@@ -202,6 +202,75 @@ class TestUploadLimitsAndExtraction:
         assert captured["filename"] == "emails.csv"
         assert captured["max_bytes"] == 123
 
+    @pytest.mark.asyncio
+    async def test_stream_upload_route_queues_large_tabular_file(self, monkeypatch):
+        captured = {}
+
+        class _FakeRequest:
+            def __init__(self):
+                self.headers = {
+                    "x-upload-filename": "sample.xlsx",
+                    "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "content-length": str(len(b"chunk-a") + len(b"chunk-b")),
+                }
+
+            async def stream(self):
+                yield b"chunk-a"
+                yield b"chunk-b"
+
+        monkeypatch.setattr(app, "get_current_user", lambda _credentials=None: {"sub": "tester"})
+        monkeypatch.setattr(app, "_cleanup_upload_jobs", lambda: None)
+        monkeypatch.setattr(app, "_max_upload_bytes_for_file", lambda _filename: 999)
+
+        async def _fake_count_reserved_slots(*_args, **_kwargs):
+            return 0
+
+        async def _fake_count_pending_jobs_for_user(*_args, **_kwargs):
+            return 0
+
+        async def _fake_blob_upload_stream(container, blob_name, chunk_iter, **kwargs):
+            data = bytearray()
+            async for chunk in chunk_iter:
+                data.extend(chunk)
+            captured["container"] = container
+            captured["blob_name"] = blob_name
+            captured["content"] = bytes(data)
+            captured["max_bytes"] = kwargs.get("max_bytes")
+            return {
+                "blob_ref": f"{container}/{blob_name}",
+                "size_bytes": len(data),
+            }
+
+        async def _fake_queue_upload_job_from_blob(conv_id, user_sub, filename, raw_blob_ref, size_bytes, content_type="", **kwargs):
+            captured["queued"] = {
+                "conv_id": conv_id,
+                "user_sub": user_sub,
+                "filename": filename,
+                "raw_blob_ref": raw_blob_ref,
+                "size_bytes": size_bytes,
+                "content_type": content_type,
+                "job_id": kwargs.get("job_id"),
+            }
+            return {
+                "job_id": kwargs.get("job_id") or "job-1",
+                "conversation_id": conv_id,
+            }
+
+        monkeypatch.setattr(app, "_count_reserved_slots_for_conversation", _fake_count_reserved_slots)
+        monkeypatch.setattr(app, "_count_pending_jobs_for_user", _fake_count_pending_jobs_for_user)
+        monkeypatch.setattr(app, "blob_upload_stream", _fake_blob_upload_stream)
+        monkeypatch.setattr(app, "_queue_upload_job_from_blob", _fake_queue_upload_job_from_blob)
+
+        result = await app.upload_file_stream_async(_FakeRequest(), None, None)
+
+        assert result["status"] == "queued"
+        assert result["upload_mode"] == "stream"
+        assert result["size_bytes"] == len(b"chunk-achunk-b")
+        assert captured["content"] == b"chunk-achunk-b"
+        assert captured["max_bytes"] == 999
+        assert captured["queued"]["filename"] == "sample.xlsx"
+        assert captured["queued"]["size_bytes"] == len(b"chunk-achunk-b")
+
 
 class TestUploadedTableCharting:
     def test_chart_tool_is_registered(self):

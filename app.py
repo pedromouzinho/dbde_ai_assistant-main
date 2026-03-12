@@ -19,7 +19,7 @@ import re
 import hashlib
 import time
 import contextlib
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 from pathlib import Path
 from collections import deque, OrderedDict
 from dataclasses import dataclass
@@ -136,6 +136,7 @@ from storage import (
     table_insert, table_query, table_merge, table_delete,
     ensure_blob_containers,
     blob_upload_bytes, blob_upload_json, blob_download_bytes, blob_download_json, blob_delete,
+    blob_upload_stream,
     parse_blob_ref, build_blob_ref,
 )
 from auth_runtime import (
@@ -2461,6 +2462,42 @@ async def _queue_upload_job(
     return job
 
 
+async def _queue_upload_job_from_blob(
+    conv_id: str,
+    user_sub: str,
+    filename: str,
+    raw_blob_ref: str,
+    size_bytes: int,
+    content_type: str = "",
+    *,
+    job_id: Optional[str] = None,
+) -> dict:
+    resolved_job_id = str(job_id or uuid.uuid4().hex)
+    blob_paths = _build_upload_blob_paths(conv_id, resolved_job_id, filename)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    job = {
+        "job_id": resolved_job_id,
+        "status": "queued",
+        "conversation_id": conv_id,
+        "filename": filename,
+        "size_bytes": int(size_bytes or 0),
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "started_at": "",
+        "finished_at": "",
+        "error": "",
+        "result": None,
+        "user_sub": user_sub,
+        "content_type": (content_type or "")[:120],
+        "raw_blob_ref": raw_blob_ref,
+        "text_blob_name": blob_paths["text_blob_name"],
+        "chunks_blob_name": blob_paths["chunks_blob_name"],
+    }
+    await upload_jobs_store.put(resolved_job_id, job)
+    await _persist_upload_job(job)
+    return job
+
+
 async def process_upload_jobs_once(max_jobs: int = UPLOAD_WORKER_BATCH_SIZE) -> dict:
     _cleanup_upload_jobs()
     target = max(1, min(int(max_jobs or 1), 50))
@@ -2608,6 +2645,86 @@ async def upload_file_async(
         "conversation_id": conv_id,
         "filename": filename,
         "size_bytes": len(content),
+    }
+
+
+@app.post("/upload/stream/async")
+@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
+async def upload_file_stream_async(
+    request: Request,
+    conversation_id: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    user = get_current_user(credentials)
+    conv_id = conversation_id or str(uuid.uuid4())
+    encoded_filename = str(request.headers.get("x-upload-filename", "") or "").strip()
+    filename = unquote(encoded_filename) if encoded_filename else "upload.bin"
+    content_type = str(request.headers.get("content-type", "") or "").strip()
+
+    if not filename or filename == "upload.bin":
+        raise HTTPException(400, "Nome de ficheiro em falta")
+    if not is_tabular_filename(filename):
+        raise HTTPException(400, "O upload em streaming está disponível apenas para ficheiros tabulares")
+
+    max_bytes = _max_upload_bytes_for_file(filename)
+    declared_size = int(request.headers.get("content-length", "0") or 0)
+    if declared_size and declared_size > max_bytes:
+        raise HTTPException(413, f"Ficheiro excede limite máximo de {max_bytes} bytes")
+
+    user_sub = str(user.get("sub", "") or "")
+    reserved_slots = await _count_reserved_slots_for_conversation(conv_id, user_sub=user_sub)
+    if reserved_slots >= MAX_FILES_PER_CONVERSATION:
+        raise HTTPException(
+            400,
+            (
+                f"Limite de {MAX_FILES_PER_CONVERSATION} ficheiros por conversa atingido "
+                "(incluindo uploads pendentes). Aguarda conclusão ou remove anexos."
+            ),
+        )
+
+    _cleanup_upload_jobs()
+    pending_jobs = await _count_pending_jobs_for_user(user_sub)
+    if pending_jobs >= UPLOAD_MAX_PENDING_JOBS_PER_USER:
+        raise HTTPException(
+            429,
+            (
+                f"Limite de {UPLOAD_MAX_PENDING_JOBS_PER_USER} uploads pendentes atingido. "
+                "Aguarda conclusão dos jobs em curso e tenta novamente."
+            ),
+        )
+
+    job_id = uuid.uuid4().hex
+    blob_paths = _build_upload_blob_paths(conv_id, job_id, filename)
+    try:
+        raw_blob = await blob_upload_stream(
+            UPLOAD_BLOB_CONTAINER_RAW,
+            blob_paths["raw_blob_name"],
+            request.stream(),
+            content_type=content_type or "application/octet-stream",
+            max_bytes=max_bytes,
+        )
+    except ValueError as exc:
+        raise HTTPException(413, str(exc))
+    except Exception as exc:
+        raise HTTPException(400, str(exc))
+
+    size_bytes = int(raw_blob.get("size_bytes", declared_size or 0) or 0)
+    job = await _queue_upload_job_from_blob(
+        conv_id,
+        user_sub,
+        filename,
+        raw_blob.get("blob_ref", build_blob_ref(UPLOAD_BLOB_CONTAINER_RAW, blob_paths["raw_blob_name"])),
+        size_bytes,
+        content_type,
+        job_id=job_id,
+    )
+    return {
+        "status": "queued",
+        "job_id": job.get("job_id"),
+        "conversation_id": conv_id,
+        "filename": filename,
+        "size_bytes": size_bytes,
+        "upload_mode": "stream",
     }
 
 

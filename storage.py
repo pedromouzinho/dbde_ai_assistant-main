@@ -12,7 +12,7 @@ import logging
 import secrets
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, AsyncIterator
 from urllib.parse import quote, unquote
 
 import httpx
@@ -289,6 +289,157 @@ async def blob_upload_bytes(
 async def blob_upload_json(container: str, blob_name: str, payload: dict) -> dict:
     data = json.dumps(payload or {}, ensure_ascii=False, default=str).encode("utf-8")
     return await blob_upload_bytes(container, blob_name, data, content_type="application/json; charset=utf-8")
+
+
+async def _blob_stage_block(
+    container: str,
+    blob_name: str,
+    block_id: str,
+    payload: bytes,
+) -> None:
+    client = _require_http_client()
+    blob_name = blob_name.lstrip("/")
+    now = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    ms_headers = {
+        "x-ms-date": now,
+        "x-ms-version": BLOB_API_VERSION,
+    }
+    query = {
+        "comp": "block",
+        "blockid": block_id,
+    }
+    auth = _blob_auth_header(
+        "PUT",
+        container,
+        blob_name,
+        content_length=len(payload),
+        content_type="application/octet-stream",
+        ms_headers=ms_headers,
+        query_params=query,
+    )
+    headers = {
+        **ms_headers,
+        "Authorization": auth,
+        "Content-Length": str(len(payload)),
+        "Content-Type": "application/octet-stream",
+    }
+    url = f"{BLOB_SERVICE_BASE_URL}/{quote(container)}/{quote(blob_name, safe='/')}"
+    resp = await client.put(url, headers=headers, params=query, content=payload)
+    if resp.status_code not in (201, 202):
+        raise StorageOperationError(
+            f"_blob_stage_block failed: {resp.status_code} {_sanitize_error_response(resp.text, 200)}"
+        )
+
+
+async def _blob_commit_block_list(
+    container: str,
+    blob_name: str,
+    block_ids: list[str],
+    *,
+    content_type: str = "application/octet-stream",
+) -> dict:
+    client = _require_http_client()
+    blob_name = blob_name.lstrip("/")
+    now = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    ms_headers = {
+        "x-ms-date": now,
+        "x-ms-version": BLOB_API_VERSION,
+        "x-ms-blob-content-type": content_type or "application/octet-stream",
+    }
+    query = {"comp": "blocklist"}
+    root = ET.Element("BlockList")
+    for block_id in block_ids:
+        elem = ET.SubElement(root, "Latest")
+        elem.text = block_id
+    payload = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    auth = _blob_auth_header(
+        "PUT",
+        container,
+        blob_name,
+        content_length=len(payload),
+        content_type="application/xml",
+        ms_headers=ms_headers,
+        query_params=query,
+    )
+    headers = {
+        **ms_headers,
+        "Authorization": auth,
+        "Content-Length": str(len(payload)),
+        "Content-Type": "application/xml",
+    }
+    url = f"{BLOB_SERVICE_BASE_URL}/{quote(container)}/{quote(blob_name, safe='/')}"
+    resp = await client.put(url, headers=headers, params=query, content=payload)
+    if resp.status_code not in (201, 202):
+        raise StorageOperationError(
+            f"_blob_commit_block_list failed: {resp.status_code} {_sanitize_error_response(resp.text, 200)}"
+        )
+    return {
+        "container": container,
+        "blob_name": blob_name,
+        "blob_ref": build_blob_ref(container, blob_name),
+        "url": url,
+        "etag": resp.headers.get("etag", ""),
+    }
+
+
+async def blob_upload_stream(
+    container: str,
+    blob_name: str,
+    chunk_iter: AsyncIterator[bytes],
+    *,
+    content_type: str = "application/octet-stream",
+    block_size: int = 4 * 1024 * 1024,
+    max_bytes: int = 0,
+) -> dict:
+    blob_name = blob_name.lstrip("/")
+    safe_block_size = max(256 * 1024, min(int(block_size or 0), 8 * 1024 * 1024))
+    total_bytes = 0
+    block_count = 0
+    buffer = bytearray()
+    block_ids: list[str] = []
+
+    async def _flush(payload: bytes) -> None:
+        nonlocal block_count
+        block_id = base64.b64encode(f"{block_count:08d}".encode("ascii")).decode("ascii")
+        await _blob_stage_block(container, blob_name, block_id, payload)
+        block_ids.append(block_id)
+        block_count += 1
+
+    async for chunk in chunk_iter:
+        if not chunk:
+            continue
+        total_bytes += len(chunk)
+        if max_bytes and total_bytes > int(max_bytes):
+            raise ValueError(f"Ficheiro excede limite máximo de {int(max_bytes)} bytes")
+        buffer.extend(chunk)
+        while len(buffer) >= safe_block_size:
+            payload = bytes(buffer[:safe_block_size])
+            del buffer[:safe_block_size]
+            await _flush(payload)
+
+    if buffer:
+        await _flush(bytes(buffer))
+
+    if not block_ids:
+        uploaded = await blob_upload_bytes(
+            container,
+            blob_name,
+            b"",
+            content_type=content_type or "application/octet-stream",
+        )
+        uploaded["size_bytes"] = 0
+        uploaded["block_count"] = 0
+        return uploaded
+
+    committed = await _blob_commit_block_list(
+        container,
+        blob_name,
+        block_ids,
+        content_type=content_type or "application/octet-stream",
+    )
+    committed["size_bytes"] = total_bytes
+    committed["block_count"] = block_count
+    return committed
 
 
 async def blob_download_bytes(container: str, blob_name: str) -> Optional[bytes]:

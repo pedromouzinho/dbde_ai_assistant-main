@@ -55,6 +55,15 @@ import {
     EMPTY_STREAMING_TRACE,
     formatStreamingToolLabel,
 } from './utils/streaming.js';
+import {
+    getMaxBytesForFile,
+    isLargeTabularFile,
+    uploadSingleFileSync,
+    queueUploadJob,
+    queueUploadJobStream,
+    queueUploadJobsBatch,
+    resolveQueuedUploads,
+} from './utils/uploads.js';
 
 function App() {
     const [conversations, setConversations] = useState([createConversation("general")]);
@@ -77,6 +86,8 @@ function App() {
     const [maxImagesPerMessage, setMaxImagesPerMessage] = useState(DEFAULT_MAX_IMAGES_PER_MESSAGE);
     const [maxFilesPerConversation, setMaxFilesPerConversation] = useState(DEFAULT_MAX_FILES_PER_CONVERSATION);
     const [maxBatchTotalBytes, setMaxBatchTotalBytes] = useState(DEFAULT_MAX_BATCH_TOTAL_BYTES);
+    const [maxUploadFileBytes, setMaxUploadFileBytes] = useState(10 * 1024 * 1024);
+    const [maxUploadFileBytesByExtension, setMaxUploadFileBytesByExtension] = useState({});
     const [uploadWorkerConcurrency, setUploadWorkerConcurrency] = useState(2);
     const [dragOver, setDragOver] = useState(false);
     const [auth, setAuth] = useState(null);
@@ -202,7 +213,11 @@ function App() {
                 const maxImages = Number(limits.max_images_per_message);
                 const maxFiles = Number(limits.max_files_per_conversation);
                 const maxBatchBytes = Number(limits.max_batch_total_bytes);
+                const maxFileBytes = Number(limits.max_file_bytes);
                 const maxConcurrency = Number(limits.max_concurrent_jobs);
+                const byExtension = limits.max_file_bytes_by_extension && typeof limits.max_file_bytes_by_extension === "object"
+                    ? limits.max_file_bytes_by_extension
+                    : {};
                 if (!cancelled && Number.isFinite(maxImages) && maxImages > 0) {
                     setMaxImagesPerMessage(Math.floor(maxImages));
                 }
@@ -211,6 +226,12 @@ function App() {
                 }
                 if (!cancelled && Number.isFinite(maxBatchBytes) && maxBatchBytes > 0) {
                     setMaxBatchTotalBytes(Math.floor(maxBatchBytes));
+                }
+                if (!cancelled && Number.isFinite(maxFileBytes) && maxFileBytes > 0) {
+                    setMaxUploadFileBytes(Math.floor(maxFileBytes));
+                }
+                if (!cancelled) {
+                    setMaxUploadFileBytesByExtension(byExtension);
                 }
                 if (!cancelled && Number.isFinite(maxConcurrency) && maxConcurrency > 0) {
                     setUploadWorkerConcurrency(Math.max(1, Math.min(4, Math.floor(maxConcurrency))));
@@ -407,203 +428,6 @@ function App() {
     }
 
     // ─── File upload ─────────────────────────────────────────────────────
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    async function uploadSingleFileSync(file, conversationId) {
-        const formData = new FormData();
-        formData.append("file", file);
-        if (conversationId) formData.append("conversation_id", conversationId);
-        const res = await authFetch(API_URL + "/upload", { method: "POST", body: formData });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || "Erro upload");
-        }
-        const data = await res.json();
-        if (data && data.status === "queued" && data.job_id) {
-            return await waitUploadJob(data.job_id);
-        }
-        return data;
-    }
-
-    async function queueUploadJob(file, conversationId) {
-        const formData = new FormData();
-        formData.append("file", file);
-        if (conversationId) formData.append("conversation_id", conversationId);
-        const res = await authFetch(API_URL + "/upload/async", { method: "POST", body: formData });
-        if (!res.ok) {
-            if (res.status === 404 || res.status === 405) {
-                return null;
-            }
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || "Erro ao criar job de upload");
-        }
-        return await res.json();
-    }
-
-    async function queueUploadJobsBatch(files, conversationId) {
-        const formData = new FormData();
-        files.forEach(f => formData.append("files", f));
-        if (conversationId) formData.append("conversation_id", conversationId);
-        const res = await authFetch(API_URL + "/upload/batch/async", { method: "POST", body: formData });
-        if (!res.ok) {
-            if (res.status === 404 || res.status === 405) {
-                return null;
-            }
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || "Erro ao criar jobs de upload");
-        }
-        return await res.json();
-    }
-
-    async function waitUploadJob(jobId) {
-        const deadline = Date.now() + UPLOAD_JOB_TIMEOUT_MS;
-        while (Date.now() < deadline) {
-            const res = await authFetch(API_URL + "/api/upload/status/" + encodeURIComponent(jobId), { method: "GET" });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.detail || "Erro ao consultar estado do upload");
-            }
-            const job = await res.json();
-            if (job.status === "completed") {
-                if (!job.result) throw new Error("Upload concluído sem resultado");
-                return job.result;
-            }
-            if (job.status === "failed") {
-                throw new Error(job.error || "Falha no processamento do ficheiro");
-            }
-            await sleep(UPLOAD_POLL_INTERVAL_MS);
-        }
-        throw new Error("Timeout no processamento do ficheiro. Tenta novamente.");
-    }
-
-    async function fetchUploadStatusBatch(jobIds) {
-        const res = await authFetch(API_URL + "/api/upload/status/batch", {
-            method: "POST",
-            headers: authHeaders(),
-            body: JSON.stringify({ job_ids: jobIds }),
-        });
-        if (!res.ok) {
-            if (res.status === 404 || res.status === 405) {
-                return null;
-            }
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || "Erro ao consultar estado batch dos uploads");
-        }
-        return await res.json();
-    }
-
-    async function resolveQueuedUploadsLegacy(queuedJobs, concurrency, onProgress) {
-        if (!Array.isArray(queuedJobs) || queuedJobs.length === 0) {
-            return { results: [], errors: [] };
-        }
-        const results = new Array(queuedJobs.length);
-        const errors = [];
-        let cursor = 0;
-        let processed = 0;
-
-        async function worker() {
-            while (true) {
-                const idx = cursor++;
-                if (idx >= queuedJobs.length) return;
-                const job = queuedJobs[idx];
-                try {
-                    const data = await waitUploadJob(job.job_id);
-                    results[idx] = { ok: true, data, filename: job.filename };
-                    processed += 1;
-                    if (onProgress) onProgress(processed, queuedJobs.length, job.filename, true);
-                } catch (err) {
-                    const message = (err && err.message) ? err.message : "Falha no processamento do ficheiro";
-                    results[idx] = { ok: false, error: message, filename: job.filename };
-                    errors.push({ filename: job.filename, error: message });
-                    processed += 1;
-                    if (onProgress) onProgress(processed, queuedJobs.length, job.filename, false);
-                }
-            }
-        }
-
-        const workerCount = Math.max(1, Math.min(concurrency, queuedJobs.length));
-        await Promise.all(Array.from({ length: workerCount }, () => worker()));
-        return { results, errors };
-    }
-
-    async function resolveQueuedUploads(queuedJobs, concurrency, onProgress) {
-        if (!Array.isArray(queuedJobs) || queuedJobs.length === 0) {
-            return { results: [], errors: [] };
-        }
-        const byId = new Map();
-        queuedJobs.forEach((job, idx) => {
-            byId.set(job.job_id, { idx, filename: job.filename || "ficheiro" });
-        });
-        const results = new Array(queuedJobs.length);
-        const errors = [];
-        const pending = new Set(queuedJobs.map(j => j.job_id));
-        const deadline = Date.now() + UPLOAD_JOB_TIMEOUT_MS;
-        let processed = 0;
-
-        while (pending.size > 0 && Date.now() < deadline) {
-            const ids = Array.from(pending);
-            let batch;
-            try {
-                batch = await fetchUploadStatusBatch(ids);
-            } catch (err) {
-                throw err;
-            }
-            if (!batch || !Array.isArray(batch.items)) {
-                return await resolveQueuedUploadsLegacy(queuedJobs, concurrency, onProgress);
-            }
-
-            for (const item of batch.items) {
-                const jobId = String(item.job_id || "");
-                if (!pending.has(jobId)) continue;
-                const meta = byId.get(jobId);
-                if (!meta) {
-                    pending.delete(jobId);
-                    continue;
-                }
-
-                const status = String(item.status || "").toLowerCase();
-                if (status === "completed") {
-                    if (item.result) {
-                        results[meta.idx] = { ok: true, data: item.result, filename: meta.filename };
-                        processed += 1;
-                        if (onProgress) onProgress(processed, queuedJobs.length, meta.filename, true);
-                    } else {
-                        const msg = "Upload concluído sem resultado";
-                        results[meta.idx] = { ok: false, error: msg, filename: meta.filename };
-                        errors.push({ filename: meta.filename, error: msg });
-                        processed += 1;
-                        if (onProgress) onProgress(processed, queuedJobs.length, meta.filename, false);
-                    }
-                    pending.delete(jobId);
-                } else if (status === "failed" || status === "not_found" || status === "forbidden") {
-                    const msg = item.error || "Falha no processamento do ficheiro";
-                    results[meta.idx] = { ok: false, error: msg, filename: meta.filename };
-                    errors.push({ filename: meta.filename, error: msg });
-                    processed += 1;
-                    if (onProgress) onProgress(processed, queuedJobs.length, meta.filename, false);
-                    pending.delete(jobId);
-                }
-            }
-
-            if (pending.size > 0) {
-                await sleep(UPLOAD_POLL_INTERVAL_MS);
-            }
-        }
-
-        for (const jobId of pending) {
-            const meta = byId.get(jobId);
-            if (!meta) continue;
-            const msg = "Timeout no processamento do ficheiro";
-            results[meta.idx] = { ok: false, error: msg, filename: meta.filename };
-            errors.push({ filename: meta.filename, error: msg });
-            if (onProgress) onProgress(Math.min(queuedJobs.length, ++processed), queuedJobs.length, meta.filename, false);
-        }
-
-        return { results, errors };
-    }
-
     async function handleFileUpload(e) {
         const selectedFiles = Array.from((e.target && e.target.files) || []);
         if (selectedFiles.length === 0) return;
@@ -613,9 +437,18 @@ function App() {
         const filesWithinSlot = selectedFiles.slice(0, availableSlots);
         const filesToUpload = [];
         const skippedByBatchLimit = [];
+        const skippedByFileLimit = [];
         let batchBytes = 0;
         for (const file of filesWithinSlot) {
             const fsize = Number(file.size || 0);
+            const maxBytesForFile = getMaxBytesForFile(file, maxUploadFileBytes, maxUploadFileBytesByExtension);
+            if (fsize > maxBytesForFile) {
+                skippedByFileLimit.push({
+                    filename: file.name || "ficheiro",
+                    limitBytes: maxBytesForFile,
+                });
+                continue;
+            }
             if (batchBytes + fsize > maxBatchTotalBytes) {
                 skippedByBatchLimit.push(file.name || "ficheiro");
                 continue;
@@ -624,7 +457,11 @@ function App() {
             batchBytes += fsize;
         }
         if (filesToUpload.length === 0) {
-            if (skippedByBatchLimit.length > 0) {
+            if (skippedByFileLimit.length > 0) {
+                const first = skippedByFileLimit[0];
+                const mb = (first.limitBytes / (1024 * 1024)).toFixed(0);
+                alert(`${first.filename} excede o limite máximo permitido (${mb}MB).`);
+            } else if (skippedByBatchLimit.length > 0) {
                 const mb = (maxBatchTotalBytes / (1024 * 1024)).toFixed(0);
                 alert(`Lote excede ${mb}MB. Seleciona menos ficheiros ou ficheiros mais pequenos.`);
             } else {
@@ -633,7 +470,7 @@ function App() {
             e.target.value = "";
             return;
         }
-        if (selectedFiles.length > filesToUpload.length || skippedByBatchLimit.length > 0) {
+        if (selectedFiles.length > filesToUpload.length || skippedByBatchLimit.length > 0 || skippedByFileLimit.length > 0) {
             alert(`Só foram processados ${filesToUpload.length} ficheiros (máximo por conversa: ${maxFilesPerConversation}).`);
         }
 
@@ -646,11 +483,16 @@ function App() {
             const failedNow = [];
             let useAsyncJobs = true;
             const queuedJobs = [];
-            const preSkipped = [];
+            const preSkipped = skippedByFileLimit.map(item => ({
+                filename: item.filename,
+                error: `Ficheiro excede o limite máximo de ${item.limitBytes} bytes`,
+            }));
+            const streamFiles = filesToUpload.filter(file => isLargeTabularFile(file, maxUploadFileBytes));
+            const regularFiles = filesToUpload.filter(file => !isLargeTabularFile(file, maxUploadFileBytes));
 
-            if (useAsyncJobs) {
+            if (useAsyncJobs && regularFiles.length > 0) {
                 setUploadProgressText(`A enfileirar ${filesToUpload.length} ficheiro(s)...`);
-                const batch = await queueUploadJobsBatch(filesToUpload, convId);
+                const batch = await queueUploadJobsBatch(authFetch, API_URL, regularFiles, convId);
                 if (batch && Array.isArray(batch.queued_jobs)) {
                     convId = batch.conversation_id || convId;
                     batch.queued_jobs.forEach(j => {
@@ -668,12 +510,12 @@ function App() {
                         });
                     }
                 } else {
-                    for (const file of filesToUpload) {
+                    for (const file of regularFiles) {
                         if (!useAsyncJobs) break;
                         setUploadProgressText(`A enfileirar ${file.name}...`);
                         let queued = null;
                         try {
-                            queued = await queueUploadJob(file, convId);
+                            queued = await queueUploadJob(authFetch, API_URL, file, convId);
                         } catch (err) {
                             preSkipped.push({
                                 filename: file.name || "ficheiro",
@@ -695,14 +537,51 @@ function App() {
                 }
             }
 
+            if (useAsyncJobs && streamFiles.length > 0) {
+                for (const file of streamFiles) {
+                    setUploadProgressText(`A enviar ${file.name} em streaming...`);
+                    let queued = null;
+                    try {
+                        queued = await queueUploadJobStream(authFetch, API_URL, file, convId);
+                    } catch (err) {
+                        preSkipped.push({
+                            filename: file.name || "ficheiro",
+                            error: (err && err.message) ? err.message : "Não foi possível enfileirar",
+                        });
+                        continue;
+                    }
+                    if (!queued) {
+                        try {
+                            queued = await queueUploadJob(authFetch, API_URL, file, convId);
+                        } catch (err) {
+                            preSkipped.push({
+                                filename: file.name || "ficheiro",
+                                error: (err && err.message) ? err.message : "Não foi possível enfileirar",
+                            });
+                            continue;
+                        }
+                    }
+                    convId = queued.conversation_id || convId;
+                    queuedJobs.push({
+                        job_id: queued.job_id,
+                        filename: file.name,
+                    });
+                }
+            }
+
             if (useAsyncJobs && queuedJobs.length > 0) {
                 const outcomes = await resolveQueuedUploads(
+                    authFetch,
+                    API_URL,
+                    authHeaders,
                     queuedJobs,
                     uploadWorkerConcurrency,
                     (done, total, filename, ok) => {
                         const mark = ok ? "OK" : "FALHA";
                         setUploadProgressText(`A processar anexos: ${done}/${total} · ${mark} · ${filename || ""}`);
-                    }
+                    },
+                    UPLOAD_JOB_TIMEOUT_MS,
+                    UPLOAD_POLL_INTERVAL_MS,
                 );
                 for (const outcome of outcomes.results) {
                     if (!outcome) continue;
@@ -722,7 +601,7 @@ function App() {
                 for (const file of filesToUpload) {
                     setUploadProgressText(`A processar ${file.name}...`);
                     try {
-                        const data = await uploadSingleFileSync(file, convId);
+                        const data = await uploadSingleFileSync(authFetch, API_URL, file, convId);
                         convId = data.conversation_id || convId;
                         lastData = data;
                         uploadedNow.push(data);
