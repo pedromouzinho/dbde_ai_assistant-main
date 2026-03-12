@@ -452,6 +452,34 @@ app.add_middleware(
 
 http_client: Optional[httpx.AsyncClient] = None
 MAX_REQUEST_BODY_BYTES = 15 * 1024 * 1024
+UPLOAD_MULTIPART_OVERHEAD_BYTES = 4 * 1024 * 1024
+MAX_SINGLE_UPLOAD_REQUEST_BODY_BYTES = (
+    max(
+        int(UPLOAD_MAX_FILE_BYTES),
+        int(get_tabular_upload_limit_bytes("sample.csv", UPLOAD_MAX_FILE_BYTES)),
+        int(get_tabular_upload_limit_bytes("sample.tsv", UPLOAD_MAX_FILE_BYTES)),
+        int(get_tabular_upload_limit_bytes("sample.xlsx", UPLOAD_MAX_FILE_BYTES)),
+        int(get_tabular_upload_limit_bytes("sample.xlsb", UPLOAD_MAX_FILE_BYTES)),
+        int(get_tabular_upload_limit_bytes("sample.xls", UPLOAD_MAX_FILE_BYTES)),
+    )
+    + UPLOAD_MULTIPART_OVERHEAD_BYTES
+)
+MAX_BATCH_UPLOAD_REQUEST_BODY_BYTES = int(UPLOAD_MAX_BATCH_TOTAL_BYTES) + UPLOAD_MULTIPART_OVERHEAD_BYTES
+
+
+def _request_body_limit_bytes(request: Request) -> int:
+    req_path = str(getattr(getattr(request, "url", None), "path", "") or "").strip()
+    if req_path == "/upload/stream/async":
+        encoded_filename = str(request.headers.get("x-upload-filename", "") or "").strip()
+        filename = unquote(encoded_filename) if encoded_filename else ""
+        if filename:
+            return max(MAX_REQUEST_BODY_BYTES, _max_upload_bytes_for_file(filename))
+        return MAX_REQUEST_BODY_BYTES
+    if req_path in {"/upload", "/upload/async"}:
+        return max(MAX_REQUEST_BODY_BYTES, MAX_SINGLE_UPLOAD_REQUEST_BODY_BYTES)
+    if req_path == "/upload/batch/async":
+        return max(MAX_REQUEST_BODY_BYTES, MAX_BATCH_UPLOAD_REQUEST_BODY_BYTES)
+    return MAX_REQUEST_BODY_BYTES
 
 
 @app.middleware("http")
@@ -467,13 +495,14 @@ async def enforce_allowed_origins(request: Request, call_next):
         request.state.auth_payload = None
         request.state.auth_error = ""
 
+        body_limit_bytes = _request_body_limit_bytes(request)
         content_length = (request.headers.get("content-length") or "").strip()
         if content_length:
             try:
-                if int(content_length) > MAX_REQUEST_BODY_BYTES:
+                if int(content_length) > body_limit_bytes:
                     return JSONResponse(
                         status_code=413,
-                        content={"detail": f"Payload demasiado grande (máximo {MAX_REQUEST_BODY_BYTES} bytes)"},
+                        content={"detail": f"Payload demasiado grande (máximo {body_limit_bytes} bytes)"},
                     )
             except ValueError:
                 pass
@@ -486,10 +515,10 @@ async def enforce_allowed_origins(request: Request, call_next):
             if message.get("type") == "http.request":
                 body_chunk = message.get("body", b"")
                 received_body_size += len(body_chunk)
-                if received_body_size > MAX_REQUEST_BODY_BYTES:
+                if received_body_size > body_limit_bytes:
                     raise HTTPException(
                         status_code=413,
-                        detail=f"Payload demasiado grande (máximo {MAX_REQUEST_BODY_BYTES} bytes)",
+                        detail=f"Payload demasiado grande (máximo {body_limit_bytes} bytes)",
                     )
             return message
 

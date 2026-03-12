@@ -271,6 +271,23 @@ class TestUploadLimitsAndExtraction:
         assert captured["queued"]["filename"] == "sample.xlsx"
         assert captured["queued"]["size_bytes"] == len(b"chunk-achunk-b")
 
+    def test_request_body_limit_bytes_uses_stream_limit_for_tabular_uploads(self, monkeypatch):
+        monkeypatch.setattr(app, "_max_upload_bytes_for_file", lambda _filename: 60 * 1024 * 1024)
+        request = types.SimpleNamespace(
+            url=types.SimpleNamespace(path="/upload/stream/async"),
+            headers={"x-upload-filename": "sample.xlsx"},
+        )
+
+        assert app._request_body_limit_bytes(request) == 60 * 1024 * 1024
+
+    def test_request_body_limit_bytes_uses_batch_limit_for_batch_uploads(self):
+        request = types.SimpleNamespace(
+            url=types.SimpleNamespace(path="/upload/batch/async"),
+            headers={},
+        )
+
+        assert app._request_body_limit_bytes(request) == app.MAX_BATCH_UPLOAD_REQUEST_BODY_BYTES
+
 
 class TestUploadedTableCharting:
     def test_chart_tool_is_registered(self):
