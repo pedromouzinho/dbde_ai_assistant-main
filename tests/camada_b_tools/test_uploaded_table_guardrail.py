@@ -1,0 +1,52 @@
+"""Tests para guardrail de routing em análise de ficheiros tabulares."""
+
+
+def test_no_forced_uploaded_table_call_for_simple_analysis_intent(monkeypatch):
+    import agent
+
+    monkeypatch.setattr(
+        agent,
+        "_get_uploaded_files",
+        lambda _conv_id: [{"filename": "Sample_Tbl_Contact_Detail.xlsx"}],
+    )
+
+    calls = agent._extract_forced_uploaded_table_calls(
+        "analisa este ficheiro e dá-me o volume médio por ano",
+        "conv-1",
+        already_used=[],
+    )
+    assert calls == []
+
+
+def test_no_forced_uploaded_table_call_for_non_analysis_intent(monkeypatch):
+    import agent
+
+    monkeypatch.setattr(
+        agent,
+        "_get_uploaded_files",
+        lambda _conv_id: [{"filename": "Sample_Tbl_Contact_Detail.xlsx"}],
+    )
+
+    calls = agent._extract_forced_uploaded_table_calls(
+        "olá, tudo bem?",
+        "conv-1",
+        already_used=[],
+    )
+    assert calls == []
+
+
+def test_no_forced_uploaded_table_call_for_exhaustive_intent(monkeypatch):
+    import agent
+
+    monkeypatch.setattr(
+        agent,
+        "_get_uploaded_files",
+        lambda _conv_id: [{"filename": "Sample_Tbl_Contact_Detail.xlsx"}],
+    )
+
+    calls = agent._extract_forced_uploaded_table_calls(
+        "analisa este ficheiro todo sem amostra e dá-me a lista completa dos valores distintos",
+        "conv-1",
+        already_used=[],
+    )
+    assert calls == []
