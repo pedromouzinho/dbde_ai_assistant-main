@@ -89,6 +89,9 @@ class TestUploadLimitsAndExtraction:
         assert csv_limit > app.MAX_UPLOAD_FILE_BYTES
         assert xlsx_limit > app.MAX_UPLOAD_FILE_BYTES
         assert xlsb_limit >= xlsx_limit
+        assert csv_limit == 60 * 1024 * 1024
+        assert xlsx_limit == 60 * 1024 * 1024
+        assert xlsb_limit == 60 * 1024 * 1024
 
     @pytest.mark.asyncio
     async def test_extract_upload_entry_accepts_xlsb(self, monkeypatch):
