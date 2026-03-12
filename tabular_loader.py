@@ -307,13 +307,20 @@ def _load_xlsx_preview(raw_bytes: bytes, preview_rows: int, preview_char_limit: 
         if not header:
             raise TabularLoaderError("Excel vazio.")
         columns = _normalize_header_row(header)
-        sample_rows, row_count, preview_lines, truncated = _collect_row_preview(
-            columns,
-            (_row_values_from_sequence(row) for row in row_iter),
-            "\t",
-            preview_rows,
-            preview_char_limit,
-        )
+        estimated_row_count = max(0, int(getattr(worksheet, "max_row", 1) or 1) - 1)
+        sample_rows: list[list[str]] = []
+        preview_lines = ["\t".join(columns)]
+        for row in row_iter:
+            normalized = _normalize_row(_row_values_from_sequence(row), len(columns))
+            if len(sample_rows) < preview_rows:
+                sample_rows.append(normalized)
+            line = "\t".join(normalized)
+            if _fits_preview(preview_lines, line, preview_char_limit):
+                preview_lines.append(line)
+            if len(sample_rows) >= preview_rows and len(preview_lines) >= (preview_rows + 1):
+                break
+        row_count = estimated_row_count if estimated_row_count > 0 else len(sample_rows)
+        truncated = row_count > len(sample_rows)
         return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
     finally:
         workbook.close()
