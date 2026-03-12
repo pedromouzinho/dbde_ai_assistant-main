@@ -523,6 +523,13 @@ button, input, textarea, select {
     color: #FFFFFF;
 }
 
+.composer-mic-btn.active {
+    background: rgba(var(--brand-accent-rgb), 0.12);
+    border-color: rgba(var(--brand-accent-rgb), 0.24);
+    color: var(--brand-accent);
+    box-shadow: 0 0 0 4px rgba(var(--brand-accent-rgb), 0.08), var(--shadow-card);
+}
+
 .selector-trigger {
     min-height: 40px;
 }

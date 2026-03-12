@@ -24,12 +24,12 @@ import {
 } from './utils/conversations.js';
 import { getAuthHeaders, authFetch } from './utils/auth.js';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
-// MessageBubble composes ChartBlock and FeedbackWidget for rich assistant output blocks.
-import MessageBubble from './components/MessageBubble.jsx';
+import MessageBubble from './components/MessageBubble.jsx'; // MessageBubble composes ChartBlock and FeedbackWidget.
 import TypingIndicator from './components/TypingIndicator.jsx';
 import LoginScreen from './components/LoginScreen.jsx';
 import UserMenu from './components/UserMenu.jsx';
 import UserStoryWorkspace from './components/UserStoryWorkspace.jsx';
+import ChatEmptyState from './components/ChatEmptyState.jsx';
 import ConversationListItem from './components/ConversationListItem.jsx';
 import ModalDialog from './components/ModalDialog.jsx';
 import ChatComposer from './components/ChatComposer.jsx';
@@ -45,7 +45,6 @@ import {
     MenuIcon,
     PlusIcon,
     ProIcon,
-    RefreshIcon,
     StoryIcon,
     ThinkingIcon,
 } from './components/AppIcons.jsx';
@@ -54,6 +53,7 @@ import {
     EMPTY_STREAMING_TRACE,
     formatStreamingToolLabel,
 } from './utils/streaming.js';
+import useSpeechPrompt from './hooks/useSpeechPrompt.js';
 import {
     getMaxBytesForFile,
     fetchUploadStatusBatch,
@@ -111,7 +111,6 @@ function App() {
                 ? `A processar ${activePendingUploadJobs.length} anexo(s) em background...`
                 : ""
         );
-
     const chatEndRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -148,7 +147,23 @@ function App() {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-
+    const {
+        speechSupported,
+        speechListening,
+        speechProcessing,
+        speechInterimText,
+        speechNotice,
+        clearSpeechNotice,
+        resetSpeechPrompt,
+        toggleSpeech,
+    } = useSpeechPrompt({
+        authFetchFn: authFetch,
+        apiUrl: API_URL,
+        agentMode,
+        conversationId: active && active.id ? active.id : null,
+        inputRef,
+        onApplyPrompt: setInput,
+    });
     useEffect(() => {
         if (!auth) return;
         let cancelled = false;
@@ -281,6 +296,7 @@ function App() {
     }
 
     async function handleLogout() {
+        resetSpeechPrompt();
         try {
             await authFetch(API_URL + "/api/auth/logout", { method: "POST" });
         } catch (e) {
@@ -298,7 +314,6 @@ function App() {
     function authHeaders() {
         return getAuthHeaders();
     }
-
     // ─── Hooks that must be called before any early return ───────────────
     const saveTimerRef = useRef(null);
 
@@ -334,7 +349,6 @@ function App() {
         bootstrapSession();
         return () => { cancelled = true; };
     }, []);
-
     useEffect(() => {
         let cancelled = false;
         async function loadRuntimeLimits() {
@@ -1838,31 +1852,14 @@ function App() {
 
                         {(!active || activeMessages.length === 0) && !loading && agentMode !== "userstory" ? (
                             <div className="app-empty-state">
-                                <img
-                                    src={MILLENNIUM_SYMBOL_DATA_URI}
-                                    alt="Millennium"
-                                    style={{ width: 74, height: 74, margin: "0 auto 24px", display: "block" }}
+                                <ChatEmptyState
+                                    suggestions={suggestions}
+                                    onSuggestionClick={(question) => {
+                                        setInput(question);
+                                        setTimeout(() => inputRef.current && inputRef.current.focus(), 50);
+                                    }}
+                                    onRefreshSuggestions={() => setSuggestionSeed((s) => s + 1)}
                                 />
-                                <div className="app-empty-title">Assistente AI DBDE</div>
-                                <div className="app-empty-subtitle">
-                                    Pesquisa, análise e geração de artefactos com contexto operacional.
-                                </div>
-                                <div className="app-suggestion-grid">
-                                    {suggestions.map((q) => (
-                                        <button
-                                            key={q}
-                                            type="button"
-                                            className="suggestion-btn"
-                                            onClick={() => { setInput(q); setTimeout(() => inputRef.current && inputRef.current.focus(), 50); }}
-                                        >
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button type="button" className="app-ghost-btn" style={{ marginTop: 18 }} onClick={() => setSuggestionSeed((s) => s + 1)}>
-                                    <RefreshIcon size={15} />
-                                    Outras sugestões
-                                </button>
                             </div>
                         ) : null}
 
@@ -1934,7 +1931,10 @@ function App() {
                     onImagePick={handleImageUpload}
                     inputRef={inputRef}
                     input={input}
-                    onInputChange={(e) => setInput(e.target.value)}
+                    onInputChange={(e) => {
+                        setInput(e.target.value);
+                        if (speechNotice) clearSpeechNotice();
+                    }}
                     onInputKeyDown={handleKeyDown}
                     onInputPaste={handlePaste}
                     inputPlaceholder={
@@ -1946,6 +1946,12 @@ function App() {
                     }
                     onSend={send}
                     maxBatchTotalBytes={maxBatchTotalBytes}
+                    speechSupported={speechSupported}
+                    speechListening={speechListening}
+                    speechProcessing={speechProcessing}
+                    speechInterimText={speechInterimText}
+                    speechNotice={speechNotice}
+                    onToggleSpeech={toggleSpeech}
                 />
 
                 {renameTarget ? (

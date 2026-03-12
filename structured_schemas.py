@@ -137,6 +137,28 @@ USER_STORY_SCHEMA = {
     },
 }
 
+SPEECH_PROMPT_NORMALIZATION_SCHEMA = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "speech_prompt_normalization",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "normalized_prompt": {"type": "string"},
+                "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+                "inferred_mode": {"type": "string", "enum": ["general", "userstory"]},
+                "notes": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": ["normalized_prompt", "confidence", "inferred_mode", "notes"],
+            "additionalProperties": False,
+        },
+    },
+}
+
 DATA_TABLE_SCHEMA = {
     "type": "json_schema",
     "json_schema": {

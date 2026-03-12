@@ -1,5 +1,5 @@
 import React from 'react';
-import { AttachmentIcon, ImageIcon, SendIcon, WarningIcon } from './AppIcons.jsx';
+import { AttachmentIcon, ImageIcon, MicrophoneIcon, SendIcon, StopIcon, WarningIcon } from './AppIcons.jsx';
 
 export default function ChatComposer({
   uploadingFiles,
@@ -27,6 +27,12 @@ export default function ChatComposer({
   inputPlaceholder,
   onSend,
   maxBatchTotalBytes,
+  speechSupported,
+  speechListening,
+  speechProcessing,
+  speechInterimText,
+  speechNotice,
+  onToggleSpeech,
 }) {
   return (
     <div className="app-input-bar">
@@ -104,6 +110,26 @@ export default function ChatComposer({
           </div>
         ) : null}
 
+        {speechListening || speechProcessing || speechNotice ? (
+          <div className={`app-banner ${speechListening ? 'accent' : speechNotice ? 'warning' : 'accent'}`}>
+            {speechListening ? <MicrophoneIcon size={18} /> : <WarningIcon size={16} />}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: speechInterimText ? 4 : 0 }}>
+                {speechListening
+                  ? 'A ouvir... fala de forma natural'
+                  : speechProcessing
+                    ? 'A interpretar o pedido por voz...'
+                    : speechNotice}
+              </div>
+              {speechInterimText ? (
+                <div style={{ fontSize: 11, lineHeight: 1.5, color: 'var(--text-muted)' }}>
+                  {speechInterimText}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         <div className="composer-shell">
           <input
             ref={fileInputRef}
@@ -147,6 +173,18 @@ export default function ChatComposer({
             <ImageIcon size={18} />
           </button>
 
+          {speechSupported ? (
+            <button
+              type="button"
+              className={`composer-action-btn${speechListening ? ' composer-mic-btn active' : ' composer-mic-btn'}`}
+              onClick={onToggleSpeech}
+              disabled={loading || uploadingFiles || speechProcessing}
+              title={speechListening ? 'Parar gravação' : 'Falar para o assistente'}
+            >
+              {speechListening ? <StopIcon size={16} /> : <MicrophoneIcon size={18} />}
+            </button>
+          ) : null}
+
           <textarea
             ref={inputRef}
             value={input}
@@ -166,14 +204,18 @@ export default function ChatComposer({
             type="button"
             className="composer-action-btn composer-send-btn"
             onClick={onSend}
-            disabled={!input.trim() || loading || uploadingFiles}
+            disabled={!input.trim() || loading || uploadingFiles || speechListening || speechProcessing}
           >
             <SendIcon size={17} />
           </button>
         </div>
 
         <div style={{ maxWidth: 960, margin: '8px auto 0', textAlign: 'center', fontSize: 10, color: 'var(--text-soft)', fontWeight: 500, letterSpacing: '0.02em' }}>
-          {uploadingFiles
+          {speechListening
+            ? 'Estamos a captar a tua fala. Quando parares, o pedido é limpo e colocado no campo antes de enviares.'
+            : speechProcessing
+              ? 'A transformar a fala num prompt claro para o assistente...'
+              : uploadingFiles
             ? 'A processar anexos. O envio da mensagem fica disponível no fim.'
             : `Enter para enviar · Shift+Enter para nova linha · anexa ficheiros · Ctrl+V para colar imagens · lote até ${Math.max(1, Math.round(maxBatchTotalBytes / (1024 * 1024)))}MB`}
         </div>

@@ -108,6 +108,7 @@ from models import (
     AgentChatRequest, AgentChatResponse,
     LoginRequest, CreateUserRequest, ChangePasswordRequest,
     FeedbackRequest, ExportRequest, SaveChatRequest, UpdateChatTitleRequest,
+    SpeechPromptNormalizeRequest, SpeechPromptNormalizeResponse,
     ModeSwitchRequest, ModeSwitchResponse,
     ClientErrorReport,
     UserStoryWorkspaceRequest,
@@ -205,6 +206,7 @@ from story_knowledge_assets import (
     review_story_knowledge_asset,
 )
 from story_knowledge_index import sync_story_knowledge_index
+from speech_prompt import normalize_spoken_prompt
 
 # =============================================================================
 # APP SETUP
@@ -3603,6 +3605,26 @@ async def get_me(request: Request, credentials: HTTPAuthorizationCredentials = D
     user = get_current_user(credentials)
     return {"username":user.get("sub"),"role":user.get("role"),"name":user.get("name")}
 
+
+@app.post("/api/speech/prompt", response_model=SpeechPromptNormalizeResponse)
+@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
+async def normalize_speech_prompt(
+    request: Request,
+    payload: SpeechPromptNormalizeRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    get_current_user(credentials)
+    transcript = str(payload.transcript or "").strip()
+    if not transcript:
+        raise HTTPException(400, "Transcrição vazia")
+
+    result = await normalize_spoken_prompt(
+        transcript=transcript,
+        mode=str(payload.mode or "general"),
+        language=str(payload.language or "pt-PT"),
+    )
+    return SpeechPromptNormalizeResponse(**result)
+
 # =============================================================================
 # FEEDBACK
 # =============================================================================
@@ -3919,6 +3941,7 @@ async def api_info(request: Request):
         },
         "features": {
             "user_story_lane": STORY_LANE_ENABLED,
+            "speech_prompt": True,
         },
     }
 

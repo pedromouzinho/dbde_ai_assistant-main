@@ -135,6 +135,21 @@ class FeedbackRequest(BaseModel):
     note: Optional[str] = Field(default=None, max_length=MAX_MEDIUM_TEXT_LEN)
 
 
+class SpeechPromptNormalizeRequest(BaseModel):
+    transcript: str = Field(min_length=1, max_length=MAX_MEDIUM_TEXT_LEN)
+    mode: Optional[Literal["general", "userstory"]] = "general"
+    conversation_id: Optional[str] = Field(default=None, max_length=MAX_ID_LEN)
+    language: Optional[str] = Field(default="pt-PT", max_length=32)
+
+
+class SpeechPromptNormalizeResponse(BaseModel):
+    raw_transcript: str = Field(min_length=1, max_length=MAX_MEDIUM_TEXT_LEN)
+    normalized_prompt: str = Field(min_length=1, max_length=MAX_MEDIUM_TEXT_LEN)
+    confidence: Literal["high", "medium", "low"] = "medium"
+    inferred_mode: Literal["general", "userstory"] = "general"
+    notes: List[str] = Field(default_factory=list, max_length=10)
+
+
 class UserStoryWorkspaceRequest(BaseModel):
     conversation_id: Optional[str] = Field(default=None, max_length=MAX_ID_LEN)
     objective: str = Field(min_length=1, max_length=MAX_MEDIUM_TEXT_LEN)

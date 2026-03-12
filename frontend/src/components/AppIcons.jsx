@@ -139,6 +139,25 @@ export function SendIcon(props) {
   );
 }
 
+export function MicrophoneIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" />
+      <path d="M19 11a7 7 0 0 1-14 0" />
+      <path d="M12 18v4" />
+      <path d="M8 22h8" />
+    </IconBase>
+  );
+}
+
+export function StopIcon(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="6" y="6" width="12" height="12" rx="2.5" />
+    </IconBase>
+  );
+}
+
 export function RefreshIcon(props) {
   return (
     <IconBase {...props}>
@@ -247,4 +266,3 @@ export function FileIcon(props) {
     </IconBase>
   );
 }
-
