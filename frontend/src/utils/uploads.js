@@ -17,9 +17,9 @@ export function getMaxBytesForFile(file, maxUploadFileBytes, maxUploadFileBytesB
   return maxUploadFileBytes;
 }
 
-export function isLargeTabularFile(file, maxUploadFileBytes) {
+export function isTabularFile(file) {
   const extension = getFilenameExtension(file && file.name);
-  return [".csv", ".tsv", ".xlsx", ".xlsb", ".xls"].includes(extension) && Number(file?.size || 0) > maxUploadFileBytes;
+  return [".csv", ".tsv", ".xlsx", ".xlsb", ".xls"].includes(extension);
 }
 
 export async function uploadSingleFileSync(authFetchFn, apiUrl, file, conversationId) {

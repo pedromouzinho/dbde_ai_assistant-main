@@ -57,7 +57,7 @@ import {
 } from './utils/streaming.js';
 import {
     getMaxBytesForFile,
-    isLargeTabularFile,
+    isTabularFile,
     uploadSingleFileSync,
     queueUploadJob,
     queueUploadJobStream,
@@ -487,8 +487,8 @@ function App() {
                 filename: item.filename,
                 error: `Ficheiro excede o limite máximo de ${item.limitBytes} bytes`,
             }));
-            const streamFiles = filesToUpload.filter(file => isLargeTabularFile(file, maxUploadFileBytes));
-            const regularFiles = filesToUpload.filter(file => !isLargeTabularFile(file, maxUploadFileBytes));
+            const streamFiles = filesToUpload.filter(file => isTabularFile(file));
+            const regularFiles = filesToUpload.filter(file => !isTabularFile(file));
 
             if (useAsyncJobs && regularFiles.length > 0) {
                 setUploadProgressText(`A enfileirar ${filesToUpload.length} ficheiro(s)...`);
