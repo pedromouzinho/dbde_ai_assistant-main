@@ -6,7 +6,6 @@ import {
   DEFAULT_MAX_FILES_PER_CONVERSATION,
   DEFAULT_MAX_BATCH_TOTAL_BYTES,
   UPLOAD_POLL_INTERVAL_MS,
-  UPLOAD_JOB_TIMEOUT_MS,
   EMPTY_CONVERSATION,
   MILLENNIUM_SYMBOL_DATA_URI,
 } from './utils/constants.js';
@@ -57,12 +56,12 @@ import {
 } from './utils/streaming.js';
 import {
     getMaxBytesForFile,
+    fetchUploadStatusBatch,
     isTabularFile,
     uploadSingleFileSync,
     queueUploadJob,
     queueUploadJobStream,
     queueUploadJobsBatch,
-    resolveQueuedUploads,
 } from './utils/uploads.js';
 
 function App() {
@@ -88,7 +87,6 @@ function App() {
     const [maxBatchTotalBytes, setMaxBatchTotalBytes] = useState(DEFAULT_MAX_BATCH_TOTAL_BYTES);
     const [maxUploadFileBytes, setMaxUploadFileBytes] = useState(10 * 1024 * 1024);
     const [maxUploadFileBytesByExtension, setMaxUploadFileBytesByExtension] = useState({});
-    const [uploadWorkerConcurrency, setUploadWorkerConcurrency] = useState(2);
     const [dragOver, setDragOver] = useState(false);
     const [auth, setAuth] = useState(null);
     const [authInitializing, setAuthInitializing] = useState(true);
@@ -102,8 +100,17 @@ function App() {
     const active = conversations[activeIdx] || createConversation(agentMode);
     const activeMessages = Array.isArray(active.messages) ? active.messages : [];
     const activeUploadedFiles = Array.isArray(active.uploadedFiles) ? active.uploadedFiles : uploadedFiles;
+    const activePendingUploadJobs = Array.isArray(active.pendingUploadJobs) ? active.pendingUploadJobs : [];
     const authUser = auth ? auth.user : {};
     const userId = authUser.username || "";
+    const uploadBusy = uploadingFiles || activePendingUploadJobs.length > 0;
+    const currentUploadProgressText = uploadingFiles
+        ? uploadProgressText
+        : (
+            activePendingUploadJobs.length > 0
+                ? `A processar ${activePendingUploadJobs.length} anexo(s) em background...`
+                : ""
+        );
 
     const chatEndRef = useRef(null);
     const inputRef = useRef(null);
@@ -141,6 +148,132 @@ function App() {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
+
+    useEffect(() => {
+        if (!auth) return;
+        let cancelled = false;
+        let timerId = null;
+
+        async function pollPendingUploads() {
+            const pendingJobs = conversations.flatMap((conv, idx) =>
+                (Array.isArray(conv?.pendingUploadJobs) ? conv.pendingUploadJobs : []).map(job => ({
+                    ...job,
+                    conversationIndex: idx,
+                    conversationId: conv?.id || job?.conversation_id || "",
+                }))
+            );
+            const pendingIds = Array.from(new Set(
+                pendingJobs
+                    .map(job => String(job.job_id || "").trim())
+                    .filter(Boolean)
+            ));
+
+            if (!pendingIds.length) {
+                return;
+            }
+
+            try {
+                const batch = await fetchUploadStatusBatch(authFetch, API_URL, authHeaders, pendingIds);
+                if (cancelled || !batch || !Array.isArray(batch.items)) {
+                    return;
+                }
+
+                const itemsById = new Map(
+                    batch.items.map(item => [String(item.job_id || "").trim(), item])
+                );
+
+                setConversations(prev => {
+                    let changed = false;
+                    const next = prev.map((conv, idx) => {
+                        const pending = Array.isArray(conv?.pendingUploadJobs) ? conv.pendingUploadJobs : [];
+                        if (!pending.length) return conv;
+
+                        const remaining = [];
+                        const newMessages = [];
+                        let nextUploadedFiles = Array.isArray(conv.uploadedFiles) ? conv.uploadedFiles : [];
+                        let jobStateChanged = false;
+
+                        for (const job of pending) {
+                            const item = itemsById.get(String(job.job_id || "").trim());
+                            if (!item) {
+                                remaining.push(job);
+                                continue;
+                            }
+
+                            const status = String(item.status || "").toLowerCase();
+                            if (status === "completed" && item.result) {
+                                const result = item.result;
+                                const rows = Number(result.rows || 0);
+                                const columns = Array.isArray(result.columns) ? result.columns.length : 0;
+                                if (Array.isArray(result.all_files)) {
+                                    nextUploadedFiles = result.all_files;
+                                }
+                                newMessages.push({
+                                    role: "assistant",
+                                    content: `Anexo processado com sucesso: **${result.filename || job.filename || "ficheiro"}**${rows > 0 ? ` (${rows.toLocaleString("pt-PT")} linhas` : ""}${columns > 0 ? ` · ${columns} colunas` : ""}).`,
+                                    tools_used: ["upload_file"],
+                                });
+                                jobStateChanged = true;
+                                continue;
+                            }
+
+                            if (status === "failed" || status === "forbidden" || status === "not_found") {
+                                const reason = String(item.error || "Falha no processamento do ficheiro").trim();
+                                newMessages.push({
+                                    role: "assistant",
+                                    content: `Falha ao processar **${job.filename || "ficheiro"}**: ${reason}`,
+                                    tools_used: ["upload_file"],
+                                });
+                                jobStateChanged = true;
+                                continue;
+                            }
+
+                            const nextJob = {
+                                ...job,
+                                status: status || job.status || "queued",
+                                updated_at: item.updated_at || job.updated_at || "",
+                            };
+                            if (
+                                nextJob.status !== job.status
+                                || nextJob.updated_at !== job.updated_at
+                            ) {
+                                jobStateChanged = true;
+                            }
+                            remaining.push(nextJob);
+                        }
+
+                        if (!jobStateChanged && remaining.length === pending.length && newMessages.length === 0) {
+                            return conv;
+                        }
+
+                        changed = true;
+                        return {
+                            ...conv,
+                            fileMode: conv.fileMode || nextUploadedFiles.length > 0 || remaining.length > 0,
+                            uploadedFiles: nextUploadedFiles,
+                            pendingUploadJobs: remaining,
+                            updatedAt: new Date().toISOString(),
+                            messages: newMessages.length > 0 ? [...conv.messages, ...newMessages] : conv.messages,
+                        };
+                    });
+
+                    return changed ? next : prev;
+                });
+            } catch (err) {
+                console.warn("Pending upload polling failed:", err);
+            } finally {
+                if (!cancelled) {
+                    timerId = window.setTimeout(pollPendingUploads, UPLOAD_POLL_INTERVAL_MS);
+                }
+            }
+        }
+
+        pollPendingUploads();
+        return () => {
+            cancelled = true;
+            if (timerId) window.clearTimeout(timerId);
+        };
+    }, [auth, conversations]);
 
     function handleLogin(user) {
         const a = { user };
@@ -258,7 +391,7 @@ function App() {
                 if (data.chats && data.chats.length > 0) {
                     const loaded = data.chats.map(c => ({
                         id: c.conversation_id, title: c.title || "Conversa",
-                        messages: [], savedOnServer: true, uploadedFiles: [],
+                        messages: [], savedOnServer: true, uploadedFiles: [], pendingUploadJobs: [],
                         message_count: c.message_count,
                         updatedAt: c.updated_at || "",
                         titleManuallyEdited: true,
@@ -432,7 +565,7 @@ function App() {
         const selectedFiles = Array.from((e.target && e.target.files) || []);
         if (selectedFiles.length === 0) return;
 
-        const currentCount = Array.isArray(activeUploadedFiles) ? activeUploadedFiles.length : 0;
+        const currentCount = (Array.isArray(activeUploadedFiles) ? activeUploadedFiles.length : 0) + activePendingUploadJobs.length;
         const availableSlots = Math.max(0, maxFilesPerConversation - currentCount);
         const filesWithinSlot = selectedFiles.slice(0, availableSlots);
         const filesToUpload = [];
@@ -479,8 +612,6 @@ function App() {
             setUploadProgressText(`A preparar upload de ${filesToUpload.length} ficheiro(s)...`);
             let convId = active && active.id ? active.id : null;
             let lastData = null;
-            const uploadedNow = [];
-            const failedNow = [];
             let useAsyncJobs = true;
             const queuedJobs = [];
             const preSkipped = skippedByFileLimit.map(item => ({
@@ -569,35 +700,49 @@ function App() {
                 }
             }
 
-            if (useAsyncJobs && queuedJobs.length > 0) {
-                const outcomes = await resolveQueuedUploads(
-                    authFetch,
-                    API_URL,
-                    authHeaders,
-                    queuedJobs,
-                    uploadWorkerConcurrency,
-                    (done, total, filename, ok) => {
-                        const mark = ok ? "OK" : "FALHA";
-                        setUploadProgressText(`A processar anexos: ${done}/${total} · ${mark} · ${filename || ""}`);
-                    },
-                    UPLOAD_JOB_TIMEOUT_MS,
-                    UPLOAD_POLL_INTERVAL_MS,
-                );
-                for (const outcome of outcomes.results) {
-                    if (!outcome) continue;
-                    if (outcome.ok && outcome.data) {
-                        const data = outcome.data;
-                        convId = data.conversation_id || convId;
-                        lastData = data;
-                        uploadedNow.push(data);
-                    } else {
-                        failedNow.push({
-                            filename: outcome.filename || "ficheiro",
-                            error: outcome.error || "Falha no processamento",
+            if (useAsyncJobs) {
+                if (queuedJobs.length === 0) {
+                    const failedSummary = preSkipped.slice(0, 3).map(f => `${f.filename}: ${f.error}`).join(" | ");
+                    throw new Error(failedSummary ? `Nenhum ficheiro foi enfileirado. ${failedSummary}` : "Nenhum ficheiro foi enfileirado.");
+                }
+                const queuedSummary = queuedJobs.map(job => `• ${job.filename}`).join("\n");
+                const failureDetails = preSkipped.length > 0
+                    ? `\n\nIgnorados nesta tentativa:\n${preSkipped.slice(0, 5).map(f => `• ${f.filename}: ${f.error}`).join("\n")}`
+                    : "";
+                setConversations(prev => {
+                    const u = [...prev];
+                    const currentConv = u[activeIdx] || createConversation(agentMode);
+                    const existingJobs = Array.isArray(currentConv.pendingUploadJobs) ? currentConv.pendingUploadJobs : [];
+                    const existingIds = new Set(existingJobs.map(job => String(job.job_id || "").trim()));
+                    const mergedJobs = existingJobs.slice();
+                    for (const job of queuedJobs) {
+                        const safeJobId = String(job.job_id || "").trim();
+                        if (!safeJobId || existingIds.has(safeJobId)) continue;
+                        mergedJobs.push({
+                            job_id: safeJobId,
+                            filename: job.filename || "ficheiro",
+                            status: "queued",
+                            conversation_id: convId || currentConv.id || "",
+                            queued_at: new Date().toISOString(),
                         });
                     }
-                }
+                    u[activeIdx] = {
+                        ...currentConv,
+                        id: convId || currentConv.id,
+                        fileMode: true,
+                        pendingUploadJobs: mergedJobs,
+                        updatedAt: new Date().toISOString(),
+                        messages: [...currentConv.messages, {
+                            role: "assistant",
+                            content: `Upload iniciado para ${queuedJobs.length} ficheiro(s).\n\n${queuedSummary}${failureDetails}\n\nVou continuar a processar em background e aviso aqui na conversa quando cada anexo ficar pronto.`,
+                            tools_used: ["upload_file"],
+                        }],
+                    };
+                    return u;
+                });
             } else {
+                const uploadedNow = [];
+                const failedNow = [];
                 for (const file of filesToUpload) {
                     setUploadProgressText(`A processar ${file.name}...`);
                     try {
@@ -612,36 +757,36 @@ function App() {
                         });
                     }
                 }
-            }
-            failedNow.push(...preSkipped);
+                failedNow.push(...preSkipped);
 
-            if (uploadedNow.length === 0) {
-                const failedSummary = failedNow.slice(0, 3).map(f => `${f.filename}: ${f.error}`).join(" | ");
-                throw new Error(failedSummary ? `Nenhum ficheiro processado com sucesso. ${failedSummary}` : "Nenhum ficheiro processado com sucesso.");
-            }
+                if (uploadedNow.length === 0) {
+                    const failedSummary = failedNow.slice(0, 3).map(f => `${f.filename}: ${f.error}`).join(" | ");
+                    throw new Error(failedSummary ? `Nenhum ficheiro processado com sucesso. ${failedSummary}` : "Nenhum ficheiro processado com sucesso.");
+                }
 
-            const allFiles = (lastData && Array.isArray(lastData.all_files)) ? lastData.all_files : [];
-            setUploadedFiles(allFiles);
-            setConversations(prev => {
-                const u = [...prev];
-                const successDetails = uploadedNow.map(d => `• ${d.filename} (${d.rows} linhas)`).join("\n");
-                const failureDetails = failedNow.length > 0
-                    ? `\n\n${failedNow.length} ficheiro(s) com falha:\n` + failedNow.slice(0, 5).map(f => `• ${f.filename}: ${f.error}`).join("\n")
-                    : "";
-                u[activeIdx] = {
-                    ...u[activeIdx],
-                    id: (lastData && lastData.conversation_id) || u[activeIdx].id,
-                    fileMode: true,
-                    uploadedFiles: allFiles,
-                    updatedAt: new Date().toISOString(),
-                    messages: [...u[activeIdx].messages, {
-                        role: "assistant",
-                        content: `${uploadedNow.length} ficheiro(s) carregado(s) com sucesso.\n\n${successDetails}${failureDetails}\n\nTotal anexado nesta conversa: ${allFiles.length}/${maxFilesPerConversation}.`,
-                        tools_used: ["upload_file"],
-                    }],
-                };
-                return u;
-            });
+                const allFiles = (lastData && Array.isArray(lastData.all_files)) ? lastData.all_files : [];
+                setUploadedFiles(allFiles);
+                setConversations(prev => {
+                    const u = [...prev];
+                    const successDetails = uploadedNow.map(d => `• ${d.filename} (${d.rows} linhas)`).join("\n");
+                    const failureDetails = failedNow.length > 0
+                        ? `\n\n${failedNow.length} ficheiro(s) com falha:\n` + failedNow.slice(0, 5).map(f => `• ${f.filename}: ${f.error}`).join("\n")
+                        : "";
+                    u[activeIdx] = {
+                        ...u[activeIdx],
+                        id: (lastData && lastData.conversation_id) || u[activeIdx].id,
+                        fileMode: true,
+                        uploadedFiles: allFiles,
+                        updatedAt: new Date().toISOString(),
+                        messages: [...u[activeIdx].messages, {
+                            role: "assistant",
+                            content: `${uploadedNow.length} ficheiro(s) carregado(s) com sucesso.\n\n${successDetails}${failureDetails}\n\nTotal anexado nesta conversa: ${allFiles.length}/${maxFilesPerConversation}.`,
+                            tools_used: ["upload_file"],
+                        }],
+                    };
+                    return u;
+                });
+            }
         } catch (e) {
             alert("Erro: " + e.message);
         } finally {
@@ -772,7 +917,11 @@ function App() {
 
     // ─── SEND MESSAGE (SSE Streaming) ────────────────────────────────────
     async function send() {
-        if (!input.trim() || loading || uploadingFiles || !active) return;
+        if (!input.trim() || loading || uploadBusy || !active) return;
+        if (activePendingUploadJobs.length > 0 && !active.id) {
+            alert("Ainda existem anexos a processar. Aguarda conclusão antes de enviar a pergunta.");
+            return;
+        }
         if (active.id) {
             const pendingUploads = await getPendingUploads(active.id);
             if (pendingUploads > 0) {
@@ -1766,8 +1915,8 @@ function App() {
                 </div>
 
                 <ChatComposer
-                    uploadingFiles={uploadingFiles}
-                    uploadProgressText={uploadProgressText}
+                    uploadingFiles={uploadBusy}
+                    uploadProgressText={currentUploadProgressText}
                     activeUploadedFiles={activeUploadedFiles}
                     activeFileMode={!!(active && active.fileMode)}
                     maxFilesPerConversation={maxFilesPerConversation}

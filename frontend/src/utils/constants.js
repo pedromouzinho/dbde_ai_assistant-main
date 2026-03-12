@@ -11,7 +11,14 @@ export const DEFAULT_MAX_BATCH_TOTAL_BYTES = 60 * 1024 * 1024;
 export const UPLOAD_POLL_INTERVAL_MS = 1200;
 export const UPLOAD_JOB_TIMEOUT_MS = 20 * 60 * 1000;
 export const DEVOPS_WORKITEM_BASE_URL = 'https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/';
-export const EMPTY_CONVERSATION = { id: null, title: 'Nova conversa', messages: [], mode: 'general', uploadedFiles: [] };
+export const EMPTY_CONVERSATION = {
+  id: null,
+  title: 'Nova conversa',
+  messages: [],
+  mode: 'general',
+  uploadedFiles: [],
+  pendingUploadJobs: [],
+};
 export const MILLENNIUM_MARK_URL = millenniumMarkUrl;
 export const MILLENNIUM_WORDMARK_URL = millenniumWordmarkUrl;
 export const MILLENNIUM_WORDMARK_INVERSE_URL = millenniumWordmarkInverseUrl;
