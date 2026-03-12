@@ -85,10 +85,12 @@ class TestUploadLimitsAndExtraction:
         csv_limit = app._max_upload_bytes_for_file("emails.csv")
         xlsx_limit = app._max_upload_bytes_for_file("report.xlsx")
         xlsb_limit = app._max_upload_bytes_for_file("report.xlsb")
+        xls_limit = app._max_upload_bytes_for_file("report.xls")
 
         assert csv_limit > app.MAX_UPLOAD_FILE_BYTES
         assert xlsx_limit > app.MAX_UPLOAD_FILE_BYTES
         assert xlsb_limit >= xlsx_limit
+        assert xls_limit == 60 * 1024 * 1024
         assert csv_limit == 60 * 1024 * 1024
         assert xlsx_limit == 60 * 1024 * 1024
         assert xlsb_limit == 60 * 1024 * 1024
