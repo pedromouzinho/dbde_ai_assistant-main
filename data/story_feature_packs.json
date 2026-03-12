@@ -1,0 +1,367 @@
+{
+  "generated_at": "2026-03-11T11:46:30.528919+00:00",
+  "source": "azure_devops_feature_pack",
+  "entries": [
+    {
+      "feature_id": "994513",
+      "feature_title": "MSE | Cartões | Via Verde",
+      "feature_url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994513",
+      "area_path": "IT.DIT\\DIT\\ADMChannels\\DBKS\\AM24\\RevampFEE MVP2",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "",
+      "aliases": [
+        "MSE | Cartões | Via Verde",
+        "Cartões",
+        "Via Verde",
+        "Alterar Cartão",
+        "Ativar Via Verde",
+        "Gestão Via Verde",
+        "Step 3",
+        "Tabela de Pagamentos de Baixo Valor"
+      ],
+      "top_ux_terms": [
+        "CTA",
+        "Link",
+        "Bloco",
+        "Card",
+        "Stepper",
+        "Tab",
+        "Chip",
+        "Tooltip",
+        "Input"
+      ],
+      "top_titles": [
+        "MSE | Cartões | Via Verde | Alterar Cartão | Operações Pendentes",
+        "MSE | Cartões | Via Verde | Alterar Cartão | Step 1 -  Alterar Cartão Associado",
+        "MSE | Cartões | Via Verde | Alterar Cartão | Step 2 - Resumo e Autorização",
+        "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ NOK",
+        "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ OK",
+        "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ PENDENTE",
+        "MSE | Cartões | Via Verde | Ativar Via Verde | Operações Pendentes",
+        "MSE | Cartões | Via Verde | Ativar Via Verde | Step 1 - Associar Cartão"
+      ],
+      "top_flows": [
+        "Alterar Cartão",
+        "Ativar Via Verde",
+        "Gestão Via Verde",
+        "Step 3",
+        "Tabela de Pagamentos de Baixo Valor"
+      ],
+      "top_journeys": [
+        "Via Verde"
+      ],
+      "mandatory_sections": [
+        "proveniência",
+        "condições",
+        "composição",
+        "comportamento"
+      ],
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "story_count": 17,
+      "created_by_top": [
+        "Pedro Mousinho"
+      ],
+      "notes": [
+        "Pack extraído diretamente do Azure DevOps para a feature 994513 com 17 user stories filhas.",
+        "Fluxos mais frequentes: Alterar Cartão, Ativar Via Verde, Gestão Via Verde, Step 3.",
+        "Lexicon dominante: CTA, Link, Bloco, Card, Stepper, Tab."
+      ],
+      "figma_url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?node-id=11938-7289",
+      "stories": [
+        {
+          "id": "1002449",
+          "title": "MSE | Cartões | Via Verde | Alterar Cartão | Operações Pendentes",
+          "snippet": "na forma de card na timeline são apresentados os seguintes dados:\n- Label \"OPERAÇÃO\", apresenta \" Alterar Cartão Associado - Via Verde\"\n- Label \"Nº Identificador\"\n- CTA \"Autorizar\" ou Chip \"Pendente\"\n- CTA Expandir/Colapsar\nna forma de card expandido (detalhe) são apresentados os seguintes dados:\n- Label \"OPERAÇÃO\", ap",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1002449",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Bloco",
+            "Tab",
+            "Chip",
+            "Tooltip"
+          ],
+          "workitem_refs": [
+            479170,
+            482015
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "994531",
+          "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 1 -  Alterar Cartão Associado",
+          "snippet": "- Cliquei no CTA \"Alterar Cartão\" presente na  User Story 994515 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994515)",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994531",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Bloco",
+            "Input",
+            "Link",
+            "Stepper",
+            "Chip"
+          ],
+          "workitem_refs": [
+            329017,
+            994515
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001153",
+          "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 2 - Resumo e Autorização",
+          "snippet": "- O utilizador iniciou a jornada para Alterar Cartão  User Story 994531 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994531) e clicou no CTA \"Continuar\" no STEP 1 \"Alterar Cartão\", posicionando-se assim no STEP 2 \"Resumo e Autorização\"",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001153",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Bloco",
+            "Link",
+            "Stepper"
+          ],
+          "workitem_refs": [
+            994531
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001315",
+          "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ NOK",
+          "snippet": "- No   CTA \"Ir para \" , o \" \" deve ser o nome da página que o utilizador tem definida como página inicial.   EX:   \"Ir para dia-a-dia\", \"Ir para movimentos\" ect.\n- Ao clicar no CTA \"Ir para \" o utilizador é redirecionado para a  página que o tem definida como página inicial.\nMockups\nLink FIGMA:\nMockup ilustrativo\n[Imag",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001315",
+          "ux_terms": [
+            "CTA",
+            "Link"
+          ],
+          "workitem_refs": [
+            1001153
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001311",
+          "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ OK",
+          "snippet": "- Bloco sobre o Comprovativo\n- Link + Ícon \"Descarregar\":\n- Ao clicar no ícone, o   comprovativo desta operação é   descarregado para o dispositivo do utilizador.   Ver composição do comprovatino na  User Story 833782 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833782) : MSE | Cartões | Pedir Cartão de Débito |",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001311",
+          "ux_terms": [
+            "CTA",
+            "Bloco",
+            "Link"
+          ],
+          "workitem_refs": [
+            832903,
+            833782,
+            1001153
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001316",
+          "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ PENDENTE",
+          "snippet": "- CTA \"Ver operações pendentes\"\n- Ao clicar neste CTA o user é redirecionado para a área de operações pendentes.\n- Bloco sobre o Comprovativo\n- Link + Ícon \"Descarregar\":\n- Ao clicar no ícone, o   comprovativo desta operação é   descarregado para o dispositivo do utilizador.   Ver composição do comprovatino na  User St",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001316",
+          "ux_terms": [
+            "CTA",
+            "Bloco",
+            "Link",
+            "Stepper"
+          ],
+          "workitem_refs": [
+            832903,
+            833791
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1002673",
+          "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Operações Pendentes",
+          "snippet": "na forma de card na timeline são apresentados os seguintes dados:\n- Label \"OPERAÇÃO\", apresenta \" Ativar Via Verde \"\n- Label \"Nº Identificador\"\n- CTA \"Autorizar\" ou Chip \"Pendente\"\n- CTA Expandir/Colapsar\nna forma de card expandido (detalhe) são apresentados os seguintes dados:\n- Label \"OPERAÇÃO\", apresenta \" Ativar Vi",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1002673",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Bloco",
+            "Tab",
+            "Chip",
+            "Tooltip"
+          ],
+          "workitem_refs": [
+            479170,
+            482015
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1000419",
+          "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 1 - Associar Cartão",
+          "snippet": "- Cliquei no CTA \" Ativar Via Verde\" presente nas  User Story 994515 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994515) e User Story 999982 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/999982)",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1000419",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Bloco",
+            "Input",
+            "Link",
+            "Stepper",
+            "Chip"
+          ],
+          "workitem_refs": [
+            329017,
+            994515,
+            999982
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1000786",
+          "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 2 - Resumo e Autorização",
+          "snippet": "- O utilizador iniciou a jornada para Ativar Cartão User Story 994531 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994531)e clicou no CTA \"Continuar\" no STEP 1 \"Associar Cartão\", posicionando-se assim no STEP 2 \"Resumo e Autorização\"",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1000786",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Bloco",
+            "Link",
+            "Stepper"
+          ],
+          "workitem_refs": [
+            994531
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001318",
+          "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 3 - Conclusão ECRÃ NOK",
+          "snippet": "- No   CTA \"Ir para \" , o \" \" deve ser o nome da página que o utilizador tem definida como página inicial.   EX:   \"Ir para dia-a-dia\", \"Ir para movimentos\" ect.\n- Ao clicar no CTA \"Ir para \" o utilizador é redirecionado para a  página que o tem definida como página inicial.\nMockups\nLink FIGMA:\nMockup ilustrativo\n[Imag",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001318",
+          "ux_terms": [
+            "CTA",
+            "Link"
+          ],
+          "workitem_refs": [
+            1000786
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001312",
+          "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 3 - Conclusão ECRÃ OK",
+          "snippet": "- Bloco sobre o Comprovativo\n- Link + Ícon \"Descarregar\":\n- Ao clicar no ícone, o   comprovativo desta operação é   descarregado para o dispositivo do utilizador. Ver composição do comprovatino na  User Story 833782 (https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833782) : MSE | Cartões | Pedir Cartão de Débito | S",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001312",
+          "ux_terms": [
+            "CTA",
+            "Bloco",
+            "Link"
+          ],
+          "workitem_refs": [
+            832903,
+            833782,
+            1000786
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1001319",
+          "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 3 - Conclusão ECRÃ PENDENTE",
+          "snippet": "**Proveniência**\n* O utilizador completou o processo de autorização de Ativar Via Verde no STEP 2 \"Resumo e Autorização\", posicionando-se assim no STEP 3 \"Conclusão\"\n\n****Condições****\n\n* O utilizador completou com sucesso o processo de ativação de Via Verde.\n* O utilizador **não tem poderes** para realizar esta operaç",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001319",
+          "ux_terms": [
+            "CTA",
+            "Bloco",
+            "Link",
+            "Stepper"
+          ],
+          "workitem_refs": [
+            832903,
+            833791
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "994515",
+          "title": "MSE | Cartões | Via Verde | Gestão Via Verde | Conta com 1 =< Contrato Associado",
+          "snippet": "- O Utilizador acedeu no menu lateral à opção Cartões > Via Verde",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994515",
+          "ux_terms": [
+            "CTA",
+            "Card",
+            "Link",
+            "Tab"
+          ],
+          "workitem_refs": [
+            994534,
+            1000786,
+            1001153
+          ],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "999982",
+          "title": "MSE | Cartões | Via Verde | Gestão Via Verde | Conta sem Contrato Associado",
+          "snippet": "- Página abre com conta em contexto aquando a entrada na jornada\nImagens\n[Imagem: Image]\nLink Figma: MSE | Cartões [Handoff] – Figma (https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7c-Cart%C3%B5es--Handoff-?node-id=12165-28912&t=xofV92UdfaHYEAW6-0)",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/999982",
+          "ux_terms": [
+            "CTA",
+            "Bloco",
+            "Link"
+          ],
+          "workitem_refs": [],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1002702",
+          "title": "MSE | Cartões | Via Verde | Step 3 | Comprovativo da operação",
+          "snippet": "O comprovativo desta operação deve seguir o layout de comprovativos do MSE. \n\nInformações a constar:\n\nTítulo : Ativar Via Verde\n\nConta associada: \n\n- Empresa\n- NIF Empresa\n- Conta selecionada no step 1 do pedido\n\nCartão Associado : \n\n- Mastercard débito empresas\n\nTitular :\n\n- Apresentar conteúdo  selecionado no c ampo ",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1002702",
+          "ux_terms": [
+            "Card"
+          ],
+          "workitem_refs": [],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "1002679",
+          "title": "MSE | Cartões | Via Verde | Step 3 | Registo da operação",
+          "snippet": "O registo desta operação deve seguir o layout dos registos do MSE. \n\nInformações a constar:\n\nTítulo : Ativar Via Verde\n\nConta associada: \n\n- Empresa\n- NIF Empresa\n- Conta selecionada no step 1 do pedido\n\nCartão Associado  : \n\n- Mastercard débito empresas\n\nTitular :\n\n- Apresentar conteúdo  selecionado no c ampo   \" Nome",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1002679",
+          "ux_terms": [
+            "Card"
+          ],
+          "workitem_refs": [],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+          "origin": "devops_feature_pack"
+        },
+        {
+          "id": "994534",
+          "title": "MSE | Cartões | Via Verde | Tabela de Pagamentos de Baixo Valor",
+          "snippet": "- Navegação: Acessível a partir da entrada \"Via Verde\" no nivel Cartões no Menu",
+          "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994534",
+          "ux_terms": [
+            "Tab"
+          ],
+          "workitem_refs": [],
+          "title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step]",
+          "origin": "devops_feature_pack"
+        }
+      ],
+      "source": "azure_devops_feature_pack",
+      "source_generated_at": "2026-03-11T11:46:30.528070+00:00"
+    }
+  ]
+}

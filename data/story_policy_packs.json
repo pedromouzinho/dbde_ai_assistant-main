@@ -1,0 +1,651 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-11T00:08:54.153467+00:00",
+  "source": "story_domain_profiles",
+  "entries": [
+    {
+      "id": "policy:apoio_ao_cliente",
+      "domain": "Apoio ao Cliente",
+      "aliases": [
+        "apoio ao cliente",
+        "suporte",
+        "ajuda",
+        "contacto",
+        "contato"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        }
+      ],
+      "top_journeys": [
+        "apoio ao cliente",
+        "ajuda"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.9,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Apoio ao Cliente [Handoff]"
+    },
+    {
+      "id": "policy:cartões",
+      "domain": "Cartões",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "high",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "Link",
+        "CTA",
+        "Card",
+        "Bloco",
+        "Stepper",
+        "Tab",
+        "Header",
+        "Input",
+        "Chip",
+        "Modal",
+        "Tooltip",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Pedir Cartão de Débito",
+        "Via Verde",
+        "Transversal",
+        "Pedir Cartão de Crédito",
+        "A NOSSA OFERTA",
+        "Consultar Carteira"
+      ],
+      "top_flows": [
+        "Step 1",
+        "Step 3",
+        "Transversal",
+        "Alterar Cartão",
+        "Ativar Via Verde",
+        "Step 2",
+        "Cartões de Crédito",
+        "Cartões Pré-pagos"
+      ],
+      "section_emphasis": [
+        "comportamento"
+      ],
+      "notes": [
+        "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+        "O corpus curado puxa sobretudo para a jornada Pedir Cartão de Débito."
+      ],
+      "coverage_score": 1.0,
+      "production_confidence": 0.97,
+      "curated_example_count": 66,
+      "design_file_title": "MSE | Cartões [Handoff]"
+    },
+    {
+      "id": "policy:crédito",
+      "domain": "Crédito",
+      "aliases": [
+        "credito",
+        "crédito"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "botão principal",
+          "to": "Primary CTA",
+          "when": "ação principal do passo"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "crédito"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.96,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Crédito [Handoff]"
+    },
+    {
+      "id": "policy:dashboard",
+      "domain": "Dashboard",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "high",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Modal",
+        "Tab",
+        "Card",
+        "Header",
+        "Link",
+        "Chip",
+        "Tooltip",
+        "Input",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Agenda",
+        "Estatuto Cliente Aplauso"
+      ],
+      "top_flows": [
+        "Agendamentos",
+        "Melhoria",
+        "Step 1 - Entrada DIA a DIA",
+        "Step 2 - Nova área",
+        "Tab \"Agendamentos\"",
+        "Criar Agendamento"
+      ],
+      "section_emphasis": [
+        "comportamento"
+      ],
+      "notes": [
+        "Usar apenas quando Dashboard II não encaixar ou para comparar evolução do domínio.",
+        "O corpus curado puxa sobretudo para a jornada Agenda."
+      ],
+      "coverage_score": 1.0,
+      "production_confidence": 0.69,
+      "curated_example_count": 27,
+      "design_file_title": "MSE | Dashboard [Handoff]"
+    },
+    {
+      "id": "policy:investimentos",
+      "domain": "Investimentos",
+      "aliases": [
+        "investimentos",
+        "investimento"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        }
+      ],
+      "top_journeys": [
+        "investimentos"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Útil para grounding de domínio, mas com menor sinal de edição humana recente."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.76,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Investimentos [Handoff]"
+    },
+    {
+      "id": "policy:mdse",
+      "domain": "MDSE",
+      "aliases": [
+        "mdse"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        }
+      ],
+      "top_journeys": [
+        "mdse"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Bom candidato atual para pedidos que mencionem explicitamente MDSE."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.92,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | MDSE [Handoff]"
+    },
+    {
+      "id": "policy:menu",
+      "domain": "Menu",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "menu lateral",
+          "to": "Sidebar",
+          "when": "navegação lateral persistente"
+        }
+      ],
+      "top_journeys": [
+        "menu",
+        "navegação principal"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Usar para proveniência de navegação, entry points e estrutura transversal."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.82,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Menu [Handoff]"
+    },
+    {
+      "id": "policy:open_banking",
+      "domain": "Open Banking",
+      "aliases": [
+        "open banking"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        }
+      ],
+      "top_journeys": [
+        "open banking"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Usar como fonte de domínio para Open Banking; boa recência, mas menos evidência humana direta."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.81,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Open Banking [Handoff]"
+    },
+    {
+      "id": "policy:pagamentos",
+      "domain": "Pagamentos",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "Tab",
+        "Input"
+      ],
+      "terminology_overrides": [],
+      "top_journeys": [
+        "Pagar Serviços",
+        "Pagar ao Estado",
+        "Pagar à Segurança Social",
+        "Carregar cartão pré-pago",
+        "Pagamento ao Estado"
+      ],
+      "top_flows": [
+        "Adicionar Nota - Propagação para Detalhe de Movimento",
+        "Alterar Operation ID para montante >= 500.000,00€"
+      ],
+      "section_emphasis": [
+        "comportamento"
+      ],
+      "notes": [
+        "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+        "O corpus curado puxa sobretudo para a jornada Pagar Serviços."
+      ],
+      "coverage_score": 0.25,
+      "production_confidence": 0.96,
+      "curated_example_count": 5,
+      "design_file_title": "MSE | Pagamentos [Handoff] III"
+    },
+    {
+      "id": "policy:repositório_handoffs",
+      "domain": "Repositório Handoffs",
+      "aliases": [
+        "repositorio",
+        "repositório",
+        "handoffs"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [],
+      "terminology_overrides": [],
+      "top_journeys": [],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Usar apenas como fallback ou índice manual; não deve ser a primeira referência do draft."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.35,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Repositório Handoffs"
+    },
+    {
+      "id": "policy:transferências",
+      "domain": "Transferências",
+      "aliases": [
+        "transferencias",
+        "transferências",
+        "transferencia",
+        "transferência"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "botão principal",
+          "to": "Primary CTA",
+          "when": "ação principal do passo"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "transferências"
+      ],
+      "top_flows": [],
+      "section_emphasis": [],
+      "notes": [
+        "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III."
+      ],
+      "coverage_score": 0.0,
+      "production_confidence": 0.94,
+      "curated_example_count": 0,
+      "design_file_title": "MSE | Transferências [Handoff]"
+    }
+  ]
+}

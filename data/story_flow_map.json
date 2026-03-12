@@ -1,0 +1,4877 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-10T23:12:38.527244+00:00",
+  "source": "figma_story_map + curated_story_examples",
+  "metadata": {
+    "entry_count": 134,
+    "domains": [
+      [
+        "cartoes",
+        71
+      ],
+      [
+        "dashboard",
+        32
+      ],
+      [
+        "menu",
+        16
+      ],
+      [
+        "pagamentos",
+        8
+      ],
+      [
+        "apoio ao cliente",
+        2
+      ],
+      [
+        "credito",
+        1
+      ],
+      [
+        "investimentos",
+        1
+      ],
+      [
+        "open banking",
+        1
+      ],
+      [
+        "mdse",
+        1
+      ],
+      [
+        "transferencias",
+        1
+      ]
+    ],
+    "source_kinds": [
+      [
+        "curated_story",
+        115
+      ],
+      [
+        "design_journey",
+        19
+      ]
+    ]
+  },
+  "entries": [
+    {
+      "id": "pagamentos_iii:journey:pagamentos",
+      "dedupe_key": "pagamentos|pagamentos",
+      "source_kind": "design_journey",
+      "domain": "Pagamentos",
+      "journey": "pagamentos",
+      "flow": "pagamentos",
+      "detail": "",
+      "title": "MSE | Pagamentos [Handoff] III",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "pagamentos_iii:journey:transferencias",
+      "dedupe_key": "pagamentos|transferencias",
+      "source_kind": "design_journey",
+      "domain": "Pagamentos",
+      "journey": "transferências",
+      "flow": "transferências",
+      "detail": "",
+      "title": "MSE | Pagamentos [Handoff] III",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "pagamentos_iii:journey:recorrencias",
+      "dedupe_key": "pagamentos|recorrencias",
+      "source_kind": "design_journey",
+      "domain": "Pagamentos",
+      "journey": "recorrências",
+      "flow": "recorrências",
+      "detail": "",
+      "title": "MSE | Pagamentos [Handoff] III",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "credito:journey:credito",
+      "dedupe_key": "credito|credito",
+      "source_kind": "design_journey",
+      "domain": "Crédito",
+      "journey": "crédito",
+      "flow": "crédito",
+      "detail": "",
+      "title": "MSE | Crédito [Handoff]",
+      "file_key": "2yCxCXQ9LJ7qSZy1l2I5JA",
+      "file_title": "MSE | Crédito [Handoff]",
+      "url": "https://www.figma.com/design/2yCxCXQ9LJ7qSZy1l2I5JA/MSE-%7C-Cr%C3%A9dito--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de crédito do canal empresas.",
+      "routing_note": "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra.",
+      "aliases": [
+        "credito",
+        "crédito"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "currentness_score": 1.0,
+      "production_confidence": 0.96,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "cartoes:journey:cartoes",
+      "dedupe_key": "cartoes|cartoes",
+      "source_kind": "design_journey",
+      "domain": "Cartões",
+      "journey": "cartões",
+      "flow": "cartões",
+      "detail": "",
+      "title": "MSE | Cartões [Handoff]",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "cartoes:journey:gestao_de_cartoes",
+      "dedupe_key": "cartoes|gestao de cartoes",
+      "source_kind": "design_journey",
+      "domain": "Cartões",
+      "journey": "gestão de cartões",
+      "flow": "gestão de cartões",
+      "detail": "",
+      "title": "MSE | Cartões [Handoff]",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "cartoes:journey:pedido_de_cartao",
+      "dedupe_key": "cartoes|pedido de cartao",
+      "source_kind": "design_journey",
+      "domain": "Cartões",
+      "journey": "pedido de cartão",
+      "flow": "pedido de cartão",
+      "detail": "",
+      "title": "MSE | Cartões [Handoff]",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "dashboard_ii:journey:dashboard",
+      "dedupe_key": "dashboard|dashboard",
+      "source_kind": "design_journey",
+      "domain": "Dashboard",
+      "journey": "dashboard",
+      "flow": "dashboard",
+      "detail": "",
+      "title": "MSE | Dashboard II [Handoff]",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://www.figma.com/design/6g0o3EMIZrm0HSeTUMlWt7/MSE-%7C-Dashboard-II--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "dashboard_ii:journey:agenda",
+      "dedupe_key": "dashboard|agenda",
+      "source_kind": "design_journey",
+      "domain": "Dashboard",
+      "journey": "agenda",
+      "flow": "agenda",
+      "detail": "",
+      "title": "MSE | Dashboard II [Handoff]",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://www.figma.com/design/6g0o3EMIZrm0HSeTUMlWt7/MSE-%7C-Dashboard-II--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "dashboard_ii:journey:resumo_operacional",
+      "dedupe_key": "dashboard|resumo operacional",
+      "source_kind": "design_journey",
+      "domain": "Dashboard",
+      "journey": "resumo operacional",
+      "flow": "resumo operacional",
+      "detail": "",
+      "title": "MSE | Dashboard II [Handoff]",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://www.figma.com/design/6g0o3EMIZrm0HSeTUMlWt7/MSE-%7C-Dashboard-II--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "apoio_cliente:journey:apoio_ao_cliente",
+      "dedupe_key": "apoio ao cliente|apoio ao cliente",
+      "source_kind": "design_journey",
+      "domain": "Apoio ao Cliente",
+      "journey": "apoio ao cliente",
+      "flow": "apoio ao cliente",
+      "detail": "",
+      "title": "MSE | Apoio ao Cliente [Handoff]",
+      "file_key": "GsWbvbumvZI4WcUSvIPU0L",
+      "file_title": "MSE | Apoio ao Cliente [Handoff]",
+      "url": "https://www.figma.com/design/GsWbvbumvZI4WcUSvIPU0L/MSE-%7C-Apoio-ao-Cliente--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de apoio, suporte e contacto.",
+      "routing_note": "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente.",
+      "aliases": [
+        "apoio ao cliente",
+        "suporte",
+        "ajuda",
+        "contacto",
+        "contato"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.91,
+      "production_confidence": 0.9,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "apoio_cliente:journey:ajuda",
+      "dedupe_key": "apoio ao cliente|ajuda",
+      "source_kind": "design_journey",
+      "domain": "Apoio ao Cliente",
+      "journey": "ajuda",
+      "flow": "ajuda",
+      "detail": "",
+      "title": "MSE | Apoio ao Cliente [Handoff]",
+      "file_key": "GsWbvbumvZI4WcUSvIPU0L",
+      "file_title": "MSE | Apoio ao Cliente [Handoff]",
+      "url": "https://www.figma.com/design/GsWbvbumvZI4WcUSvIPU0L/MSE-%7C-Apoio-ao-Cliente--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de apoio, suporte e contacto.",
+      "routing_note": "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente.",
+      "aliases": [
+        "apoio ao cliente",
+        "suporte",
+        "ajuda",
+        "contacto",
+        "contato"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.91,
+      "production_confidence": 0.9,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "investimentos:journey:investimentos",
+      "dedupe_key": "investimentos|investimentos",
+      "source_kind": "design_journey",
+      "domain": "Investimentos",
+      "journey": "investimentos",
+      "flow": "investimentos",
+      "detail": "",
+      "title": "MSE | Investimentos [Handoff]",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.76,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "open_banking:journey:open_banking",
+      "dedupe_key": "open banking|open banking",
+      "source_kind": "design_journey",
+      "domain": "Open Banking",
+      "journey": "open banking",
+      "flow": "open banking",
+      "detail": "",
+      "title": "MSE | Open Banking [Handoff]",
+      "file_key": "JYCI99QFHaguFCgU2vpo1H",
+      "file_title": "MSE | Open Banking [Handoff]",
+      "url": "https://www.figma.com/design/JYCI99QFHaguFCgU2vpo1H/MSE-%7C-Open-Banking--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de Open Banking do canal empresas.",
+      "routing_note": "Usar como fonte de domínio para Open Banking; boa recência, mas menos evidência humana direta.",
+      "aliases": [
+        "open banking"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "currentness_score": 0.82,
+      "production_confidence": 0.81,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "dashboard:journey:dashboard",
+      "dedupe_key": "dashboard|dashboard",
+      "source_kind": "design_journey",
+      "domain": "Dashboard",
+      "journey": "dashboard",
+      "flow": "dashboard",
+      "detail": "",
+      "title": "MSE | Dashboard [Handoff]",
+      "file_key": "cBcZdkCy34mrQhMfW3TBDD",
+      "file_title": "MSE | Dashboard [Handoff]",
+      "url": "https://www.figma.com/design/cBcZdkCy34mrQhMfW3TBDD/MSE-%7C-Dashboard--Handoff-?m=auto",
+      "site_placement": "Handoff anterior de Dashboard.",
+      "routing_note": "Usar apenas quando Dashboard II não encaixar ou para comparar evolução do domínio.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Header"
+      ],
+      "currentness_score": 0.7,
+      "production_confidence": 0.69,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "menu:journey:menu",
+      "dedupe_key": "menu|menu",
+      "source_kind": "design_journey",
+      "domain": "Menu",
+      "journey": "menu",
+      "flow": "menu",
+      "detail": "",
+      "title": "MSE | Menu [Handoff]",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://www.figma.com/design/cgcF5Goau4swl7ePf7Idzl/MSE-%7C-Menu--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "ux_terms": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "menu:journey:navegacao_principal",
+      "dedupe_key": "menu|navegacao principal",
+      "source_kind": "design_journey",
+      "domain": "Menu",
+      "journey": "navegação principal",
+      "flow": "navegação principal",
+      "detail": "",
+      "title": "MSE | Menu [Handoff]",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://www.figma.com/design/cgcF5Goau4swl7ePf7Idzl/MSE-%7C-Menu--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "ux_terms": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "mdse:journey:mdse",
+      "dedupe_key": "mdse|mdse",
+      "source_kind": "design_journey",
+      "domain": "MDSE",
+      "journey": "mdse",
+      "flow": "mdse",
+      "detail": "",
+      "title": "MSE | MDSE [Handoff]",
+      "file_key": "WrHwJQLLIkr6mLZVaFx11s",
+      "file_title": "MSE | MDSE [Handoff]",
+      "url": "https://www.figma.com/design/WrHwJQLLIkr6mLZVaFx11s/MSE-%7C-MDSE--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Domínio MDSE do canal empresas.",
+      "routing_note": "Bom candidato atual para pedidos que mencionem explicitamente MDSE.",
+      "aliases": [
+        "mdse"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.92,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "transferencias:journey:transferencias",
+      "dedupe_key": "transferencias|transferencias",
+      "source_kind": "design_journey",
+      "domain": "Transferências",
+      "journey": "transferências",
+      "flow": "transferências",
+      "detail": "",
+      "title": "MSE | Transferências [Handoff]",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferências",
+        "transferencia",
+        "transferência"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.94,
+      "quality_score": 0.0,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "curated:570707",
+      "dedupe_key": "pagamentos|pagar servicos|adicionar nota - propagacao para detalhe de movimento",
+      "source_kind": "curated_story",
+      "domain": "Pagamentos",
+      "journey": "Pagar Serviços",
+      "flow": "Adicionar Nota - Propagação para Detalhe de Movimento",
+      "detail": "",
+      "title": "Revamp | Pagamentos | Pagar Serviços | Adicionar Nota - Propagação para Detalhe de Movimento",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/570707",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.63,
+      "source_work_item_id": "570707"
+    },
+    {
+      "id": "curated:570709",
+      "dedupe_key": "pagamentos|pagar ao estado|adicionar nota - propagacao para detalhe de movimento",
+      "source_kind": "curated_story",
+      "domain": "Pagamentos",
+      "journey": "Pagar ao Estado",
+      "flow": "Adicionar Nota - Propagação para Detalhe de Movimento",
+      "detail": "",
+      "title": "Revamp | Pagamentos | Pagar ao Estado | Adicionar Nota - Propagação para Detalhe de Movimento",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/570709",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.63,
+      "source_work_item_id": "570709"
+    },
+    {
+      "id": "curated:570710",
+      "dedupe_key": "pagamentos|pagar a seguranca social|adicionar nota - propagacao para detalhe de movimento",
+      "source_kind": "curated_story",
+      "domain": "Pagamentos",
+      "journey": "Pagar à Segurança Social",
+      "flow": "Adicionar Nota - Propagação para Detalhe de Movimento",
+      "detail": "",
+      "title": "Revamp | Pagamentos | Pagar à Segurança Social | Adicionar Nota - Propagação para Detalhe de Movimento",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/570710",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.63,
+      "source_work_item_id": "570710"
+    },
+    {
+      "id": "curated:570712",
+      "dedupe_key": "pagamentos|carregar cartao pre-pago|adicionar nota - propagacao para detalhe de movimento",
+      "source_kind": "curated_story",
+      "domain": "Pagamentos",
+      "journey": "Carregar cartão pré-pago",
+      "flow": "Adicionar Nota - Propagação para Detalhe de Movimento",
+      "detail": "",
+      "title": "Revamp | Pagamentos | Carregar cartão pré-pago | Adicionar Nota - Propagação para Detalhe de Movimento",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/570712",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.63,
+      "source_work_item_id": "570712"
+    },
+    {
+      "id": "curated:799961",
+      "dedupe_key": "cartoes|consultar carteira|cartoes de credito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Consultar Carteira",
+      "flow": "Cartões de Crédito",
+      "detail": "Página intermédia",
+      "title": "MSE | Cartões | Consultar Carteira | Cartões de Crédito | Página intermédia",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/799961",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "799961"
+    },
+    {
+      "id": "curated:804593",
+      "dedupe_key": "cartoes|transversal|menu",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Transversal",
+      "flow": "Menu",
+      "detail": "",
+      "title": "MSE | Cartões | Transversal | Menu",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/804593",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "804593"
+    },
+    {
+      "id": "curated:832214",
+      "dedupe_key": "cartoes|a nossa oferta|cartoes de debito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "A NOSSA OFERTA",
+      "flow": "Cartões de Débito",
+      "detail": "",
+      "title": "MSE | Cartões | A NOSSA OFERTA | Cartões de Débito",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832214",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832214"
+    },
+    {
+      "id": "curated:832230",
+      "dedupe_key": "cartoes|a nossa oferta|cartoes pre-pagos",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "A NOSSA OFERTA",
+      "flow": "Cartões Pré-pagos",
+      "detail": "",
+      "title": "MSE | Cartões | A NOSSA OFERTA | Cartões Pré-pagos",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832230",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "832230"
+    },
+    {
+      "id": "curated:832239",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Oferta",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Oferta",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832239",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832239"
+    },
+    {
+      "id": "curated:832258",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Preçário S/ Soluções",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Preçário S/ Soluções",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832258",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832258"
+    },
+    {
+      "id": "curated:832320",
+      "dedupe_key": "cartoes|pedir cartao de debito|mastercard debito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Mastercard Débito",
+      "detail": "Condições de acesso",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Mastercard Débito | Condições de acesso",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832320",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card"
+      ],
+      "ux_terms": [
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "832320"
+    },
+    {
+      "id": "curated:832344",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Sem acesso",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Sem acesso | Grau de risco",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832344",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832344"
+    },
+    {
+      "id": "curated:832346",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Sem acesso",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Sem acesso | Certificado",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832346",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832346"
+    },
+    {
+      "id": "curated:832347",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Sem acesso",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Sem acesso | Perfil de autorização",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832347",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832347"
+    },
+    {
+      "id": "curated:832352",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Estrutura da Página",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Estrutura da Página",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832352",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832352"
+    },
+    {
+      "id": "curated:832370",
+      "dedupe_key": "cartoes|pedir cartao de debito|transversal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Transversal",
+      "detail": "Header",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Transversal | Header",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832370",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "832370"
+    },
+    {
+      "id": "curated:832373",
+      "dedupe_key": "cartoes|pedir cartao de debito|mastercard debito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Mastercard Débito",
+      "detail": "Caracterização da Transação",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Mastercard Débito | Caracterização da Transação | PSDC",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832373",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "832373"
+    },
+    {
+      "id": "curated:832378",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Card conta",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Card conta",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832378",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Tooltip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Tooltip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832378"
+    },
+    {
+      "id": "curated:832384",
+      "dedupe_key": "cartoes|pedir cartao de debito|transversal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Transversal",
+      "detail": "Tipo de contas elegíveis",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Transversal | Tipo de contas elegíveis",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832384",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card"
+      ],
+      "ux_terms": [
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "832384"
+    },
+    {
+      "id": "curated:832396",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Bloco \"Envio\"",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Bloco \"Envio\"",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832396",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832396"
+    },
+    {
+      "id": "curated:832851",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 2",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 2",
+      "detail": "Resumo e Autorização",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 2 | Resumo e Autorização",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832851",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header",
+        "Tooltip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header",
+        "Tooltip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832851"
+    },
+    {
+      "id": "curated:832854",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 2",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 2",
+      "detail": "Ler e aceitar Condições Gerais",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 2 | Ler e aceitar Condições Gerais",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832854",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832854"
+    },
+    {
+      "id": "curated:832870",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 2",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 2",
+      "detail": "Footer de Autorização",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 2 | Footer de Autorização",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832870",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Input",
+        "Link",
+        "Chip",
+        "Tooltip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Input",
+        "Link",
+        "Chip",
+        "Tooltip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832870"
+    },
+    {
+      "id": "curated:832894",
+      "dedupe_key": "cartoes|pedir cartao de debito|transversal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Transversal",
+      "detail": "Histórico de Operações",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Transversal | Histórico de Operações",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832894",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "832894"
+    },
+    {
+      "id": "curated:832895",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Ecrã de Conclusão NOK",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Ecrã de Conclusão NOK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832895",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832895"
+    },
+    {
+      "id": "curated:832903",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Envio do Comprovativo/Registo",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Envio do Comprovativo/Registo",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832903",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link",
+        "Modal",
+        "Tab",
+        "Chip",
+        "Tooltip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link",
+        "Modal",
+        "Tab",
+        "Chip",
+        "Tooltip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832903"
+    },
+    {
+      "id": "curated:832906",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Ecrã de Conclusão Pendente",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Ecrã de Conclusão Pendente",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/832906",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "832906"
+    },
+    {
+      "id": "curated:833049",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Ecrã de Conclusão OK",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Ecrã de Conclusão OK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833049",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link",
+        "Chip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link",
+        "Chip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833049"
+    },
+    {
+      "id": "curated:833051",
+      "dedupe_key": "cartoes|pedir cartao de debito|transversal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Transversal",
+      "detail": "Operações Pendentes",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Transversal | Operações Pendentes",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833051",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "833051"
+    },
+    {
+      "id": "curated:833056",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Sem acesso",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Sem acesso | Já tem cartão",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833056",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833056"
+    },
+    {
+      "id": "curated:833150",
+      "dedupe_key": "cartoes|consultar carteira|cartoes pre-pagos",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Consultar Carteira",
+      "flow": "Cartões Pré-pagos",
+      "detail": "Página intermédia",
+      "title": "MSE | Cartões | Consultar Carteira | Cartões Pré-pagos | Página intermédia",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833150",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833150"
+    },
+    {
+      "id": "curated:833782",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Comprovativo da operação",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Comprovativo da operação",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833782",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card"
+      ],
+      "ux_terms": [
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "833782"
+    },
+    {
+      "id": "curated:833791",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Registo da operação",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Registo da operação",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833791",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card"
+      ],
+      "ux_terms": [
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "833791"
+    },
+    {
+      "id": "curated:833825",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Acesso de grupo",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Acesso de grupo",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833825",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Chip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Chip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833825"
+    },
+    {
+      "id": "curated:833833",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Preçário M Empresas",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Preçário M Empresas",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833833",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833833"
+    },
+    {
+      "id": "curated:833835",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Preçário M Empresas 2º cartão",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Preçário M Empresas 2º cartão",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833835",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833835"
+    },
+    {
+      "id": "curated:833836",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Preçário M Empresas Premium 3º cartão",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Preçário M Empresas Premium 3º cartão",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833836",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833836"
+    },
+    {
+      "id": "curated:833839",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Preçário M Empresas Premium",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Preçário M Empresas Premium",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833839",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "833839"
+    },
+    {
+      "id": "curated:833844",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Preçário Promocional",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Preçário Promocional",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/833844",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "833844"
+    },
+    {
+      "id": "curated:834256",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Mail Gestor/Sucursal",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Mail Gestor/Sucursal",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/834256",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Input"
+      ],
+      "ux_terms": [
+        "Input"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "834256"
+    },
+    {
+      "id": "curated:839649",
+      "dedupe_key": "cartoes|pedir cartao de debito|transversal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Transversal",
+      "detail": "BackOffice",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Transversal | BackOffice",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/839649",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.37,
+      "source_work_item_id": "839649"
+    },
+    {
+      "id": "curated:839657",
+      "dedupe_key": "cartoes|cartoes|pedir cartao de debito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Cartões",
+      "flow": "Pedir Cartão de Débito",
+      "detail": "Transversal",
+      "title": "BLOCKED | MSE | Cartões | Pedir Cartão de Débito | Transversal | Eventos Firebase",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/839657",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.25,
+      "source_work_item_id": "839657"
+    },
+    {
+      "id": "curated:839659",
+      "dedupe_key": "cartoes|cartoes|pedir cartao de debito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Cartões",
+      "flow": "Pedir Cartão de Débito",
+      "detail": "Transversal",
+      "title": "BLOCKED | MSE | Cartões | Pedir Cartão de Débito | Transversal | Dashboard",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/839659",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.25,
+      "source_work_item_id": "839659"
+    },
+    {
+      "id": "curated:840264",
+      "dedupe_key": "cartoes|a nossa oferta|cartoes de credito",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "A NOSSA OFERTA",
+      "flow": "Cartões de Crédito",
+      "detail": "",
+      "title": "MSE | Cartões | A NOSSA OFERTA | Cartões de Crédito",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/840264",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "840264"
+    },
+    {
+      "id": "curated:840488",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 1",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 1",
+      "detail": "Sem acesso",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 1 | Sem acesso | Sem contas",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/840488",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Stepper",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "840488"
+    },
+    {
+      "id": "curated:840892",
+      "dedupe_key": "cartoes|transversal|click to call (dentro de horas)",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Transversal",
+      "flow": "Click to call (dentro de horas)",
+      "detail": "",
+      "title": "MSE | Cartões | Transversal | Click to call (dentro de horas)",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/840892",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Input",
+        "Link",
+        "Modal",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Input",
+        "Link",
+        "Modal",
+        "Tab"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "840892"
+    },
+    {
+      "id": "curated:841012",
+      "dedupe_key": "cartoes|transversal|click to call (fora de horas)",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Transversal",
+      "flow": "Click to call (fora de horas)",
+      "detail": "",
+      "title": "MSE | Cartões | Transversal | Click to call (fora de horas)",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/841012",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Input",
+        "Link",
+        "Modal",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Input",
+        "Link",
+        "Modal",
+        "Tab"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "841012"
+    },
+    {
+      "id": "curated:841399",
+      "dedupe_key": "cartoes|transversal|click to call loading",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Transversal",
+      "flow": "Click to call Loading",
+      "detail": "",
+      "title": "MSE | Cartões | Transversal | Click to call Loading",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/841399",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link",
+        "Modal"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "841399"
+    },
+    {
+      "id": "curated:841400",
+      "dedupe_key": "cartoes|transversal|click to call nok",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Transversal",
+      "flow": "Click to call NOK",
+      "detail": "",
+      "title": "MSE | Cartões | Transversal | Click to call NOK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/841400",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link",
+        "Modal"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "841400"
+    },
+    {
+      "id": "curated:841401",
+      "dedupe_key": "cartoes|transversal|click to call ok",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Transversal",
+      "flow": "Click to call OK",
+      "detail": "",
+      "title": "MSE | Cartões | Transversal | Click to call OK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/841401",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link",
+        "Modal"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "841401"
+    },
+    {
+      "id": "curated:850847",
+      "dedupe_key": "cartoes|pedir cartao de debito|transversal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Transversal",
+      "detail": "Representantes Orgânicos",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Transversal | Representantes Orgânicos",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/850847",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card"
+      ],
+      "ux_terms": [
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "850847"
+    },
+    {
+      "id": "curated:855199",
+      "dedupe_key": "cartoes|pedir cartao de debito|step 3",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Débito",
+      "flow": "Step 3",
+      "detail": "Email envio CGUs",
+      "title": "MSE | Cartões | Pedir Cartão de Débito | Step 3 | Email envio CGUs",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/855199",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Card"
+      ],
+      "ux_terms": [
+        "Card"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "855199"
+    },
+    {
+      "id": "curated:876295",
+      "dedupe_key": "cartoes|pedir cartao de credito|estrutura da pagina",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Crédito",
+      "flow": "Estrutura da Página",
+      "detail": "",
+      "title": "MSE | Cartões | Pedir Cartão de Crédito | Estrutura da Página",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/876295",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Input",
+        "Link",
+        "Stepper",
+        "Tab",
+        "Header"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Input",
+        "Link",
+        "Stepper",
+        "Tab",
+        "Header"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "876295"
+    },
+    {
+      "id": "curated:876366",
+      "dedupe_key": "cartoes|pedir cartao de credito|agrupamentos",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Crédito",
+      "flow": "Agrupamentos",
+      "detail": "",
+      "title": "MSE | Cartões | Pedir Cartão de Crédito | Agrupamentos",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/876366",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Chip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Chip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "876366"
+    },
+    {
+      "id": "curated:876368",
+      "dedupe_key": "cartoes|pedir cartao de credito|card conta",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Crédito",
+      "flow": "Card conta",
+      "detail": "",
+      "title": "MSE | Cartões | Pedir Cartão de Crédito | Card conta",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/876368",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "876368"
+    },
+    {
+      "id": "curated:876371",
+      "dedupe_key": "cartoes|pedir cartao de credito|ecra de conclusao ok",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Crédito",
+      "flow": "Ecrã de Conclusão OK",
+      "detail": "",
+      "title": "MSE | Cartões | Pedir Cartão de Crédito | Ecrã de Conclusão OK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/876371",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "876371"
+    },
+    {
+      "id": "curated:876372",
+      "dedupe_key": "cartoes|pedir cartao de credito|ecra de conclusao nok",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Crédito",
+      "flow": "Ecrã de Conclusão NOK",
+      "detail": "",
+      "title": "MSE | Cartões | Pedir Cartão de Crédito | Ecrã de Conclusão NOK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/876372",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "876372"
+    },
+    {
+      "id": "curated:876445",
+      "dedupe_key": "cartoes|pedir cartao de credito|lead mail gestor/sucursal",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Pedir Cartão de Crédito",
+      "flow": "Lead Mail Gestor/Sucursal",
+      "detail": "",
+      "title": "MSE | Cartões | Pedir Cartão de Crédito | Lead Mail Gestor/Sucursal",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/876445",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Input"
+      ],
+      "ux_terms": [
+        "Input"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "876445"
+    },
+    {
+      "id": "curated:953895",
+      "dedupe_key": "dashboard|agenda|visibilidade de selecao de filtro",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Visibilidade de seleção de Filtro",
+      "detail": "",
+      "title": "MSE | Melhorias | Agenda | Visibilidade de seleção de Filtro",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/953895",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "953895"
+    },
+    {
+      "id": "curated:969589",
+      "dedupe_key": "dashboard|estatuto cliente aplauso|step 1 - entrada dia a dia",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Estatuto Cliente Aplauso",
+      "flow": "Step 1 - Entrada DIA a DIA",
+      "detail": "",
+      "title": "MSE | Dashboard | Estatuto Cliente Aplauso | Step 1 - Entrada DIA a DIA",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/969589",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Chip",
+        "Tooltip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab",
+        "Chip",
+        "Tooltip"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.63,
+      "source_work_item_id": "969589"
+    },
+    {
+      "id": "curated:969628",
+      "dedupe_key": "dashboard|estatuto cliente aplauso|step 2 - nova area",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Estatuto Cliente Aplauso",
+      "flow": "Step 2 - Nova área",
+      "detail": "",
+      "title": "MSE | Dashboard | Estatuto Cliente Aplauso | Step 2 - Nova área",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/969628",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.51,
+      "source_work_item_id": "969628"
+    },
+    {
+      "id": "curated:969681",
+      "dedupe_key": "menu|menu|consultas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Menu",
+      "flow": "Consultas",
+      "detail": "Nova entrada App M Empresas",
+      "title": "Suspensa: MSE | Melhorias | Menu | Consultas | Nova entrada App M Empresas",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/969681",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.55,
+      "source_work_item_id": "969681"
+    },
+    {
+      "id": "curated:982454",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Cancelar subscrição",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Cancelar subscrição | Autorizar operação",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/982454",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "982454"
+    },
+    {
+      "id": "curated:982470",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Landing Page (Serviço App M Empresas não subscrito)",
+      "title": "MSE | Menu Lateral | Consultas |  A sua Oferta - App M Empresas | Landing Page (Serviço App M Empresas não subscrito)",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/982470",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.76,
+      "source_work_item_id": "982470"
+    },
+    {
+      "id": "curated:982473",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Landing Page (Serviço App M Empresas subscrito)",
+      "title": "MSE | Menu Lateral | Consultas |  A sua Oferta - App M Empresas | Landing Page (Serviço App M Empresas subscrito)",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/982473",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Modal",
+        "Tooltip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Modal",
+        "Tooltip"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "982473"
+    },
+    {
+      "id": "curated:984405",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Header",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Header",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/984405",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Card",
+        "Header"
+      ],
+      "ux_terms": [
+        "Card",
+        "Header"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "984405"
+    },
+    {
+      "id": "curated:985955",
+      "dedupe_key": "dashboard|agenda|tab \"agendamentos\"",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Tab \"Agendamentos\"",
+      "detail": "",
+      "title": "MSE | Dashboard | Agenda | Tab \"Agendamentos\"",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985955",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Card",
+        "Tab",
+        "Header"
+      ],
+      "ux_terms": [
+        "Card",
+        "Tab",
+        "Header"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.76,
+      "source_work_item_id": "985955"
+    },
+    {
+      "id": "curated:985956",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Header",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Header",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985956",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Tab",
+        "Header"
+      ],
+      "ux_terms": [
+        "Tab",
+        "Header"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.68,
+      "source_work_item_id": "985956"
+    },
+    {
+      "id": "curated:985957",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Filtros",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Filtros",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985957",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.68,
+      "source_work_item_id": "985957"
+    },
+    {
+      "id": "curated:985958",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Tabela",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Tabela",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985958",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.68,
+      "source_work_item_id": "985958"
+    },
+    {
+      "id": "curated:985973",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Ver detalhe » Transferência (pontual)",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Ver detalhe » Transferência (pontual)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985973",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "985973"
+    },
+    {
+      "id": "curated:985974",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe » Pagamento de serviços (pontual)",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe » Pagamento de serviços (pontual)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985974",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "985974"
+    },
+    {
+      "id": "curated:985978",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe » Pagamento TSU (pontual)",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe » Pagamento TSU (pontual)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985978",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "985978"
+    },
+    {
+      "id": "curated:985979",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe » Carregamento cartões pré-pagos (pontual)",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe » Carregamento cartões pré-pagos (pontual)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985979",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "985979"
+    },
+    {
+      "id": "curated:985990",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe | Editar",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985990",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "985990"
+    },
+    {
+      "id": "curated:985991",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe | Eliminar",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985991",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "985991"
+    },
+    {
+      "id": "curated:985996",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Criar Evento",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Criar Evento",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/985996",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.56,
+      "source_work_item_id": "985996"
+    },
+    {
+      "id": "curated:986007",
+      "dedupe_key": "dashboard|agenda|criar agendamento",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Criar Agendamento",
+      "detail": "",
+      "title": "MSE | Dashboard | Agenda | Criar Agendamento",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/986007",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Dropdown",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Dropdown",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.68,
+      "source_work_item_id": "986007"
+    },
+    {
+      "id": "curated:986966",
+      "dedupe_key": "pagamentos|pagamento ao estado|alterar operation id para montante >= 500.000,00€",
+      "source_kind": "curated_story",
+      "domain": "Pagamentos",
+      "journey": "Pagamento ao Estado",
+      "flow": "Alterar Operation ID para montante >= 500.000,00€",
+      "detail": "",
+      "title": "MSE | Pagamentos | Pagamento ao Estado | Alterar Operation ID para montante >= 500.000,00€",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/986966",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "ui_components": [
+        "Input"
+      ],
+      "ux_terms": [
+        "Input"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "quality_score": 0.68,
+      "source_work_item_id": "986966"
+    },
+    {
+      "id": "curated:987433",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Ver detalhe » Transferência (recorrente)",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Ver detalhe » Transferência (recorrente)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987433",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.63,
+      "source_work_item_id": "987433"
+    },
+    {
+      "id": "curated:987441",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Ver detalhe » Pagamento de Serviços (pontual)",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Ver detalhe » Pagamento de Serviços (pontual)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987441",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987441"
+    },
+    {
+      "id": "curated:987445",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe » Pagamento de serviços (recorrente)",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe » Pagamento de serviços (recorrente)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987445",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987445"
+    },
+    {
+      "id": "curated:987453",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Ver detalhe » Pagamento ao Estado (pontual)",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Ver detalhe » Pagamento ao Estado (pontual)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987453",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987453"
+    },
+    {
+      "id": "curated:987484",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Ver detalhe » Ver Beneficiários",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Ver detalhe » Ver Beneficiários",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987484",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987484"
+    },
+    {
+      "id": "curated:987543",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe | Editar | Mensagem de Conclusão",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987543",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987543"
+    },
+    {
+      "id": "curated:987608",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe | Eliminar | Mensagem de Sucesso",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987608",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Modal"
+      ],
+      "ux_terms": [
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987608"
+    },
+    {
+      "id": "curated:987612",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe | Editar & Eliminar | Mensagem de Insucesso",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987612",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Modal"
+      ],
+      "ux_terms": [
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "987612"
+    },
+    {
+      "id": "curated:987630",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Subscrever",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Subscrever | STEP 1 | Dados",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987630",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Stepper"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.55,
+      "source_work_item_id": "987630"
+    },
+    {
+      "id": "curated:987635",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Subscrever",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Subscrever | STEP 2 | Resumo e Autorização",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/987635",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.63,
+      "source_work_item_id": "987635"
+    },
+    {
+      "id": "curated:988225",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Subscrever",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Subscrever | STEP 3 | Conclusão",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/988225",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA"
+      ],
+      "ux_terms": [
+        "CTA"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.51,
+      "source_work_item_id": "988225"
+    },
+    {
+      "id": "curated:988273",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Cancelar subscrição",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Cancelar subscrição | Conclusão",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/988273",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA"
+      ],
+      "ux_terms": [
+        "CTA"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "988273"
+    },
+    {
+      "id": "curated:990048",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Alterar limite por transação",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Alterar limite por transação | STEP 1 | Dados",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990048",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "Input",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "Input",
+        "Stepper"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "990048"
+    },
+    {
+      "id": "curated:990054",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Alterar limite por transação",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Alterar limite por transação | STEP 2 | Resumo e Conclusão",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990054",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "Card",
+        "Stepper",
+        "Tab"
+      ],
+      "ux_terms": [
+        "Card",
+        "Stepper",
+        "Tab"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "990054"
+    },
+    {
+      "id": "curated:990055",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Alterar limite por transação",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Alterar limite por transação | STEP 3 | Conclusão",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990055",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA"
+      ],
+      "ux_terms": [
+        "CTA"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "990055"
+    },
+    {
+      "id": "curated:990057",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Gerir contas Associadas",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Gerir contas Associadas | STEP 1 | Dados",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990057",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "Card",
+        "Stepper",
+        "Tab"
+      ],
+      "ux_terms": [
+        "Card",
+        "Stepper",
+        "Tab"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "990057"
+    },
+    {
+      "id": "curated:990058",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Gerir contas Associadas",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Gerir contas Associadas | STEP 2 | Resumo e Autorização",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990058",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "Stepper",
+        "Tab",
+        "Chip"
+      ],
+      "ux_terms": [
+        "Stepper",
+        "Tab",
+        "Chip"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "990058"
+    },
+    {
+      "id": "curated:990059",
+      "dedupe_key": "menu|consultas|a sua oferta - app m empresas",
+      "source_kind": "curated_story",
+      "domain": "Menu",
+      "journey": "Consultas",
+      "flow": "A sua Oferta - App M Empresas",
+      "detail": "Gerir contas Associadas",
+      "title": "MSE | Menu Lateral | Consultas | A sua Oferta - App M Empresas | Gerir contas Associadas | STEP 3 | Conclusão",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "file_title": "MSE | Menu [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990059",
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal.",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "ui_components": [
+        "CTA"
+      ],
+      "ux_terms": [
+        "CTA"
+      ],
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "quality_score": 0.68,
+      "source_work_item_id": "990059"
+    },
+    {
+      "id": "curated:990884",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Tipos de de Eventos",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Tipos de de Eventos",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990884",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.76,
+      "source_work_item_id": "990884"
+    },
+    {
+      "id": "curated:990895",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Sugestão de eventos",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Sugestão de eventos",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990895",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.25,
+      "source_work_item_id": "990895"
+    },
+    {
+      "id": "curated:990897",
+      "dedupe_key": "dashboard|agenda|melhoria",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Melhoria",
+      "detail": "Tabela Agenda",
+      "title": "MSE | Dashboard | Agenda | Melhoria | Tabela Agenda",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990897",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.55,
+      "source_work_item_id": "990897"
+    },
+    {
+      "id": "curated:990916",
+      "dedupe_key": "dashboard|agenda|agendamentos",
+      "source_kind": "curated_story",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "Agendamentos",
+      "detail": "Ver detalhe » Pagamento de serviços (recorrente)",
+      "title": "MSE | Dashboard | Agenda | Agendamentos | Ver detalhe » Pagamento de serviços (recorrente)",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "file_title": "MSE | Dashboard II [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/990916",
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "ui_components": [
+        "CTA",
+        "Modal"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Modal"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "quality_score": 0.51,
+      "source_work_item_id": "990916"
+    },
+    {
+      "id": "curated:994515",
+      "dedupe_key": "cartoes|via verde|gestao via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Gestão Via Verde",
+      "detail": "Conta com 1 =< Contrato Associado",
+      "title": "MSE | Cartões | Via Verde | Gestão Via Verde | Conta com 1 =< Contrato Associado",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994515",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link",
+        "Tab"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "994515"
+    },
+    {
+      "id": "curated:994531",
+      "dedupe_key": "cartoes|via verde|alterar cartao",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Alterar Cartão",
+      "detail": "Step 1 -  Alterar Cartão Associado",
+      "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 1 -  Alterar Cartão Associado",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994531",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Input",
+        "Stepper",
+        "Chip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Input",
+        "Stepper",
+        "Chip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "994531"
+    },
+    {
+      "id": "curated:994534",
+      "dedupe_key": "cartoes|via verde|tabela de pagamentos de baixo valor",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Tabela de Pagamentos de Baixo Valor",
+      "detail": "",
+      "title": "MSE | Cartões | Via Verde | Tabela de Pagamentos de Baixo Valor",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/994534",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "Tab"
+      ],
+      "ux_terms": [
+        "Tab"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.55,
+      "source_work_item_id": "994534"
+    },
+    {
+      "id": "curated:999982",
+      "dedupe_key": "cartoes|via verde|gestao via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Gestão Via Verde",
+      "detail": "Conta sem Contrato Associado",
+      "title": "MSE | Cartões | Via Verde | Gestão Via Verde | Conta sem Contrato Associado",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/999982",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.68,
+      "source_work_item_id": "999982"
+    },
+    {
+      "id": "curated:1000419",
+      "dedupe_key": "cartoes|via verde|ativar via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Ativar Via Verde",
+      "detail": "Step 1 - Associar Cartão",
+      "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 1 - Associar Cartão",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1000419",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Input",
+        "Stepper",
+        "Chip"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Input",
+        "Stepper",
+        "Chip"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "1000419"
+    },
+    {
+      "id": "curated:1000786",
+      "dedupe_key": "cartoes|via verde|ativar via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Ativar Via Verde",
+      "detail": "Step 2 - Resumo e Autorização",
+      "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 2 - Resumo e Autorização",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1000786",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "1000786"
+    },
+    {
+      "id": "curated:1001153",
+      "dedupe_key": "cartoes|via verde|alterar cartao",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Alterar Cartão",
+      "detail": "Step 2 - Resumo e Autorização",
+      "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 2 - Resumo e Autorização",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001153",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "1001153"
+    },
+    {
+      "id": "curated:1001311",
+      "dedupe_key": "cartoes|via verde|alterar cartao",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Alterar Cartão",
+      "detail": "Step 3 -  Conclusão ECRÃ OK",
+      "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ OK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001311",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "1001311"
+    },
+    {
+      "id": "curated:1001312",
+      "dedupe_key": "cartoes|via verde|ativar via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Ativar Via Verde",
+      "detail": "Step 3 - Conclusão ECRÃ OK",
+      "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 3 - Conclusão ECRÃ OK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001312",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Bloco",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Bloco",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "1001312"
+    },
+    {
+      "id": "curated:1001315",
+      "dedupe_key": "cartoes|via verde|alterar cartao",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Alterar Cartão",
+      "detail": "Step 3 -  Conclusão ECRÃ NOK",
+      "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ NOK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001315",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "1001315"
+    },
+    {
+      "id": "curated:1001316",
+      "dedupe_key": "cartoes|via verde|alterar cartao",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Alterar Cartão",
+      "detail": "Step 3 -  Conclusão ECRÃ PENDENTE",
+      "title": "MSE | Cartões | Via Verde | Alterar Cartão | Step 3 -  Conclusão ECRÃ PENDENTE",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001316",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "1001316"
+    },
+    {
+      "id": "curated:1001318",
+      "dedupe_key": "cartoes|via verde|ativar via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Ativar Via Verde",
+      "detail": "Step 3 - Conclusão ECRÃ NOK",
+      "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 3 - Conclusão ECRÃ NOK",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001318",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Link"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Link"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.76,
+      "source_work_item_id": "1001318"
+    },
+    {
+      "id": "curated:1001319",
+      "dedupe_key": "cartoes|via verde|ativar via verde",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Ativar Via Verde",
+      "detail": "Step 3 - Conclusão ECRÃ PENDENTE",
+      "title": "MSE | Cartões | Via Verde | Ativar Via Verde | Step 3 - Conclusão ECRÃ PENDENTE",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1001319",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [
+        "CTA",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Bloco",
+        "Link",
+        "Stepper"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.63,
+      "source_work_item_id": "1001319"
+    },
+    {
+      "id": "curated:1002449",
+      "dedupe_key": "cartoes|via verde|alterar cartao",
+      "source_kind": "curated_story",
+      "domain": "Cartões",
+      "journey": "Via Verde",
+      "flow": "Alterar Cartão",
+      "detail": "Operações Pendentes",
+      "title": "MSE | Cartões | Via Verde | Alterar Cartão | Operações Pendentes",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/1002449",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "ui_components": [],
+      "ux_terms": [],
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "quality_score": 0.25,
+      "source_work_item_id": "1002449"
+    }
+  ]
+}

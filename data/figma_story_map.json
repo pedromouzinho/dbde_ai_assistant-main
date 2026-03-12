@@ -1,0 +1,405 @@
+{
+  "version": "2026-03-10",
+  "entries": [
+    {
+      "id": "pagamentos_iii",
+      "domain": "Pagamentos",
+      "family": "pagamentos",
+      "title": "MSE | Pagamentos [Handoff] III",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 30,
+      "currentness_score": 0.99,
+      "production_confidence": 0.96,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-03-10T10:26:07.484Z",
+      "last_touched_by": "maria carvalho barreira",
+      "creator": "João Pinto Paulo",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "journeys": [
+        "pagamentos",
+        "transferências",
+        "recorrências"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente."
+    },
+    {
+      "id": "credito",
+      "domain": "Crédito",
+      "family": "credito",
+      "title": "MSE | Crédito [Handoff]",
+      "file_key": "2yCxCXQ9LJ7qSZy1l2I5JA",
+      "url": "https://www.figma.com/design/2yCxCXQ9LJ7qSZy1l2I5JA/MSE-%7C-Cr%C3%A9dito--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 29,
+      "currentness_score": 1.0,
+      "production_confidence": 0.96,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-03-10T17:39:50.605Z",
+      "last_touched_by": "Mariana Pulido",
+      "creator": "Mariana Pulido",
+      "aliases": [
+        "credito",
+        "crédito"
+      ],
+      "journeys": [
+        "crédito"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "site_placement": "Fluxos de crédito do canal empresas.",
+      "routing_note": "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra."
+    },
+    {
+      "id": "cartoes",
+      "domain": "Cartões",
+      "family": "cartoes",
+      "title": "MSE | Cartões [Handoff]",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 30,
+      "currentness_score": 0.98,
+      "production_confidence": 0.97,
+      "curated_example_coverage": "high",
+      "last_touched_at": "2026-03-09T18:39:07.270Z",
+      "last_touched_by": "maria carvalho barreira",
+      "creator": "maria carvalho barreira",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "journeys": [
+        "cartões",
+        "gestão de cartões",
+        "pedido de cartão"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões."
+    },
+    {
+      "id": "dashboard_ii",
+      "domain": "Dashboard",
+      "family": "dashboard",
+      "title": "MSE | Dashboard II [Handoff]",
+      "file_key": "6g0o3EMIZrm0HSeTUMlWt7",
+      "url": "https://www.figma.com/design/6g0o3EMIZrm0HSeTUMlWt7/MSE-%7C-Dashboard-II--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 28,
+      "currentness_score": 0.95,
+      "production_confidence": 0.93,
+      "curated_example_coverage": "medium",
+      "last_touched_at": "2026-03-06T16:37:22.504Z",
+      "last_touched_by": "maria carvalho barreira",
+      "creator": "Margarida Xavier",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "journeys": [
+        "dashboard",
+        "agenda",
+        "resumo operacional"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Header",
+        "Bloco",
+        "Tab"
+      ],
+      "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+      "routing_note": "Preferir Dashboard II quando o pedido for genérico sobre dashboard; deve sobrepor-se ao handoff antigo."
+    },
+    {
+      "id": "apoio_cliente",
+      "domain": "Apoio ao Cliente",
+      "family": "apoio_cliente",
+      "title": "MSE | Apoio ao Cliente [Handoff]",
+      "file_key": "GsWbvbumvZI4WcUSvIPU0L",
+      "url": "https://www.figma.com/design/GsWbvbumvZI4WcUSvIPU0L/MSE-%7C-Apoio-ao-Cliente--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 24,
+      "currentness_score": 0.91,
+      "production_confidence": 0.9,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-03-03T11:29:55.407Z",
+      "last_touched_by": "Mariana Pulido",
+      "creator": "maria carvalho barreira",
+      "aliases": [
+        "apoio ao cliente",
+        "suporte",
+        "ajuda",
+        "contacto",
+        "contato"
+      ],
+      "journeys": [
+        "apoio ao cliente",
+        "ajuda"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "site_placement": "Fluxos de apoio, suporte e contacto.",
+      "routing_note": "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente."
+    },
+    {
+      "id": "repositorio_handoffs",
+      "domain": "Repositório Handoffs",
+      "family": "repository",
+      "title": "MSE | Repositório Handoffs",
+      "file_key": "L8RwMhjRPT8zk9MzPnihsF",
+      "url": "https://www.figma.com/design/L8RwMhjRPT8zk9MzPnihsF/MSE-%7C-Reposit%C3%B3rio-Handoffs?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "meta_repository",
+      "preferred_rank": 5,
+      "currentness_score": 0.45,
+      "production_confidence": 0.35,
+      "curated_example_coverage": "n/a",
+      "last_touched_at": "2026-02-03T16:51:40.073Z",
+      "last_touched_by": "Figma",
+      "creator": "maria carvalho barreira",
+      "aliases": [
+        "repositorio",
+        "repositório",
+        "handoffs"
+      ],
+      "journeys": [],
+      "ux_terms": [],
+      "site_placement": "Ficheiro agregador; não corresponde a um domínio funcional único.",
+      "routing_note": "Usar apenas como fallback ou índice manual; não deve ser a primeira referência do draft."
+    },
+    {
+      "id": "investimentos",
+      "domain": "Investimentos",
+      "family": "investimentos",
+      "title": "MSE | Investimentos [Handoff]",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "likely_current_handoff",
+      "preferred_rank": 20,
+      "currentness_score": 0.74,
+      "production_confidence": 0.76,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-02-05T12:44:40.739Z",
+      "last_touched_by": "Figma",
+      "creator": "Mariana Pulido",
+      "aliases": [
+        "investimentos",
+        "investimento"
+      ],
+      "journeys": [
+        "investimentos"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente."
+    },
+    {
+      "id": "open_banking",
+      "domain": "Open Banking",
+      "family": "open_banking",
+      "title": "MSE | Open Banking [Handoff]",
+      "file_key": "JYCI99QFHaguFCgU2vpo1H",
+      "url": "https://www.figma.com/design/JYCI99QFHaguFCgU2vpo1H/MSE-%7C-Open-Banking--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "likely_current_handoff",
+      "preferred_rank": 22,
+      "currentness_score": 0.82,
+      "production_confidence": 0.81,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-02-18T16:26:55.884Z",
+      "last_touched_by": "Figma",
+      "creator": "Margarida Xavier",
+      "aliases": [
+        "open banking"
+      ],
+      "journeys": [
+        "open banking"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "site_placement": "Fluxos de Open Banking do canal empresas.",
+      "routing_note": "Usar como fonte de domínio para Open Banking; boa recência, mas menos evidência humana direta."
+    },
+    {
+      "id": "dashboard",
+      "domain": "Dashboard",
+      "family": "dashboard",
+      "title": "MSE | Dashboard [Handoff]",
+      "file_key": "cBcZdkCy34mrQhMfW3TBDD",
+      "url": "https://www.figma.com/design/cBcZdkCy34mrQhMfW3TBDD/MSE-%7C-Dashboard--Handoff-?m=auto",
+      "status": "fallback_handoff",
+      "preferred_rank": 14,
+      "currentness_score": 0.7,
+      "production_confidence": 0.69,
+      "curated_example_coverage": "medium",
+      "last_touched_at": "2026-02-02T14:35:56.306Z",
+      "last_touched_by": "Figma",
+      "creator": "Mariana Pulido",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "journeys": [
+        "dashboard"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Header"
+      ],
+      "site_placement": "Handoff anterior de Dashboard.",
+      "routing_note": "Usar apenas quando Dashboard II não encaixar ou para comparar evolução do domínio."
+    },
+    {
+      "id": "menu",
+      "domain": "Menu",
+      "family": "menu",
+      "title": "MSE | Menu [Handoff]",
+      "file_key": "cgcF5Goau4swl7ePf7Idzl",
+      "url": "https://www.figma.com/design/cgcF5Goau4swl7ePf7Idzl/MSE-%7C-Menu--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "likely_current_handoff",
+      "preferred_rank": 21,
+      "currentness_score": 0.79,
+      "production_confidence": 0.82,
+      "curated_example_coverage": "medium",
+      "last_touched_at": "2026-02-12T12:45:32.594Z",
+      "last_touched_by": "Figma",
+      "creator": "maria carvalho barreira",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "journeys": [
+        "menu",
+        "navegação principal"
+      ],
+      "ux_terms": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "site_placement": "Navegação principal e menu lateral do canal empresas.",
+      "routing_note": "Usar para proveniência de navegação, entry points e estrutura transversal."
+    },
+    {
+      "id": "mdse",
+      "domain": "MDSE",
+      "family": "mdse",
+      "title": "MSE | MDSE [Handoff]",
+      "file_key": "WrHwJQLLIkr6mLZVaFx11s",
+      "url": "https://www.figma.com/design/WrHwJQLLIkr6mLZVaFx11s/MSE-%7C-MDSE--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 27,
+      "currentness_score": 0.98,
+      "production_confidence": 0.92,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-03-10T10:04:34.621Z",
+      "last_touched_by": "maria carvalho barreira",
+      "creator": "maria carvalho barreira",
+      "aliases": [
+        "mdse"
+      ],
+      "journeys": [
+        "mdse"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "site_placement": "Domínio MDSE do canal empresas.",
+      "routing_note": "Bom candidato atual para pedidos que mencionem explicitamente MDSE."
+    },
+    {
+      "id": "transferencias",
+      "domain": "Transferências",
+      "family": "transferencias",
+      "title": "MSE | Transferências [Handoff]",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "status": "current_handoff",
+      "preferred_rank": 28,
+      "currentness_score": 0.95,
+      "production_confidence": 0.94,
+      "curated_example_coverage": "low",
+      "last_touched_at": "2026-03-06T17:33:15.430Z",
+      "last_touched_by": "maria carvalho barreira",
+      "creator": "Margarida Xavier",
+      "aliases": [
+        "transferencias",
+        "transferências",
+        "transferencia",
+        "transferência"
+      ],
+      "journeys": [
+        "transferências"
+      ],
+      "ux_terms": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III."
+    }
+  ]
+}

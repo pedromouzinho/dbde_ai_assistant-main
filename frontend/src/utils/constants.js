@@ -1,0 +1,21 @@
+import millenniumMarkUrl from '../assets/brand/millennium-mark.svg';
+import millenniumWordmarkUrl from '../assets/brand/millennium-wordmark.svg';
+import millenniumWordmarkInverseUrl from '../assets/brand/millennium-wordmark-inverse.svg';
+
+export const API_URL = window.location.origin;
+export const APP_VERSION = 'v8.0.0';
+export const BRAND_ACCENT_HEX = '#D1005D';
+export const DEFAULT_MAX_IMAGES_PER_MESSAGE = 10;
+export const DEFAULT_MAX_FILES_PER_CONVERSATION = 10;
+export const DEFAULT_MAX_BATCH_TOTAL_BYTES = 60 * 1024 * 1024;
+export const UPLOAD_POLL_INTERVAL_MS = 1200;
+export const UPLOAD_JOB_TIMEOUT_MS = 20 * 60 * 1000;
+export const DEVOPS_WORKITEM_BASE_URL = 'https://dev.azure.com/ptbcp/IT.DIT/_workitems/edit/';
+export const EMPTY_CONVERSATION = { id: null, title: 'Nova conversa', messages: [], mode: 'general', uploadedFiles: [] };
+export const MILLENNIUM_MARK_URL = millenniumMarkUrl;
+export const MILLENNIUM_WORDMARK_URL = millenniumWordmarkUrl;
+export const MILLENNIUM_WORDMARK_INVERSE_URL = millenniumWordmarkInverseUrl;
+export const MILLENNIUM_SYMBOL_DATA_URI = MILLENNIUM_MARK_URL;
+export const MILLENNIUM_LOGO_DARK_TILE_URI = MILLENNIUM_MARK_URL;
+export const MILLENNIUM_LOGO_MAGENTA_TILE_URI = MILLENNIUM_WORDMARK_URL;
+export const MILLENNIUM_LOGO_DATA_URI = MILLENNIUM_MARK_URL;

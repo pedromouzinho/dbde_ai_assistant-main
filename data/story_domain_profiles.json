@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-10T23:19:52.030106+00:00",
+  "source": "figma_story_map + curated_story_examples",
+  "entries": [
+    {
+      "domain": "Apoio ao Cliente",
+      "aliases": [
+        "apoio ao cliente",
+        "suporte",
+        "ajuda",
+        "contacto",
+        "contato"
+      ],
+      "design_file_title": "MSE | Apoio ao Cliente [Handoff]",
+      "design_file_url": "https://www.figma.com/design/GsWbvbumvZI4WcUSvIPU0L/MSE-%7C-Apoio-ao-Cliente--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "apoio ao cliente",
+        "ajuda"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente."
+      ],
+      "production_confidence": 0.9,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "Cartões",
+      "aliases": [
+        "cartoes",
+        "cartões",
+        "cartao",
+        "cartão",
+        "via verde"
+      ],
+      "design_file_title": "MSE | Cartões [Handoff]",
+      "design_file_url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [
+        "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+        "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step]"
+      ],
+      "top_journeys": [
+        "Pedir Cartão de Débito",
+        "Via Verde",
+        "Transversal",
+        "Pedir Cartão de Crédito",
+        "A NOSSA OFERTA",
+        "Consultar Carteira"
+      ],
+      "top_flows": [
+        "Step 1",
+        "Step 3",
+        "Transversal",
+        "Alterar Cartão",
+        "Ativar Via Verde",
+        "Step 2",
+        "Cartões de Crédito",
+        "Cartões Pré-pagos"
+      ],
+      "preferred_lexicon": [
+        "Link",
+        "CTA",
+        "Card",
+        "Bloco",
+        "Stepper",
+        "Tab",
+        "Header",
+        "Input",
+        "Chip",
+        "Modal",
+        "Tooltip",
+        "Dropdown"
+      ],
+      "section_emphasis": [
+        "comportamento"
+      ],
+      "routing_notes": [
+        "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+        "O corpus curado puxa sobretudo para a jornada Pedir Cartão de Débito."
+      ],
+      "production_confidence": 0.97,
+      "coverage_score": 1.0,
+      "curated_example_count": 66
+    },
+    {
+      "domain": "Crédito",
+      "aliases": [
+        "credito",
+        "crédito"
+      ],
+      "design_file_title": "MSE | Crédito [Handoff]",
+      "design_file_url": "https://www.figma.com/design/2yCxCXQ9LJ7qSZy1l2I5JA/MSE-%7C-Cr%C3%A9dito--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "crédito"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra."
+      ],
+      "production_confidence": 0.96,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "Dashboard",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo"
+      ],
+      "design_file_title": "MSE | Dashboard [Handoff]",
+      "design_file_url": "https://www.figma.com/design/cBcZdkCy34mrQhMfW3TBDD/MSE-%7C-Dashboard--Handoff-?m=auto",
+      "top_title_patterns": [
+        "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+        "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step]"
+      ],
+      "top_journeys": [
+        "Agenda",
+        "Estatuto Cliente Aplauso"
+      ],
+      "top_flows": [
+        "Agendamentos",
+        "Melhoria",
+        "Step 1 - Entrada DIA a DIA",
+        "Step 2 - Nova área",
+        "Tab \"Agendamentos\"",
+        "Criar Agendamento"
+      ],
+      "preferred_lexicon": [
+        "CTA",
+        "Modal",
+        "Tab",
+        "Card",
+        "Header",
+        "Link",
+        "Chip",
+        "Tooltip",
+        "Input",
+        "Dropdown"
+      ],
+      "section_emphasis": [
+        "comportamento"
+      ],
+      "routing_notes": [
+        "Usar apenas quando Dashboard II não encaixar ou para comparar evolução do domínio.",
+        "O corpus curado puxa sobretudo para a jornada Agenda."
+      ],
+      "production_confidence": 0.69,
+      "coverage_score": 1.0,
+      "curated_example_count": 27
+    },
+    {
+      "domain": "Investimentos",
+      "aliases": [
+        "investimentos",
+        "investimento"
+      ],
+      "design_file_title": "MSE | Investimentos [Handoff]",
+      "design_file_url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "investimentos"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Útil para grounding de domínio, mas com menor sinal de edição humana recente."
+      ],
+      "production_confidence": 0.76,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "MDSE",
+      "aliases": [
+        "mdse"
+      ],
+      "design_file_title": "MSE | MDSE [Handoff]",
+      "design_file_url": "https://www.figma.com/design/WrHwJQLLIkr6mLZVaFx11s/MSE-%7C-MDSE--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "mdse"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Bom candidato atual para pedidos que mencionem explicitamente MDSE."
+      ],
+      "production_confidence": 0.92,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "Menu",
+      "aliases": [
+        "menu",
+        "menu lateral",
+        "navegacao",
+        "navegação",
+        "sidebar"
+      ],
+      "design_file_title": "MSE | Menu [Handoff]",
+      "design_file_url": "https://www.figma.com/design/cgcF5Goau4swl7ePf7Idzl/MSE-%7C-Menu--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "menu",
+        "navegação principal"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "Sidebar",
+        "CTA",
+        "Tab",
+        "Link"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Usar para proveniência de navegação, entry points e estrutura transversal."
+      ],
+      "production_confidence": 0.82,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "Open Banking",
+      "aliases": [
+        "open banking"
+      ],
+      "design_file_title": "MSE | Open Banking [Handoff]",
+      "design_file_url": "https://www.figma.com/design/JYCI99QFHaguFCgU2vpo1H/MSE-%7C-Open-Banking--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "open banking"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Modal"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Usar como fonte de domínio para Open Banking; boa recência, mas menos evidência humana direta."
+      ],
+      "production_confidence": 0.81,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "Pagamentos",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "transferências",
+        "recorrencias",
+        "recorrências",
+        "pagamentos recorrentes"
+      ],
+      "design_file_title": "MSE | Pagamentos [Handoff] III",
+      "design_file_url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [
+        "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step]"
+      ],
+      "top_journeys": [
+        "Pagar Serviços",
+        "Pagar ao Estado",
+        "Pagar à Segurança Social",
+        "Carregar cartão pré-pago",
+        "Pagamento ao Estado"
+      ],
+      "top_flows": [
+        "Adicionar Nota - Propagação para Detalhe de Movimento",
+        "Alterar Operation ID para montante >= 500.000,00€"
+      ],
+      "preferred_lexicon": [
+        "Tab",
+        "Input"
+      ],
+      "section_emphasis": [
+        "comportamento"
+      ],
+      "routing_notes": [
+        "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+        "O corpus curado puxa sobretudo para a jornada Pagar Serviços."
+      ],
+      "production_confidence": 0.96,
+      "coverage_score": 0.25,
+      "curated_example_count": 5
+    },
+    {
+      "domain": "Repositório Handoffs",
+      "aliases": [
+        "repositorio",
+        "repositório",
+        "handoffs"
+      ],
+      "design_file_title": "MSE | Repositório Handoffs",
+      "design_file_url": "https://www.figma.com/design/L8RwMhjRPT8zk9MzPnihsF/MSE-%7C-Reposit%C3%B3rio-Handoffs?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [],
+      "top_flows": [],
+      "preferred_lexicon": [],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Usar apenas como fallback ou índice manual; não deve ser a primeira referência do draft."
+      ],
+      "production_confidence": 0.35,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    },
+    {
+      "domain": "Transferências",
+      "aliases": [
+        "transferencias",
+        "transferências",
+        "transferencia",
+        "transferência"
+      ],
+      "design_file_title": "MSE | Transferências [Handoff]",
+      "design_file_url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "top_title_patterns": [],
+      "top_journeys": [
+        "transferências"
+      ],
+      "top_flows": [],
+      "preferred_lexicon": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "section_emphasis": [],
+      "routing_notes": [
+        "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III."
+      ],
+      "production_confidence": 0.94,
+      "coverage_score": 0.0,
+      "curated_example_count": 0
+    }
+  ]
+}
