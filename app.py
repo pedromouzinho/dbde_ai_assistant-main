@@ -89,6 +89,8 @@ from config import (
     UPLOAD_MAX_CONCURRENT_JOBS, UPLOAD_MAX_PENDING_JOBS_PER_USER,
     UPLOAD_MAX_IMAGES_PER_MESSAGE, UPLOAD_EMBEDDING_CONCURRENCY,
     UPLOAD_MAX_CHUNKS_PER_FILE, UPLOAD_JOB_STALE_SECONDS,
+    UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES, UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS,
+    UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
     UPLOAD_MAX_BATCH_TOTAL_BYTES,
     UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS,
     UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
@@ -2072,6 +2074,8 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
     image_base64 = None
     image_content_type = None
     detected_delimiter = ","
+    full_text = ""
+    tabular_ingest_mode = ""
     filename_lower = filename.lower()
     is_pptx_mime = content_type == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     is_image_mime = (content_type or "").startswith("image/")
@@ -2126,9 +2130,18 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
             row_count,
         )
         truncated = bool(preview.get("truncated", False))
-        if row_count > 0:
+        sample_records = list(preview.get("sample_records") or [])
+        should_deep_ingest = (
+            len(content) <= UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES
+            and row_count <= UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS
+        )
+        if row_count > 0 and should_deep_ingest:
             try:
-                full_dataset = load_tabular_dataset(content, filename_lower)
+                full_dataset = load_tabular_dataset(
+                    content,
+                    filename_lower,
+                    max_rows=UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
+                )
                 full_records = list(full_dataset.get("records") or [])
                 if full_records and col_names:
                     full_lines = [detected_delimiter.join(col_names)]
@@ -2139,10 +2152,22 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
                     full_text = "\n".join(full_lines)
                 else:
                     full_text = data_text
+                tabular_ingest_mode = "deep"
             except Exception:
                 full_text = data_text
+                tabular_ingest_mode = "preview_only"
         else:
             full_text = data_text
+            tabular_ingest_mode = "preview_only"
+            if row_count > len(sample_records):
+                truncated = True
+        if tabular_ingest_mode == "preview_only":
+            logger.info(
+                "[Upload] tabular preview-only ingest filename=%s size_bytes=%s rows=%s",
+                filename,
+                len(content),
+                row_count,
+            )
     elif filename_lower.endswith(".pdf"):
         used_doc_intel = False
         if DOC_INTEL_ENABLED:
@@ -2257,7 +2282,7 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
 
     if not is_tabular_filename(filename_lower):
         full_text = data_text
-    if not image_base64 and len(full_text) > 50000:
+    if not image_base64 and len(full_text) > 50000 and tabular_ingest_mode != "preview_only":
         semantic_chunks = await _build_semantic_chunks(full_text)
 
     if len(data_text) > 100000:
@@ -2281,6 +2306,7 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
         store_entry["document_intelligence"] = doc_intel_meta
     if is_tabular_filename(filename_lower):
         store_entry["col_analysis"] = col_analysis
+        store_entry["tabular_ingest_mode"] = tabular_ingest_mode or "preview_only"
         if polymorphic_schema:
             store_entry["polymorphic_schema"] = polymorphic_schema
 
@@ -2298,6 +2324,8 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
         response_payload["polymorphic"] = True
         response_payload["pivot_column"] = str(polymorphic_schema.get("pivot_column", "") or "")
         response_payload["pivot_values_count"] = int(polymorphic_schema.get("pivot_values_count", 0) or 0)
+    if is_tabular_filename(filename_lower):
+        response_payload["tabular_ingest_mode"] = tabular_ingest_mode or "preview_only"
     return store_entry, response_payload
 
 

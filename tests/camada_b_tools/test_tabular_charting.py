@@ -125,6 +125,8 @@ class TestUploadLimitsAndExtraction:
         captured = {}
         preview_rows = [f"row-{idx}" for idx in range(200)]
         full_records = [{"Body": f"line-{idx}-" + ("x" * 260)} for idx in range(300)]
+        monkeypatch.setattr(app, "UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES", 1024 * 1024)
+        monkeypatch.setattr(app, "UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS", 1000)
 
         monkeypatch.setattr(
             app,
@@ -141,7 +143,7 @@ class TestUploadLimitsAndExtraction:
         monkeypatch.setattr(
             app,
             "load_tabular_dataset",
-            lambda _content, _filename: {
+            lambda _content, _filename, **_kwargs: {
                 "columns": ["Body"],
                 "records": full_records,
                 "row_count": 300,
@@ -158,6 +160,44 @@ class TestUploadLimitsAndExtraction:
 
         assert len(captured["text"].splitlines()) == 301
         assert store_entry["data_text"].count("\n") < len(captured["text"].splitlines())
+
+    @pytest.mark.asyncio
+    async def test_extract_upload_entry_uses_preview_only_mode_for_large_tabular_files(self, monkeypatch):
+        fake_xlsx = b"PK\x03\x04" + (b"x" * app.UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES)
+        monkeypatch.setattr(
+            app,
+            "load_tabular_preview",
+            lambda _content, _filename: {
+                "columns": ["Body"],
+                "row_count": 25000,
+                "data_text": "Body\nlinha 1\nlinha 2\n",
+                "delimiter": "\t",
+                "col_analysis": [],
+                "sample_records": [{"Body": "linha 1"}, {"Body": "linha 2"}],
+                "column_types": {"Body": "text"},
+                "truncated": False,
+            },
+        )
+
+        def _should_not_load_dataset(*_args, **_kwargs):
+            raise AssertionError("large tabular files should not trigger deep dataset loading")
+
+        async def _should_not_build_chunks(*_args, **_kwargs):
+            raise AssertionError("preview-only ingest should not build semantic chunks")
+
+        monkeypatch.setattr(app, "load_tabular_dataset", _should_not_load_dataset)
+        monkeypatch.setattr(app, "_build_semantic_chunks", _should_not_build_chunks)
+
+        store_entry, result_payload = await app._extract_upload_entry(
+            "large.xlsx",
+            fake_xlsx,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        assert store_entry["tabular_ingest_mode"] == "preview_only"
+        assert result_payload["tabular_ingest_mode"] == "preview_only"
+        assert store_entry["truncated"] is True
+        assert "chunks" not in store_entry
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("route_name", ["upload_file", "upload_file_async"])
