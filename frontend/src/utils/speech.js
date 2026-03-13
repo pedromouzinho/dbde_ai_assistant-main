@@ -40,15 +40,41 @@ function getPhraseList(mode = "general") {
 function mapAzureSpeechCancel(errorCode = "") {
   const code = String(errorCode || "").toLowerCase();
   if (code.includes("notallowed") || code.includes("permission")) {
-    return "A permissão do microfone foi negada neste browser.";
+    return "A permissão do microfone foi negada. Verifica as permissões do browser e também as permissões de microfone do sistema operativo.";
   }
   if (code.includes("nomatch") || code.includes("no_match")) {
     return "Não apanhei fala suficiente. Tenta novamente.";
+  }
+  if (code.includes("notreadable") || code.includes("device")) {
+    return "O microfone não ficou disponível. Fecha outras apps a usar o microfone e tenta novamente.";
   }
   if (code.includes("connection")) {
     return "A ligação ao Azure Speech falhou. Tenta novamente.";
   }
   return "A captação de voz falhou. Tenta novamente.";
+}
+
+async function requestMicrophonePreflight() {
+  if (!navigator?.mediaDevices?.getUserMedia) {
+    throw new Error("O browser atual não suporta acesso ao microfone.");
+  }
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (error) {
+    const rawMessage = String(error?.message || error?.name || "microphone_error");
+    throw new Error(mapAzureSpeechCancel(rawMessage));
+  } finally {
+    if (stream) {
+      for (const track of stream.getTracks?.() || []) {
+        try {
+          track.stop();
+        } catch (_) {
+          // ignore
+        }
+      }
+    }
+  }
 }
 
 export function createSpeechRecognition({ language = "pt-PT", onResult, onError, onEnd } = {}) {
@@ -115,6 +141,8 @@ export async function createAzureSpeechRecognition({
   if (!isAzureSpeechBrowserSupported()) {
     throw new Error("O browser atual não suporta captação de microfone para Azure Speech.");
   }
+
+  await requestMicrophonePreflight();
 
   const [{ default: speechsdk }, tokenPayload] = await Promise.all([
     import("microsoft-cognitiveservices-speech-sdk"),
@@ -195,7 +223,16 @@ export async function createAzureSpeechRecognition({
       }),
     stop: () =>
       new Promise((resolve, reject) => {
-        recognizer.stopContinuousRecognitionAsync(resolve, (error) => reject(new Error(String(error || "Falha ao parar Azure Speech."))));
+        recognizer.stopContinuousRecognitionAsync(
+          () => {
+            finish();
+            resolve();
+          },
+          (error) => {
+            finish();
+            reject(new Error(String(error || "Falha ao parar Azure Speech.")));
+          },
+        );
       }),
     abort: () => {
       finish();

@@ -269,6 +269,50 @@ export default function useSpeechPrompt({
     });
   }
 
+  function createBrowserFallbackSession(withNotice = false) {
+    if (withNotice) {
+      setSpeechNotice('Azure Speech indisponível neste browser. A usar reconhecimento de voz do browser.');
+    }
+    return createSpeechRecognition({
+      language: 'pt-PT',
+      onResult: ({ finalTranscript, combinedTranscript }) => {
+        const transcript = String(finalTranscript || combinedTranscript || '').trim();
+        speechTranscriptRef.current = transcript;
+        setSpeechInterimText(String(combinedTranscript || transcript || '').trim());
+      },
+      onError: (errorCode) => {
+        const code = String(errorCode || '').trim();
+        const friendlyMessage =
+          code === 'not-allowed' || code === 'service-not-allowed'
+            ? 'A permissão do microfone foi negada neste browser.'
+            : code === 'no-speech'
+              ? 'Não apanhei fala suficiente. Tenta novamente.'
+              : 'O reconhecimento de voz falhou. Tenta novamente.';
+        speechRecognitionRef.current = null;
+        setSpeechListening(false);
+        setSpeechProcessing(false);
+        setSpeechInterimText('');
+        if (!speechTranscriptRef.current.trim()) {
+          setSpeechNotice(friendlyMessage);
+        }
+      },
+      onEnd: () => {
+        const transcript = speechTranscriptRef.current;
+        speechRecognitionRef.current = null;
+        setSpeechListening(false);
+        const wasStopping = speechStoppingRef.current;
+        speechStoppingRef.current = false;
+        if (transcript.trim()) {
+          finalizeSpeechPrompt(transcript);
+          return;
+        }
+        if (wasStopping) {
+          setSpeechNotice('Captação de voz terminada sem texto suficiente.');
+        }
+      },
+    });
+  }
+
   async function toggleSpeech() {
     if (!speechSupported) {
       setSpeechNotice('O browser atual não suporta captação de voz.');
@@ -298,9 +342,23 @@ export default function useSpeechPrompt({
     setSpeechProcessing(false);
 
     try {
-      const recognition = await createRecognitionSession();
+      let recognition = await createRecognitionSession();
       speechRecognitionRef.current = recognition;
-      await recognition.start();
+      try {
+        await recognition.start();
+      } catch (startError) {
+        const message = String(startError?.message || '');
+        const canFallbackToBrowser =
+          speechProvider === 'azure_speech' &&
+          isSpeechRecognitionSupported() &&
+          !message.toLowerCase().includes('permissão do microfone foi negada');
+        if (!canFallbackToBrowser) {
+          throw startError;
+        }
+        recognition = createBrowserFallbackSession(true);
+        speechRecognitionRef.current = recognition;
+        await recognition.start();
+      }
       setSpeechListening(true);
       setSpeechNotice('');
     } catch (error) {
