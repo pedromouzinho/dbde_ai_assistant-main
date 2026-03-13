@@ -147,7 +147,7 @@ function App() {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-    const { speechSupported, speechListening, speechProcessing, speechInterimText, speechNotice, speechSubmitMode, speechProvider, clearSpeechNotice, resetSpeechPrompt, toggleSpeech, toggleSpeechSubmitMode } = useSpeechPrompt({
+    const { speechSupported, speechListening, speechStopping, speechProcessing, speechInterimText, speechNotice, speechSubmitMode, speechProvider, clearSpeechNotice, resetSpeechPrompt, toggleSpeech, toggleSpeechSubmitMode } = useSpeechPrompt({
         authFetchFn: authFetch,
         apiUrl: API_URL,
         agentMode,
@@ -1941,6 +1941,7 @@ function App() {
                     maxBatchTotalBytes={maxBatchTotalBytes}
                     speechSupported={speechSupported}
                     speechListening={speechListening}
+                    speechStopping={speechStopping}
                     speechProcessing={speechProcessing}
                     speechInterimText={speechInterimText}
                     speechNotice={speechNotice}

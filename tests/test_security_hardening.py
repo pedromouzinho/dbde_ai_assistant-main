@@ -1,6 +1,7 @@
 import base64
 from pathlib import Path
 
+import app
 from code_interpreter import (
     _build_subprocess_env,
     _is_safe_symlink_source,
@@ -117,3 +118,28 @@ class TestCodeInterpreterHardening:
         assert env["PATH"] == "/usr/local/bin:/usr/bin:/bin"
         assert "/tmp/evil" not in env["PATH"]
         assert "/usr/sbin" not in env["PATH"]
+
+
+class TestSecurityHeaders:
+    def test_permissions_policy_allows_microphone_for_self(self):
+        assert app._build_permissions_policy() == "camera=(), microphone=(self), geolocation=()"
+
+    def test_csp_includes_speech_endpoints_when_enabled(self, monkeypatch):
+        monkeypatch.setattr(app, "AZURE_SPEECH_ENABLED", True)
+        monkeypatch.setattr(app, "AZURE_SPEECH_REGION", "swedencentral")
+
+        csp = app._build_content_security_policy()
+
+        assert "connect-src 'self'" in csp
+        assert "https://swedencentral.stt.speech.microsoft.com" in csp
+        assert "wss://swedencentral.stt.speech.microsoft.com" in csp
+        assert "https://*.speech.microsoft.com" in csp
+        assert "wss://*.speech.microsoft.com" in csp
+
+    def test_csp_stays_local_when_speech_disabled(self, monkeypatch):
+        monkeypatch.setattr(app, "AZURE_SPEECH_ENABLED", False)
+        monkeypatch.setattr(app, "AZURE_SPEECH_REGION", "")
+
+        csp = app._build_content_security_policy()
+
+        assert csp.endswith("connect-src 'self';")

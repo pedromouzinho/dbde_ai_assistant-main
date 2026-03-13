@@ -591,18 +591,10 @@ async def enforce_allowed_origins(request: Request, call_next):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault("Permissions-Policy", _build_permissions_policy())
         path = request.url.path or ""
         if not (path.startswith("/docs") or path.startswith("/redoc")):
-            response.headers.setdefault(
-                "Content-Security-Policy",
-                "default-src 'self'; "
-                "script-src 'self' https://cdnjs.cloudflare.com https://cdn.plot.ly; "
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-                "font-src 'self' https://fonts.gstatic.com; "
-                "img-src 'self' data: https:; "
-                "connect-src 'self';",
-            )
+            response.headers.setdefault("Content-Security-Policy", _build_content_security_policy())
         if _request_is_https(request):
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         return response
@@ -642,6 +634,33 @@ def _is_process_alive(pid: Optional[int]) -> bool:
         return True
     except Exception:
         return False
+
+
+def _build_permissions_policy() -> str:
+    # O microfone é necessário para a funcionalidade de voz do chat.
+    return "camera=(), microphone=(self), geolocation=()"
+
+
+def _build_content_security_policy() -> str:
+    connect_src = ["'self'"]
+    if AZURE_SPEECH_ENABLED and AZURE_SPEECH_REGION:
+        region = AZURE_SPEECH_REGION.strip().lower()
+        connect_src.extend(
+            [
+                f"https://{region}.stt.speech.microsoft.com",
+                f"wss://{region}.stt.speech.microsoft.com",
+                "https://*.speech.microsoft.com",
+                "wss://*.speech.microsoft.com",
+            ]
+        )
+    return (
+        "default-src 'self'; "
+        "script-src 'self' https://cdnjs.cloudflare.com https://cdn.plot.ly; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https:; "
+        f"connect-src {' '.join(connect_src)};"
+    )
 
 
 def _chat_partition_key_for_user(user: Optional[dict]) -> str:

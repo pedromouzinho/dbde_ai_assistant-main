@@ -27,6 +27,7 @@ export default function useSpeechPrompt({
 }) {
   const [speechSupported, setSpeechSupported] = useState(false);
   const [speechListening, setSpeechListening] = useState(false);
+  const [speechStopping, setSpeechStopping] = useState(false);
   const [speechProcessing, setSpeechProcessing] = useState(false);
   const [speechInterimText, setSpeechInterimText] = useState('');
   const [speechNotice, setSpeechNotice] = useState('');
@@ -90,6 +91,7 @@ export default function useSpeechPrompt({
     }
     speechTranscriptRef.current = '';
     speechStoppingRef.current = false;
+    setSpeechStopping(false);
     setSpeechListening(false);
     setSpeechProcessing(false);
     setSpeechInterimText('');
@@ -198,6 +200,7 @@ export default function useSpeechPrompt({
           },
           onError: (message) => {
             speechRecognitionRef.current = null;
+            setSpeechStopping(false);
             setSpeechListening(false);
             setSpeechProcessing(false);
             setSpeechInterimText('');
@@ -208,6 +211,7 @@ export default function useSpeechPrompt({
           onEnd: () => {
             const transcript = speechTranscriptRef.current;
             speechRecognitionRef.current = null;
+            setSpeechStopping(false);
             setSpeechListening(false);
             const wasStopping = speechStoppingRef.current;
             speechStoppingRef.current = false;
@@ -245,6 +249,7 @@ export default function useSpeechPrompt({
               ? 'Não apanhei fala suficiente. Tenta novamente.'
               : 'O reconhecimento de voz falhou. Tenta novamente.';
         speechRecognitionRef.current = null;
+        setSpeechStopping(false);
         setSpeechListening(false);
         setSpeechProcessing(false);
         setSpeechInterimText('');
@@ -255,6 +260,7 @@ export default function useSpeechPrompt({
       onEnd: () => {
         const transcript = speechTranscriptRef.current;
         speechRecognitionRef.current = null;
+        setSpeechStopping(false);
         setSpeechListening(false);
         const wasStopping = speechStoppingRef.current;
         speechStoppingRef.current = false;
@@ -320,23 +326,29 @@ export default function useSpeechPrompt({
     }
 
     if (speechListening && speechRecognitionRef.current) {
+      const activeRecognition = speechRecognitionRef.current;
       speechStoppingRef.current = true;
+      setSpeechStopping(true);
+      setSpeechListening(false);
+      setSpeechNotice('A terminar a captação de voz...');
       try {
-        await speechRecognitionRef.current.stop?.();
+        await Promise.race([
+          Promise.resolve(activeRecognition.stop?.()),
+          new Promise((_, reject) => window.setTimeout(() => reject(new Error('speech_stop_timeout')), 1500)),
+        ]);
       } catch (_) {
         try {
-          await speechRecognitionRef.current.abort?.();
+          await activeRecognition.abort?.();
         } catch (_) {
           // ignore stop/abort race
         }
       }
-      setSpeechListening(false);
-      setSpeechNotice('A terminar a captação de voz...');
       return;
     }
 
     speechTranscriptRef.current = '';
     speechStoppingRef.current = false;
+    setSpeechStopping(false);
     setSpeechNotice('');
     setSpeechInterimText('');
     setSpeechProcessing(false);
@@ -360,9 +372,11 @@ export default function useSpeechPrompt({
         await recognition.start();
       }
       setSpeechListening(true);
+      setSpeechStopping(false);
       setSpeechNotice('');
     } catch (error) {
       speechRecognitionRef.current = null;
+      setSpeechStopping(false);
       setSpeechListening(false);
       setSpeechProcessing(false);
       setSpeechInterimText('');
@@ -373,6 +387,7 @@ export default function useSpeechPrompt({
   return {
     speechSupported,
     speechListening,
+    speechStopping,
     speechProcessing,
     speechInterimText,
     speechNotice,

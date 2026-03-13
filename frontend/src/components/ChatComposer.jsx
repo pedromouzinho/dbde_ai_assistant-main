@@ -29,6 +29,7 @@ export default function ChatComposer({
   maxBatchTotalBytes,
   speechSupported,
   speechListening,
+  speechStopping,
   speechProcessing,
   speechInterimText,
   speechNotice,
@@ -113,13 +114,15 @@ export default function ChatComposer({
           </div>
         ) : null}
 
-        {speechListening || speechProcessing || speechNotice ? (
-          <div className={`app-banner ${speechListening ? 'accent' : speechNotice ? 'warning' : 'accent'}`}>
-            {speechListening ? <MicrophoneIcon size={18} /> : <WarningIcon size={16} />}
+        {speechListening || speechStopping || speechProcessing || speechNotice ? (
+          <div className={`app-banner ${speechListening || speechStopping ? 'accent' : speechNotice ? 'warning' : 'accent'}`}>
+            {speechListening || speechStopping ? <MicrophoneIcon size={18} /> : <WarningIcon size={16} />}
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: speechInterimText ? 4 : 0 }}>
                 {speechListening
                   ? 'A ouvir... fala de forma natural'
+                  : speechStopping
+                    ? 'A terminar a captação de voz...'
                   : speechProcessing
                     ? 'A interpretar o pedido por voz...'
                     : speechNotice}
@@ -185,19 +188,19 @@ export default function ChatComposer({
                 type="button"
                 className={`composer-action-btn composer-mode-btn${speechSubmitMode === 'auto' ? ' active' : ''}`}
                 onClick={onToggleSpeechSubmitMode}
-                disabled={loading || uploadingFiles || speechListening || speechProcessing}
+                disabled={loading || uploadingFiles || speechListening || speechStopping || speechProcessing}
                 title={speechSubmitMode === 'auto' ? 'Modo atual: Auto-enviar. Clica para passar a Só texto.' : 'Modo atual: Só texto. Clica para passar a Auto-enviar.'}
               >
                 {speechSubmitMode === 'auto' ? 'Auto' : 'Texto'}
               </button>
               <button
                 type="button"
-                className={`composer-action-btn${speechListening ? ' composer-mic-btn active' : ' composer-mic-btn'}`}
+                className={`composer-action-btn${speechListening || speechStopping ? ' composer-mic-btn active' : ' composer-mic-btn'}`}
                 onClick={onToggleSpeech}
                 disabled={loading || uploadingFiles || speechProcessing}
-                title={speechListening ? 'Parar gravação' : `Falar para o assistente (${speechSubmitMode === 'auto' ? 'Auto-enviar' : 'Só texto'})`}
+                title={speechListening || speechStopping ? 'Parar gravação' : `Falar para o assistente (${speechSubmitMode === 'auto' ? 'Auto-enviar' : 'Só texto'})`}
               >
-                {speechListening ? <StopIcon size={16} /> : <MicrophoneIcon size={18} />}
+                {speechListening || speechStopping ? <StopIcon size={16} /> : <MicrophoneIcon size={18} />}
               </button>
             </>
           ) : null}
@@ -221,7 +224,7 @@ export default function ChatComposer({
             type="button"
             className="composer-action-btn composer-send-btn"
             onClick={onSend}
-            disabled={!input.trim() || loading || uploadingFiles || speechListening || speechProcessing}
+            disabled={!input.trim() || loading || uploadingFiles || speechListening || speechStopping || speechProcessing}
           >
             <SendIcon size={17} />
           </button>
@@ -230,6 +233,8 @@ export default function ChatComposer({
         <div style={{ maxWidth: 960, margin: '8px auto 0', textAlign: 'center', fontSize: 10, color: 'var(--text-soft)', fontWeight: 500, letterSpacing: '0.02em' }}>
           {speechListening
             ? `Estamos a captar a tua fala. Modo atual: ${speechSubmitMode === 'auto' ? 'Auto-enviar' : 'Só texto'}.`
+            : speechStopping
+              ? 'A terminar a captação de voz...'
             : speechProcessing
               ? 'A transformar a fala num prompt claro para o assistente...'
             : uploadingFiles
