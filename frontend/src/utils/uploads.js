@@ -32,6 +32,9 @@ export async function uploadSingleFileSync(authFetchFn, apiUrl, file, conversati
     throw new Error(err.detail || "Erro upload");
   }
   const data = await res.json();
+  if (data && data.status === "completed" && data.result) {
+    return data.result;
+  }
   if (data && data.status === "queued" && data.job_id) {
     return await waitUploadJob(authFetchFn, apiUrl, data.job_id);
   }

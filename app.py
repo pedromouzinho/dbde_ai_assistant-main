@@ -3008,9 +3008,31 @@ async def upload_file(request: Request, file: UploadFile = File(...), conversati
         )
     try:
         job = await _queue_upload_job(conv_id, user_sub, filename, content, file.content_type or "")
+        job_id = str(job.get("job_id", ""))
+        # --- Inline processing for sync route: process immediately instead of
+        # waiting for the background worker loop. This ensures small files
+        # get an instant response without depending on the async worker. ---
+        try:
+            await _run_upload_job(job_id)
+            processed_job = await upload_jobs_store.get_or_fetch(job_id)
+            if not processed_job:
+                processed_job = await _load_upload_job_from_storage(job_id)
+            if processed_job and str(processed_job.get("status", "")).lower() == "completed":
+                return {
+                    "status": "completed",
+                    "job_id": job_id,
+                    "conversation_id": conv_id,
+                    "filename": filename,
+                    "size_bytes": len(content),
+                    "result": processed_job.get("result"),
+                }
+        except Exception as inline_err:
+            logger.warning("[App] sync upload inline processing failed for %s, falling back to queued: %s", job_id, inline_err)
+        # Fallback: return queued status (frontend will poll via waitUploadJob)
+        create_logged_task(_nudge_upload_worker(), name=f"upload-nudge-{job_id[:8]}")
         return {
             "status": "queued",
-            "job_id": job.get("job_id"),
+            "job_id": job_id,
             "conversation_id": conv_id,
             "filename": filename,
             "size_bytes": len(content),
