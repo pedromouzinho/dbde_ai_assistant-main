@@ -12,6 +12,7 @@ from tabular_artifacts import (
     compare_tabular_artifact_periods,
     compute_tabular_artifact_numeric_metrics,
     export_tabular_artifact_as_csv_bytes,
+    load_tabular_artifact_time_series,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
     summarize_tabular_artifact_values,
@@ -157,6 +158,35 @@ def test_compare_tabular_artifact_periods_compares_full_periods():
         "period1": {"count": 2, "numeric_count": 2, "metrics": {"sum": 30.0, "mean": 15.0}},
         "period2": {"count": 2, "numeric_count": 2, "metrics": {"sum": 70.0, "mean": 35.0}},
     }
+
+
+def test_load_tabular_artifact_time_series_supports_sampling_and_full_points():
+    artifact = build_tabular_artifact(_large_csv_bytes(row_count=6000), "sample.csv")
+
+    sampled = load_tabular_artifact_time_series(
+        artifact["artifact_bytes"],
+        date_column="Date",
+        value_column="Revenue",
+        max_points=200,
+        full_points=False,
+    )
+    full = load_tabular_artifact_time_series(
+        artifact["artifact_bytes"],
+        date_column="Date",
+        value_column="Revenue",
+        max_points=200,
+        full_points=True,
+    )
+
+    assert sampled["total_points"] == 6000
+    assert sampled["sampled"] is True
+    assert len(sampled["points"]) <= 200
+    assert full["total_points"] == 6000
+    assert full["sampled"] is False
+    assert len(full["points"]) == 6000
+    values = [point[1] for point in full["points"]]
+    assert min(values) == 1.0
+    assert max(values) == 6000.0
 
 
 @pytest.mark.asyncio
@@ -373,3 +403,34 @@ async def test_analyze_uploaded_table_uses_artifact_for_period_comparison(monkey
     assert result["delta"] == {"sum": 40.0}
     assert result["analysis_quality"]["rows_processed"] == 6
     assert result["analysis_quality"]["coverage"] == 0.6667
+
+
+@pytest.mark.asyncio
+async def test_analyze_uploaded_table_uses_artifact_for_time_series_sampling(monkeypatch):
+    artifact = build_tabular_artifact(_large_csv_bytes(row_count=6000), "sample.csv")
+
+    async def _fake_resolve_uploaded_tabular_source(_conv_id, _user_sub="", _filename=""):
+        return {
+            "filename": "sample.csv",
+            "source_kind": "artifact",
+            "artifact_bytes": artifact["artifact_bytes"],
+            "artifact_format": "parquet",
+        }
+
+    monkeypatch.setattr(tools, "_resolve_uploaded_tabular_source", _fake_resolve_uploaded_tabular_source)
+
+    result = await tools.tool_analyze_uploaded_table(
+        query="faz um gráfico de linha da revenue ao longo do tempo",
+        conv_id="conv-1",
+        user_sub="pedro",
+        filename="sample.csv",
+        value_column="Revenue",
+        date_column="Date",
+        top=200,
+    )
+
+    assert len(result["groups"]) <= 200
+    assert result["analysis_quality"]["rows_processed"] == 6000
+    assert result["analysis_quality"]["coverage"] == 1.0
+    assert result["analysis_quality"]["sampled"] is True
+    assert any("Série temporal amostrada" in warning for warning in result["analysis_quality"]["warnings"])

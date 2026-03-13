@@ -511,6 +511,79 @@ def compare_tabular_artifact_periods(
     return {"period1": result1, "period2": result2}
 
 
+def load_tabular_artifact_time_series(
+    artifact_bytes: bytes,
+    *,
+    date_column: str,
+    value_column: str,
+    max_points: int = 2000,
+    full_points: bool = False,
+) -> dict:
+    import duckdb
+
+    safe_date_column = str(date_column or "").strip()
+    safe_value_column = str(value_column or "").strip()
+    if not artifact_bytes or not safe_date_column or not safe_value_column:
+        raise TabularLoaderError("Parâmetros inválidos para série temporal do artefacto tabular.")
+
+    safe_max_points = max(1, min(int(max_points or 0), 100_000))
+    dt_expr = f"TRY_CAST({_duckdb_ident(safe_date_column)} AS TIMESTAMP)"
+    num_expr = f"TRY_CAST({_duckdb_ident(safe_value_column)} AS DOUBLE)"
+    base_sql = (
+        f"SELECT {dt_expr} AS dt, {num_expr} AS num "
+        "FROM read_parquet(?) "
+        f"WHERE {dt_expr} IS NOT NULL AND {num_expr} IS NOT NULL"
+    )
+    order_by = "dt, num"
+
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            total_points = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM ({base_sql}) t",
+                    [temp_path],
+                ).fetchone()[0]
+                or 0
+            )
+            if total_points <= 0:
+                return {"points": [], "total_points": 0, "sampled": False}
+
+            if full_points or total_points <= safe_max_points:
+                rows = conn.execute(
+                    f"SELECT dt, num FROM ({base_sql}) t ORDER BY {order_by}",
+                    [temp_path],
+                ).fetchall()
+                sampled = False
+            else:
+                step = max(1, -(-total_points // safe_max_points))
+                rows = conn.execute(
+                    (
+                        "SELECT dt, num FROM ("
+                        f"SELECT dt, num, ROW_NUMBER() OVER (ORDER BY {order_by}) AS rn "
+                        f"FROM ({base_sql}) t"
+                        ") ranked "
+                        "WHERE ((rn - 1) % ?) = 0 "
+                        f"ORDER BY {order_by} LIMIT ?"
+                    ),
+                    [temp_path, step, safe_max_points],
+                ).fetchall()
+                sampled = True
+        finally:
+            conn.close()
+
+    points = []
+    for dt_value, num_value in rows:
+        if dt_value is None or num_value is None:
+            continue
+        points.append((dt_value, float(num_value)))
+    return {
+        "points": points,
+        "total_points": total_points,
+        "sampled": sampled,
+    }
+
+
 def _insert_batch(conn, columns: list[str], batch: list[list[str]]) -> None:
     placeholders = ", ".join(["?"] * len(columns))
     conn.executemany(f"INSERT INTO uploaded VALUES ({placeholders})", batch)

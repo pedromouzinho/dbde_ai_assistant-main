@@ -62,6 +62,7 @@ from tabular_artifacts import (
     compute_tabular_artifact_numeric_metrics,
     export_tabular_artifact_as_csv_bytes,
     iter_tabular_artifact_batches,
+    load_tabular_artifact_time_series,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
     summarize_tabular_artifact_values,
@@ -1143,31 +1144,51 @@ async def tool_analyze_uploaded_table(
         series_intent = bool(re.search(r"\b(grafico|gráfico|chart|linha|line|evolucao|evolução|time series|serie temporal)\b", q_norm))
         if matched_date_col and matched_value_col and series_intent:
             # Modo "none" com pedido de gráfico temporal.
-            series = []
-            row_batches = _artifact_batches([matched_date_col, matched_value_col]) if source_kind == "artifact" else [records]
-            rows_processed = 0
-            for batch in row_batches:
-                rows_processed += len(batch)
-                for row in batch:
-                    dt = _parse_datetime_value(row.get(matched_date_col, ""))
-                    num = _parse_numeric_value(row.get(matched_value_col, ""))
-                    if dt is None or num is None:
-                        continue
-                    series.append((dt, num))
-            series.sort(key=lambda x: x[0])
+            if source_kind == "artifact":
+                series_result = load_tabular_artifact_time_series(
+                    source.get("artifact_bytes") or b"",
+                    date_column=matched_date_col,
+                    value_column=matched_value_col,
+                    max_points=chart_top,
+                    full_points=full_points,
+                )
+                series = list(series_result.get("points") or [])
+                rows_processed = rows_total
+                valid_data_points = int(series_result.get("total_points", 0) or 0)
+                sampled = bool(series_result.get("sampled", False))
+            else:
+                series = []
+                row_batches = [records]
+                rows_processed = 0
+                for batch in row_batches:
+                    rows_processed += len(batch)
+                    for row in batch:
+                        dt = _parse_datetime_value(row.get(matched_date_col, ""))
+                        num = _parse_numeric_value(row.get(matched_value_col, ""))
+                        if dt is None or num is None:
+                            continue
+                        series.append((dt, num))
+                series.sort(key=lambda x: x[0])
+                valid_data_points = len(series)
+                sampled = False
             if not series:
                 return {"error": "Sem dados numéricos/datas válidos para gerar série temporal.", "filename": selected_filename}
             if full_points:
                 sampled = series
             else:
-                if len(series) > chart_top:
+                if sampled:
+                    sampled = series
+                    was_sampled = True
+                    warnings_list.append(f"Série temporal amostrada para {len(sampled)} de {valid_data_points} pontos.")
+                elif len(series) > chart_top:
                     step = max(1, len(series) // chart_top)
                     sampled = [series[i] for i in range(0, len(series), step)][:chart_top]
                     was_sampled = True
                     warnings_list.append(f"Série temporal amostrada para {len(sampled)} de {len(series)} pontos.")
                 else:
                     sampled = series
-            valid_data_points = len(series)
+            if not valid_data_points:
+                valid_data_points = len(series)
             groups = [
                 {"group": dt.isoformat(), "value": round(val, 6), "count": 1}
                 for dt, val in sampled
