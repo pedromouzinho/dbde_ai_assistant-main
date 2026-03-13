@@ -101,6 +101,7 @@ from config import (
     UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
     UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_TABULAR_RAW_RETENTION_HOURS,
     UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS,
+    UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE,
     UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
     CHAT_TOOLRESULT_BLOB_CONTAINER,
@@ -1273,11 +1274,13 @@ async def startup_event():
     logger.info("[Startup] Token quota manager initialised: %s", list(TOKEN_QUOTA_CONFIG.keys()))
 
     await _purge_expired_upload_artifacts(limit=80)
+    await _backfill_tabular_artifact_chunks(limit=UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE)
     _upload_retention_task = create_logged_task(_upload_retention_loop(), name="upload-retention-worker")
     logger.info(
-        "Upload retention worker enabled (interval=%ss, retention=%sh)",
+        "Upload retention worker enabled (interval=%ss, retention=%sh, backfill batch=%s)",
         UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
         UPLOAD_ARTIFACT_RETENTION_HOURS,
+        UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE,
     )
 
     if INLINE_WORKER_ENABLED_EFFECTIVE:
@@ -4317,11 +4320,134 @@ async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
     }
 
 
+async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE) -> dict:
+    safe_limit = max(1, min(int(limit or 1), 25))
+    queried = 0
+    completed = 0
+    skipped = 0
+
+    try:
+        rows = await table_query("UploadIndex", top=min(max(safe_limit * 10, 50), 250))
+    except Exception as e:
+        logger.warning("[App] tabular chunk backfill query failed: %s", e)
+        return {"queried": 0, "completed": 0, "skipped": 0}
+
+    candidates = []
+    for row in rows:
+        filename = str(row.get("Filename", "") or "").strip()
+        artifact_blob_ref = str(row.get("TabularArtifactBlobRef", "") or "").strip()
+        has_chunks = bool(row.get("HasChunks", False))
+        chunks_blob_ref = str(row.get("ChunksBlobRef", "") or "").strip()
+        if not filename or not is_tabular_filename(filename):
+            continue
+        if not artifact_blob_ref or has_chunks or chunks_blob_ref:
+            continue
+        candidates.append(row)
+        if len(candidates) >= safe_limit:
+            break
+
+    for row in candidates:
+        queried += 1
+        conv_id = str(row.get("PartitionKey", "") or "").strip()
+        job_id = str(row.get("RowKey", "") or "").strip()
+        filename = str(row.get("Filename", "") or "").strip()
+        artifact_blob_ref = str(row.get("TabularArtifactBlobRef", "") or "").strip()
+        if not conv_id or not job_id or not filename or not artifact_blob_ref:
+            skipped += 1
+            continue
+
+        container, blob_name = parse_blob_ref(artifact_blob_ref)
+        if not container or not blob_name:
+            skipped += 1
+            continue
+
+        try:
+            artifact_bytes = await blob_download_bytes(container, blob_name)
+            columns = []
+            try:
+                parsed_cols = json.loads(row.get("ColNamesJson", "[]") or "[]")
+                if isinstance(parsed_cols, list):
+                    columns = [str(col or "").strip() for col in parsed_cols if str(col or "").strip()]
+            except Exception:
+                columns = []
+            chunks = await _build_tabular_semantic_chunks_from_artifact(
+                artifact_bytes,
+                columns=columns or None,
+            )
+            if not chunks:
+                skipped += 1
+                continue
+
+            chunks_blob_ref = str(row.get("ChunksBlobRef", "") or "").strip()
+            if chunks_blob_ref:
+                chunks_container, chunks_blob_name = parse_blob_ref(chunks_blob_ref)
+            else:
+                fallback_paths = _build_upload_blob_paths(conv_id, job_id, filename)
+                chunks_container = UPLOAD_BLOB_CONTAINER_CHUNKS
+                chunks_blob_name = fallback_paths["chunks_blob_name"]
+            if not chunks_container or not chunks_blob_name:
+                skipped += 1
+                continue
+
+            chunks_blob = await blob_upload_json(
+                chunks_container,
+                chunks_blob_name,
+                {"chunks": chunks},
+            )
+            new_chunks_blob_ref = str(chunks_blob.get("blob_ref", "") or "")
+            if not new_chunks_blob_ref:
+                skipped += 1
+                continue
+
+            raw_blob_retention_until = _raw_blob_retention_until_iso(
+                filename=filename,
+                artifact_blob_ref=artifact_blob_ref,
+                has_chunks=True,
+                fallback_hours=UPLOAD_ARTIFACT_RETENTION_HOURS,
+            )
+            await table_merge(
+                "UploadIndex",
+                {
+                    "PartitionKey": conv_id,
+                    "RowKey": job_id,
+                    "ChunksBlobRef": new_chunks_blob_ref,
+                    "HasChunks": True,
+                    "RawBlobRetentionUntil": raw_blob_retention_until[:64],
+                    "RawBlobPurgedAt": "",
+                },
+            )
+            await table_merge(
+                "UploadJobs",
+                {
+                    "PartitionKey": "upload",
+                    "RowKey": job_id,
+                    "ChunksBlobName": str(chunks_blob_name)[:500],
+                    "RawBlobRetentionUntil": raw_blob_retention_until[:64],
+                    "RawBlobPurgedAt": "",
+                    "UpdatedAt": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+            cached_job = await upload_jobs_store.get(job_id)
+            if cached_job:
+                cached_job = dict(cached_job)
+                cached_job["chunks_blob_name"] = chunks_blob_name
+                cached_job["raw_blob_retention_until"] = raw_blob_retention_until
+                cached_job["raw_blob_purged_at"] = ""
+                await upload_jobs_store.put(job_id, cached_job)
+            completed += 1
+        except Exception as e:
+            logger.warning("[App] tabular chunk backfill failed for %s/%s: %s", conv_id, job_id, e)
+            skipped += 1
+
+    return {"queried": queried, "completed": completed, "skipped": skipped}
+
+
 async def _upload_retention_loop() -> None:
     sleep_for = max(300, int(UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS or 1800))
     while True:
         try:
             await _purge_expired_upload_artifacts()
+            await _backfill_tabular_artifact_chunks()
         except asyncio.CancelledError:
             raise
         except Exception as e:

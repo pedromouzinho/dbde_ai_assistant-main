@@ -317,3 +317,70 @@ async def test_process_upload_job_shortens_raw_retention_once_tabular_chunks_exi
     assert delta.total_seconds() > 0.5 * 3600
     assert delta.total_seconds() < 1.5 * 3600
     assert uploaded["store_entry"]["has_chunks"] is True
+
+
+@pytest.mark.asyncio
+async def test_backfill_tabular_artifact_chunks_completes_historical_row(monkeypatch):
+    artifact = app.build_tabular_artifact(
+        b"Date,Value\n2026-01-01,10\n2026-01-02,20\n",
+        "historical.csv",
+    )
+    merged_rows = []
+    uploaded_chunks = {}
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_RAW_RETENTION_HOURS", 6)
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS", 1)
+
+    async def _fake_table_query(table_name, filter_str="", top=0):
+        _ = (filter_str, top)
+        if table_name == "UploadIndex":
+            return [
+                {
+                    "PartitionKey": "conv-1",
+                    "RowKey": "job-1",
+                    "Filename": "historical.csv",
+                    "TabularArtifactBlobRef": "upload-artifacts/conv-1/job-1/artifact/data.parquet",
+                    "ChunksBlobRef": "",
+                    "HasChunks": False,
+                    "ColNamesJson": '["Date","Value"]',
+                }
+            ]
+        return []
+
+    async def _fake_blob_download_bytes(_container, _blob_name):
+        return artifact["artifact_bytes"]
+
+    async def _fake_blob_upload_json(container, blob_name, payload):
+        uploaded_chunks["container"] = container
+        uploaded_chunks["blob_name"] = blob_name
+        uploaded_chunks["payload"] = payload
+        return {"blob_ref": f"{container}/{blob_name}"}
+
+    async def _fake_table_merge(table_name, entity):
+        merged_rows.append((table_name, dict(entity)))
+
+    async def _fake_get_embedding(_text):
+        return [1.0]
+
+    monkeypatch.setattr(app, "table_query", _fake_table_query)
+    monkeypatch.setattr(app, "blob_download_bytes", _fake_blob_download_bytes)
+    monkeypatch.setattr(app, "blob_upload_json", _fake_blob_upload_json)
+    monkeypatch.setattr(app, "table_merge", _fake_table_merge)
+    monkeypatch.setattr(app, "get_embedding", _fake_get_embedding)
+    monkeypatch.setattr(app.upload_jobs_store, "get", lambda *_args, **_kwargs: asyncio.sleep(0, result=None))
+
+    result = await app._backfill_tabular_artifact_chunks(limit=5)
+
+    assert result["completed"] == 1
+    assert uploaded_chunks["container"] == app.UPLOAD_BLOB_CONTAINER_CHUNKS
+    assert uploaded_chunks["payload"]["chunks"]
+    assert any(
+        table_name == "UploadIndex"
+        and entity.get("HasChunks") is True
+        and entity.get("ChunksBlobRef")
+        for table_name, entity in merged_rows
+    )
+    upload_jobs_merge = next(entity for table_name, entity in merged_rows if table_name == "UploadJobs")
+    retention_until = datetime.fromisoformat(upload_jobs_merge["RawBlobRetentionUntil"])
+    delta = retention_until - datetime.now(timezone.utc)
+    assert delta.total_seconds() > 0.5 * 3600
+    assert delta.total_seconds() < 1.5 * 3600

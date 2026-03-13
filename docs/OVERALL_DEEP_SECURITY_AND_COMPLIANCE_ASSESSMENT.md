@@ -56,6 +56,7 @@ Foi introduzido controlo explícito de retenção para:
 - purge seletiva mais cedo do `RawBlobRef` tabular quando já existe artefacto persistente de análise;
 - redução do `RawBlobRef` tabular para retenção curta por defeito (`6h`) quando o artefacto persistente já existe;
 - encurtamento adicional do `RawBlobRef` tabular para uma janela ainda mais curta (`1h`) quando o upload já ficou completo com artefacto persistente **e** chunks semânticos gerados a partir desse artefacto;
+- backfill automático e leve de uploads tabulares históricos que já tinham artefacto persistente, mas ainda não tinham `HasChunks`, evitando depender do `RawBlobRef` para preservar grounding e contexto;
 - purge de blobs e rows associadas, reduzindo acumulação e retenção desnecessária.
 
 Isto reduz:
