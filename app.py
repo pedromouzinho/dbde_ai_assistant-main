@@ -1654,6 +1654,7 @@ EXPORT_JOB_TTL_SECONDS = 24 * 3600
 
 upload_jobs_store = PersistentJobStore("UploadJobs", partition_key="upload-cache")
 _upload_jobs_semaphore = asyncio.Semaphore(MAX_CONCURRENT_UPLOAD_JOBS)
+_upload_worker_wake_event = asyncio.Event()
 _upload_conv_locks: OrderedDict[str, asyncio.Lock] = OrderedDict()
 _UPLOAD_CONV_LOCKS_MAX = 500
 export_jobs_store = PersistentJobStore("ExportJobs", partition_key="export-cache")
@@ -2907,6 +2908,8 @@ async def _queue_upload_job_from_blob(
 
 async def _nudge_upload_worker(max_jobs: int = 1, delay_seconds: float = 0.05) -> None:
     """Best-effort local pickup so async uploads don't depend only on sidecars."""
+    # Wake the background worker loop immediately instead of waiting for the poll
+    _upload_worker_wake_event.set()
     if delay_seconds > 0:
         await asyncio.sleep(delay_seconds)
     try:
@@ -2969,6 +2972,7 @@ async def process_upload_jobs_once(max_jobs: int = UPLOAD_WORKER_BATCH_SIZE) -> 
 
 
 async def _upload_worker_loop() -> None:
+    poll_seconds = max(5.0, float(UPLOAD_WORKER_POLL_SECONDS))
     while True:
         try:
             await process_upload_jobs_once(max_jobs=UPLOAD_WORKER_BATCH_SIZE)
@@ -2976,7 +2980,12 @@ async def _upload_worker_loop() -> None:
             raise
         except Exception as e:
             logger.warning("[App] upload worker loop failed: %s", e)
-        await asyncio.sleep(max(0.5, float(UPLOAD_WORKER_POLL_SECONDS)))
+        # Sleep until next poll OR until woken up by a nudge event.
+        _upload_worker_wake_event.clear()
+        try:
+            await asyncio.wait_for(_upload_worker_wake_event.wait(), timeout=poll_seconds)
+        except asyncio.TimeoutError:
+            pass
 
 
 @app.post("/upload")
