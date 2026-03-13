@@ -68,6 +68,32 @@ API_VERSION_CHAT = _get_env("API_VERSION_CHAT", "2024-10-21")
 API_VERSION_OPENAI = _get_env("API_VERSION_OPENAI", "2023-05-15")
 
 # =============================================================================
+# AZURE SPEECH
+# =============================================================================
+AZURE_SPEECH_ENABLED = _get_env("AZURE_SPEECH_ENABLED", "false").lower() == "true"
+AZURE_SPEECH_KEY = _get_env("AZURE_SPEECH_KEY", "")
+AZURE_SPEECH_REGION = _get_env("AZURE_SPEECH_REGION", "")
+AZURE_SPEECH_LANGUAGE = _get_env("AZURE_SPEECH_LANGUAGE", "pt-PT")
+AZURE_SPEECH_PHRASE_LIST_GENERAL = tuple(
+    item.strip()
+    for item in _get_env(
+        "AZURE_SPEECH_PHRASE_LIST_GENERAL",
+        "Millennium,DBDE,MSE,MDSE,Via Verde,CTA,stepper,RevampFEE,epic,feature,user story,acceptance criteria,KPI,DevOps",
+    ).split(",")
+    if item.strip()
+)
+AZURE_SPEECH_PHRASE_LIST_USERSTORY = tuple(
+    item.strip()
+    for item in _get_env(
+        "AZURE_SPEECH_PHRASE_LIST_USERSTORY",
+        "Millennium,DBDE,MSE,MDSE,Via Verde,CTA,stepper,RevampFEE,epic,feature,user story,acceptance criteria,critérios de aceitação,proveniência,composição,comportamento",
+    ).split(",")
+    if item.strip()
+)
+SPEECH_PROMPT_PRIMARY_SPEC = _get_env("SPEECH_PROMPT_PRIMARY_SPEC", "azure_openai:gpt-4-1-mini-dz")
+SPEECH_PROMPT_FALLBACK_SPEC = _get_env("SPEECH_PROMPT_FALLBACK_SPEC", "anthropic:sonnet")
+
+# =============================================================================
 # ANTHROPIC (Claude) — via API directa OU via Azure AI Foundry
 # =============================================================================
 # Se ANTHROPIC_FOUNDRY_RESOURCE estiver definido, usa Azure Foundry.

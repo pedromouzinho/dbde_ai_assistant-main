@@ -147,22 +147,15 @@ function App() {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
-    const {
-        speechSupported,
-        speechListening,
-        speechProcessing,
-        speechInterimText,
-        speechNotice,
-        clearSpeechNotice,
-        resetSpeechPrompt,
-        toggleSpeech,
-    } = useSpeechPrompt({
+    const { speechSupported, speechListening, speechProcessing, speechInterimText, speechNotice, speechSubmitMode, speechProvider, clearSpeechNotice, resetSpeechPrompt, toggleSpeech, toggleSpeechSubmitMode } = useSpeechPrompt({
         authFetchFn: authFetch,
         apiUrl: API_URL,
         agentMode,
         conversationId: active && active.id ? active.id : null,
         inputRef,
         onApplyPrompt: setInput,
+        onAutoSendPrompt: async (prompt) => { await send(prompt); },
+        hasPendingInput: () => Boolean(String(input || "").trim()),
     });
     useEffect(() => {
         if (!auth) return;
@@ -930,8 +923,9 @@ function App() {
     }
 
     // ─── SEND MESSAGE (SSE Streaming) ────────────────────────────────────
-    async function send() {
-        if (!input.trim() || loading || uploadBusy || !active) return;
+    async function send(promptOverride = null) {
+        const nextPrompt = typeof promptOverride === "string" ? promptOverride : input;
+        if (!nextPrompt.trim() || loading || uploadBusy || !active) return;
         if (activePendingUploadJobs.length > 0 && !active.id) {
             alert("Ainda existem anexos a processar. Aguarda conclusão antes de enviar a pergunta.");
             return;
@@ -943,8 +937,8 @@ function App() {
                 return;
             }
         }
-        const q = input.trim();
-        const currentImages = [...imagePreviews];
+        const q = nextPrompt.trim();
+        const currentImages = typeof promptOverride === "string" ? [] : [...imagePreviews];
         const fastEscalatedToThinking = modelTier === "fast" && shouldEscalateFastPrompt(
             q,
             Array.isArray(activeUploadedFiles) ? activeUploadedFiles.length : 0,
@@ -956,8 +950,10 @@ function App() {
         } else {
             setTierRoutingNotice("");
         }
-        setInput(""); setImagePreviews([]);
-        if (inputRef.current) inputRef.current.style.height = "auto";
+        if (typeof promptOverride !== "string") {
+            setInput(""); setImagePreviews([]);
+            if (inputRef.current) inputRef.current.style.height = "auto";
+        }
 
         // Add user message
         setConversations(prev => {
@@ -1931,10 +1927,7 @@ function App() {
                     onImagePick={handleImageUpload}
                     inputRef={inputRef}
                     input={input}
-                    onInputChange={(e) => {
-                        setInput(e.target.value);
-                        if (speechNotice) clearSpeechNotice();
-                    }}
+                    onInputChange={(e) => { setInput(e.target.value); if (speechNotice) clearSpeechNotice(); }}
                     onInputKeyDown={handleKeyDown}
                     onInputPaste={handlePaste}
                     inputPlaceholder={
@@ -1951,7 +1944,10 @@ function App() {
                     speechProcessing={speechProcessing}
                     speechInterimText={speechInterimText}
                     speechNotice={speechNotice}
+                    speechSubmitMode={speechSubmitMode}
+                    speechProvider={speechProvider}
                     onToggleSpeech={toggleSpeech}
+                    onToggleSpeechSubmitMode={toggleSpeechSubmitMode}
                 />
 
                 {renameTarget ? (

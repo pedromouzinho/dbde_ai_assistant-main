@@ -76,10 +76,12 @@ except Exception:
 from config import (
     APP_VERSION, APP_TITLE, APP_DESCRIPTION,
     AZURE_OPENAI_KEY,
+    AZURE_SPEECH_ENABLED, AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, AZURE_SPEECH_LANGUAGE,
     DEVOPS_INDEX, OMNI_INDEX, EXAMPLES_INDEX,
     DEVOPS_ORG, DEVOPS_PROJECT,
     SEARCH_SERVICE, SEARCH_KEY, API_VERSION_SEARCH,
     LLM_TIER_FAST, LLM_TIER_STANDARD, LLM_TIER_PRO, LLM_TIER_VISION, VISION_ENABLED,
+    SPEECH_PROMPT_PRIMARY_SPEC, SPEECH_PROMPT_FALLBACK_SPEC,
     MODEL_ROUTER_ENABLED, MODEL_ROUTER_SPEC, MODEL_ROUTER_TARGET_TIERS, MODEL_ROUTER_NON_PROD_ONLY,
     IS_PRODUCTION,
     RERANK_ENABLED, RERANK_MODEL, RERANK_ENDPOINT, RERANK_TOP_N, RERANK_AUTH_MODE,
@@ -108,7 +110,7 @@ from models import (
     AgentChatRequest, AgentChatResponse,
     LoginRequest, CreateUserRequest, ChangePasswordRequest,
     FeedbackRequest, ExportRequest, SaveChatRequest, UpdateChatTitleRequest,
-    SpeechPromptNormalizeRequest, SpeechPromptNormalizeResponse,
+    SpeechPromptNormalizeRequest, SpeechPromptNormalizeResponse, SpeechPromptTokenResponse,
     ModeSwitchRequest, ModeSwitchResponse,
     ClientErrorReport,
     UserStoryWorkspaceRequest,
@@ -3618,12 +3620,54 @@ async def normalize_speech_prompt(
     if not transcript:
         raise HTTPException(400, "Transcrição vazia")
 
+    started = time.perf_counter()
     result = await normalize_spoken_prompt(
         transcript=transcript,
         mode=str(payload.mode or "general"),
         language=str(payload.language or "pt-PT"),
     )
+    logger.info(
+        "[Speech] normalized prompt provider=%s confidence=%s auto_send=%s elapsed_ms=%d",
+        result.get("provider_used", "unknown"),
+        result.get("confidence", "unknown"),
+        result.get("auto_send_allowed", False),
+        int((time.perf_counter() - started) * 1000),
+    )
     return SpeechPromptNormalizeResponse(**result)
+
+
+@app.post("/api/speech/token", response_model=SpeechPromptTokenResponse)
+@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
+async def issue_speech_token(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    get_current_user(credentials)
+    if not (AZURE_SPEECH_ENABLED and AZURE_SPEECH_KEY and AZURE_SPEECH_REGION):
+        raise HTTPException(503, "Azure Speech não está configurado.")
+
+    token_url = f"https://{AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issuetoken"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                token_url,
+                headers={"Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY, "Content-Length": "0"},
+            )
+            response.raise_for_status()
+    except Exception as exc:
+        logger.error("[Speech] token issuance failed: %s", exc)
+        raise HTTPException(502, "Falha ao obter token do Azure Speech")
+
+    token = str(response.text or "").strip()
+    if not token:
+        raise HTTPException(502, "Azure Speech não devolveu token válido")
+
+    return SpeechPromptTokenResponse(
+        token=token,
+        region=AZURE_SPEECH_REGION,
+        language=AZURE_SPEECH_LANGUAGE,
+        expires_in_seconds=600,
+    )
 
 # =============================================================================
 # FEEDBACK
@@ -3942,6 +3986,10 @@ async def api_info(request: Request):
         "features": {
             "user_story_lane": STORY_LANE_ENABLED,
             "speech_prompt": True,
+            "speech_provider": "azure_speech" if (AZURE_SPEECH_ENABLED and AZURE_SPEECH_KEY and AZURE_SPEECH_REGION) else "browser_fallback",
+            "speech_prompt_primary": SPEECH_PROMPT_PRIMARY_SPEC,
+            "speech_prompt_fallback": SPEECH_PROMPT_FALLBACK_SPEC,
+            "speech_submit_modes": ["auto", "text"],
         },
     }
 

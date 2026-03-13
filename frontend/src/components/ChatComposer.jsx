@@ -32,7 +32,10 @@ export default function ChatComposer({
   speechProcessing,
   speechInterimText,
   speechNotice,
+  speechSubmitMode,
+  speechProvider,
   onToggleSpeech,
+  onToggleSpeechSubmitMode,
 }) {
   return (
     <div className="app-input-bar">
@@ -127,6 +130,9 @@ export default function ChatComposer({
                 </div>
               ) : null}
             </div>
+            <div style={{ fontSize: 11, color: 'var(--text-soft)', fontWeight: 700 }}>
+              {speechProvider === 'azure_speech' ? 'Azure Speech' : 'Browser'}
+            </div>
           </div>
         ) : null}
 
@@ -174,15 +180,26 @@ export default function ChatComposer({
           </button>
 
           {speechSupported ? (
-            <button
-              type="button"
-              className={`composer-action-btn${speechListening ? ' composer-mic-btn active' : ' composer-mic-btn'}`}
-              onClick={onToggleSpeech}
-              disabled={loading || uploadingFiles || speechProcessing}
-              title={speechListening ? 'Parar gravação' : 'Falar para o assistente'}
-            >
-              {speechListening ? <StopIcon size={16} /> : <MicrophoneIcon size={18} />}
-            </button>
+            <>
+              <button
+                type="button"
+                className={`composer-action-btn composer-mode-btn${speechSubmitMode === 'auto' ? ' active' : ''}`}
+                onClick={onToggleSpeechSubmitMode}
+                disabled={loading || uploadingFiles || speechListening || speechProcessing}
+                title={speechSubmitMode === 'auto' ? 'Modo atual: Auto-enviar. Clica para passar a Só texto.' : 'Modo atual: Só texto. Clica para passar a Auto-enviar.'}
+              >
+                {speechSubmitMode === 'auto' ? 'Auto' : 'Texto'}
+              </button>
+              <button
+                type="button"
+                className={`composer-action-btn${speechListening ? ' composer-mic-btn active' : ' composer-mic-btn'}`}
+                onClick={onToggleSpeech}
+                disabled={loading || uploadingFiles || speechProcessing}
+                title={speechListening ? 'Parar gravação' : `Falar para o assistente (${speechSubmitMode === 'auto' ? 'Auto-enviar' : 'Só texto'})`}
+              >
+                {speechListening ? <StopIcon size={16} /> : <MicrophoneIcon size={18} />}
+              </button>
+            </>
           ) : null}
 
           <textarea
@@ -212,10 +229,10 @@ export default function ChatComposer({
 
         <div style={{ maxWidth: 960, margin: '8px auto 0', textAlign: 'center', fontSize: 10, color: 'var(--text-soft)', fontWeight: 500, letterSpacing: '0.02em' }}>
           {speechListening
-            ? 'Estamos a captar a tua fala. Quando parares, o pedido é limpo e colocado no campo antes de enviares.'
+            ? `Estamos a captar a tua fala. Modo atual: ${speechSubmitMode === 'auto' ? 'Auto-enviar' : 'Só texto'}.`
             : speechProcessing
               ? 'A transformar a fala num prompt claro para o assistente...'
-              : uploadingFiles
+            : uploadingFiles
             ? 'A processar anexos. O envio da mensagem fica disponível no fim.'
             : `Enter para enviar · Shift+Enter para nova linha · anexa ficheiros · Ctrl+V para colar imagens · lote até ${Math.max(1, Math.round(maxBatchTotalBytes / (1024 * 1024)))}MB`}
         </div>

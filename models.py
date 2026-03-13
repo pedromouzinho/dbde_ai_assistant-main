@@ -147,7 +147,16 @@ class SpeechPromptNormalizeResponse(BaseModel):
     normalized_prompt: str = Field(min_length=1, max_length=MAX_MEDIUM_TEXT_LEN)
     confidence: Literal["high", "medium", "low"] = "medium"
     inferred_mode: Literal["general", "userstory"] = "general"
+    auto_send_allowed: bool = False
     notes: List[str] = Field(default_factory=list, max_length=10)
+
+
+class SpeechPromptTokenResponse(BaseModel):
+    token: str = Field(min_length=1, max_length=MAX_MEDIUM_TEXT_LEN)
+    region: str = Field(min_length=1, max_length=64)
+    language: str = Field(min_length=1, max_length=32)
+    provider: Literal["azure_speech"] = "azure_speech"
+    expires_in_seconds: int = Field(default=600, ge=60, le=3600)
 
 
 class UserStoryWorkspaceRequest(BaseModel):

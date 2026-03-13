@@ -963,6 +963,12 @@ def _get_cached_provider(provider_name: str, model: str) -> LLMProvider:
     return provider
 
 
+def get_provider_for_spec(spec: str) -> LLMProvider:
+    """Retorna o provider correspondente a um spec explicito provider:model."""
+    provider_name, model = _parse_provider_spec(spec or "")
+    return _get_cached_provider(provider_name, model)
+
+
 async def close_all_providers() -> None:
     for provider in _PROVIDER_CACHE.values():
         try:

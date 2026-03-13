@@ -1,6 +1,54 @@
+const GENERAL_PHRASES = [
+  "Millennium",
+  "DBDE",
+  "MSE",
+  "MDSE",
+  "Via Verde",
+  "CTA",
+  "stepper",
+  "RevampFEE",
+  "epic",
+  "feature",
+  "user story",
+  "acceptance criteria",
+  "KPI",
+  "DevOps",
+];
+
+const USERSTORY_PHRASES = [
+  ...GENERAL_PHRASES,
+  "critérios de aceitação",
+  "proveniência",
+  "composição",
+  "comportamento",
+];
+
 export function isSpeechRecognitionSupported() {
   if (typeof window === "undefined") return false;
   return Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+export function isAzureSpeechBrowserSupported() {
+  if (typeof window === "undefined") return false;
+  return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
+}
+
+function getPhraseList(mode = "general") {
+  return mode === "userstory" ? USERSTORY_PHRASES : GENERAL_PHRASES;
+}
+
+function mapAzureSpeechCancel(errorCode = "") {
+  const code = String(errorCode || "").toLowerCase();
+  if (code.includes("notallowed") || code.includes("permission")) {
+    return "A permissão do microfone foi negada neste browser.";
+  }
+  if (code.includes("nomatch") || code.includes("no_match")) {
+    return "Não apanhei fala suficiente. Tenta novamente.";
+  }
+  if (code.includes("connection")) {
+    return "A ligação ao Azure Speech falhou. Tenta novamente.";
+  }
+  return "A captação de voz falhou. Tenta novamente.";
 }
 
 export function createSpeechRecognition({ language = "pt-PT", onResult, onError, onEnd } = {}) {
@@ -42,6 +90,118 @@ export function createSpeechRecognition({ language = "pt-PT", onResult, onError,
   };
 
   return recognition;
+}
+
+export async function fetchSpeechToken(authFetchFn, apiUrl) {
+  const response = await authFetchFn(apiUrl + "/api/speech/token", {
+    method: "POST",
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(String(data?.detail || "Falha ao obter token de voz."));
+  }
+  return data;
+}
+
+export async function createAzureSpeechRecognition({
+  authFetchFn,
+  apiUrl,
+  language = "pt-PT",
+  mode = "general",
+  onResult,
+  onError,
+  onEnd,
+} = {}) {
+  if (!isAzureSpeechBrowserSupported()) {
+    throw new Error("O browser atual não suporta captação de microfone para Azure Speech.");
+  }
+
+  const [{ default: speechsdk }, tokenPayload] = await Promise.all([
+    import("microsoft-cognitiveservices-speech-sdk"),
+    fetchSpeechToken(authFetchFn, apiUrl),
+  ]);
+
+  const speechConfig = speechsdk.SpeechConfig.fromAuthorizationToken(
+    tokenPayload.token,
+    tokenPayload.region,
+  );
+  speechConfig.speechRecognitionLanguage = tokenPayload.language || language;
+  speechConfig.enableDictation();
+
+  const audioConfig = speechsdk.AudioConfig.fromDefaultMicrophoneInput();
+  const recognizer = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
+  const phraseList = speechsdk.PhraseListGrammar.fromRecognizer(recognizer);
+  for (const phrase of getPhraseList(mode)) {
+    phraseList.addPhrase(phrase);
+  }
+
+  let finalTranscript = "";
+  let ended = false;
+
+  function finish() {
+    if (ended) return;
+    ended = true;
+    try {
+      recognizer.close();
+    } catch (_) {
+      // ignore close failures
+    }
+    try {
+      audioConfig.close?.();
+    } catch (_) {
+      // ignore close failures
+    }
+    onEnd?.();
+  }
+
+  recognizer.recognizing = (_, event) => {
+    const interimText = String(event?.result?.text || "").trim();
+    onResult?.({
+      finalTranscript,
+      interimTranscript: interimText,
+      combinedTranscript: `${finalTranscript} ${interimText}`.trim(),
+    });
+  };
+
+  recognizer.recognized = (_, event) => {
+    if (event?.result?.reason === speechsdk.ResultReason.RecognizedSpeech) {
+      const text = String(event.result.text || "").trim();
+      finalTranscript = `${finalTranscript} ${text}`.trim();
+      onResult?.({
+        finalTranscript,
+        interimTranscript: "",
+        combinedTranscript: finalTranscript,
+      });
+      return;
+    }
+    if (event?.result?.reason === speechsdk.ResultReason.NoMatch) {
+      onError?.("nomatch");
+    }
+  };
+
+  recognizer.canceled = (_, event) => {
+    onError?.(mapAzureSpeechCancel(event?.errorDetails || event?.reason || ""));
+    finish();
+  };
+
+  recognizer.sessionStopped = () => {
+    finish();
+  };
+
+  return {
+    start: () =>
+      new Promise((resolve, reject) => {
+        recognizer.startContinuousRecognitionAsync(resolve, (error) => reject(new Error(String(error || "Falha ao iniciar Azure Speech."))));
+      }),
+    stop: () =>
+      new Promise((resolve, reject) => {
+        recognizer.stopContinuousRecognitionAsync(resolve, (error) => reject(new Error(String(error || "Falha ao parar Azure Speech."))));
+      }),
+    abort: () => {
+      finish();
+      return Promise.resolve();
+    },
+  };
 }
 
 export async function normalizeSpeechPrompt(authFetchFn, apiUrl, payload) {

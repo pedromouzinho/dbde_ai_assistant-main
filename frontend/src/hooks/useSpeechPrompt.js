@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  createAzureSpeechRecognition,
   createSpeechRecognition,
+  isAzureSpeechBrowserSupported,
   isSpeechRecognitionSupported,
   normalizeSpeechPrompt,
 } from '../utils/speech.js';
+
+const STORAGE_KEY = 'dbde:speech-submit-mode';
+
+function loadStoredSubmitMode() {
+  if (typeof window === 'undefined') return 'auto';
+  const stored = String(window.localStorage.getItem(STORAGE_KEY) || '').trim().toLowerCase();
+  return stored === 'text' ? 'text' : 'auto';
+}
 
 export default function useSpeechPrompt({
   authFetchFn,
@@ -12,30 +22,56 @@ export default function useSpeechPrompt({
   conversationId,
   inputRef,
   onApplyPrompt,
+  onAutoSendPrompt,
+  hasPendingInput,
 }) {
   const [speechSupported, setSpeechSupported] = useState(false);
   const [speechListening, setSpeechListening] = useState(false);
   const [speechProcessing, setSpeechProcessing] = useState(false);
   const [speechInterimText, setSpeechInterimText] = useState('');
   const [speechNotice, setSpeechNotice] = useState('');
+  const [speechSubmitMode, setSpeechSubmitMode] = useState(loadStoredSubmitMode);
+  const [speechProvider, setSpeechProvider] = useState('browser_fallback');
 
   const speechRecognitionRef = useRef(null);
   const speechTranscriptRef = useRef('');
   const speechStoppingRef = useRef(false);
 
   useEffect(() => {
-    setSpeechSupported(isSpeechRecognitionSupported());
+    setSpeechSupported(isSpeechRecognitionSupported() || isAzureSpeechBrowserSupported());
     return () => {
       if (speechRecognitionRef.current) {
-        try {
-          speechRecognitionRef.current.abort();
-        } catch (_) {
-          // ignore cleanup failures
-        }
+        Promise.resolve(speechRecognitionRef.current.abort?.()).catch(() => {});
         speechRecognitionRef.current = null;
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEY, speechSubmitMode);
+  }, [speechSubmitMode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSpeechInfo() {
+      try {
+        const response = await fetch(apiUrl + '/api/info');
+        if (!response.ok) return;
+        const payload = await response.json();
+        const provider = String(payload?.features?.speech_provider || 'browser_fallback').trim() || 'browser_fallback';
+        if (!cancelled) {
+          setSpeechProvider(provider);
+        }
+      } catch (_) {
+        // ignore info fetch failures; browser fallback remains available
+      }
+    }
+    loadSpeechInfo();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUrl]);
 
   function resizeComposerInput() {
     if (!inputRef?.current) return;
@@ -49,11 +85,7 @@ export default function useSpeechPrompt({
 
   function resetSpeechPrompt() {
     if (speechRecognitionRef.current) {
-      try {
-        speechRecognitionRef.current.abort();
-      } catch (_) {
-        // ignore abort failures during reset
-      }
+      Promise.resolve(speechRecognitionRef.current.abort?.()).catch(() => {});
       speechRecognitionRef.current = null;
     }
     speechTranscriptRef.current = '';
@@ -62,6 +94,10 @@ export default function useSpeechPrompt({
     setSpeechProcessing(false);
     setSpeechInterimText('');
     setSpeechNotice('');
+  }
+
+  function toggleSpeechSubmitMode() {
+    setSpeechSubmitMode((prev) => (prev === 'auto' ? 'text' : 'auto'));
   }
 
   function applyNormalizedSpeechPrompt(nextPrompt, notice = '') {
@@ -103,9 +139,16 @@ export default function useSpeechPrompt({
       const notes = Array.isArray(normalized?.notes)
         ? normalized.notes.filter(Boolean).map(item => String(item).trim()).filter(Boolean)
         : [];
+      const autoSendAllowed = Boolean(normalized?.auto_send_allowed);
+      const hasDraftText = Boolean(hasPendingInput?.());
+      const shouldAutoSend = speechSubmitMode === 'auto' && autoSendAllowed && !hasDraftText;
 
       const noticeParts = [];
-      if (confidence === 'high') {
+      if (shouldAutoSend) {
+        noticeParts.push('Pedido por voz enviado automaticamente.');
+      } else if (speechSubmitMode === 'auto' && hasDraftText) {
+        noticeParts.push('Mantive o texto no composer porque já tinhas conteúdo por rever.');
+      } else if (confidence === 'high') {
         noticeParts.push('Pedido por voz pronto a rever.');
       } else if (confidence === 'low') {
         noticeParts.push('Interpretação com baixa confiança. Revê o texto antes de enviar.');
@@ -118,8 +161,15 @@ export default function useSpeechPrompt({
       if (notes.length > 0) {
         noticeParts.push(notes[0]);
       }
+      const finalNotice = noticeParts.join(' ');
 
-      applyNormalizedSpeechPrompt(finalPrompt, noticeParts.join(' '));
+      if (shouldAutoSend) {
+        await onAutoSendPrompt?.(finalPrompt, finalNotice);
+        setSpeechNotice(finalNotice);
+        return;
+      }
+
+      applyNormalizedSpeechPrompt(finalPrompt, finalNotice);
     } catch (error) {
       setSpeechNotice(error?.message || 'Falha ao interpretar o pedido por voz.');
     } finally {
@@ -128,19 +178,105 @@ export default function useSpeechPrompt({
     }
   }
 
-  function toggleSpeech() {
+  async function createRecognitionSession() {
+    if (speechProvider === 'azure_speech') {
+      try {
+        return await createAzureSpeechRecognition({
+          authFetchFn,
+          apiUrl,
+          language: 'pt-PT',
+          mode: agentMode,
+          onResult: ({ finalTranscript, combinedTranscript }) => {
+            const transcript = String(finalTranscript || combinedTranscript || '').trim();
+            speechTranscriptRef.current = transcript;
+            setSpeechInterimText(String(combinedTranscript || transcript || '').trim());
+          },
+          onError: (message) => {
+            speechRecognitionRef.current = null;
+            setSpeechListening(false);
+            setSpeechProcessing(false);
+            setSpeechInterimText('');
+            if (!speechTranscriptRef.current.trim()) {
+              setSpeechNotice(message || 'Azure Speech falhou. Tenta novamente.');
+            }
+          },
+          onEnd: () => {
+            const transcript = speechTranscriptRef.current;
+            speechRecognitionRef.current = null;
+            setSpeechListening(false);
+            const wasStopping = speechStoppingRef.current;
+            speechStoppingRef.current = false;
+            if (transcript.trim()) {
+              finalizeSpeechPrompt(transcript);
+              return;
+            }
+            if (wasStopping) {
+              setSpeechNotice('Captação de voz terminada sem texto suficiente.');
+            }
+          },
+        });
+      } catch (error) {
+        if (isSpeechRecognitionSupported()) {
+          setSpeechNotice('Azure Speech indisponível. A usar reconhecimento de voz do browser.');
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    return createSpeechRecognition({
+      language: 'pt-PT',
+      onResult: ({ finalTranscript, combinedTranscript }) => {
+        const transcript = String(finalTranscript || combinedTranscript || '').trim();
+        speechTranscriptRef.current = transcript;
+        setSpeechInterimText(String(combinedTranscript || transcript || '').trim());
+      },
+      onError: (errorCode) => {
+        const code = String(errorCode || '').trim();
+        const friendlyMessage =
+          code === 'not-allowed' || code === 'service-not-allowed'
+            ? 'A permissão do microfone foi negada neste browser.'
+            : code === 'no-speech'
+              ? 'Não apanhei fala suficiente. Tenta novamente.'
+              : 'O reconhecimento de voz falhou. Tenta novamente.';
+        speechRecognitionRef.current = null;
+        setSpeechListening(false);
+        setSpeechProcessing(false);
+        setSpeechInterimText('');
+        if (!speechTranscriptRef.current.trim()) {
+          setSpeechNotice(friendlyMessage);
+        }
+      },
+      onEnd: () => {
+        const transcript = speechTranscriptRef.current;
+        speechRecognitionRef.current = null;
+        setSpeechListening(false);
+        const wasStopping = speechStoppingRef.current;
+        speechStoppingRef.current = false;
+        if (transcript.trim()) {
+          finalizeSpeechPrompt(transcript);
+          return;
+        }
+        if (wasStopping) {
+          setSpeechNotice('Captação de voz terminada sem texto suficiente.');
+        }
+      },
+    });
+  }
+
+  async function toggleSpeech() {
     if (!speechSupported) {
-      setSpeechNotice('O browser atual não suporta reconhecimento de voz.');
+      setSpeechNotice('O browser atual não suporta captação de voz.');
       return;
     }
 
     if (speechListening && speechRecognitionRef.current) {
       speechStoppingRef.current = true;
       try {
-        speechRecognitionRef.current.stop();
+        await speechRecognitionRef.current.stop?.();
       } catch (_) {
         try {
-          speechRecognitionRef.current.abort();
+          await speechRecognitionRef.current.abort?.();
         } catch (_) {
           // ignore stop/abort race
         }
@@ -157,47 +293,9 @@ export default function useSpeechPrompt({
     setSpeechProcessing(false);
 
     try {
-      const recognition = createSpeechRecognition({
-        language: 'pt-PT',
-        onResult: ({ finalTranscript, combinedTranscript }) => {
-          const transcript = String(finalTranscript || combinedTranscript || '').trim();
-          speechTranscriptRef.current = transcript;
-          setSpeechInterimText(String(combinedTranscript || transcript || '').trim());
-        },
-        onError: (errorCode) => {
-          const code = String(errorCode || '').trim();
-          const friendlyMessage =
-            code === 'not-allowed' || code === 'service-not-allowed'
-              ? 'A permissão do microfone foi negada neste browser.'
-              : code === 'no-speech'
-                ? 'Não apanhei fala suficiente. Tenta novamente.'
-                : 'O reconhecimento de voz falhou. Tenta novamente.';
-          speechRecognitionRef.current = null;
-          setSpeechListening(false);
-          setSpeechProcessing(false);
-          setSpeechInterimText('');
-          if (!speechTranscriptRef.current.trim()) {
-            setSpeechNotice(friendlyMessage);
-          }
-        },
-        onEnd: () => {
-          const transcript = speechTranscriptRef.current;
-          speechRecognitionRef.current = null;
-          setSpeechListening(false);
-          const wasStopping = speechStoppingRef.current;
-          speechStoppingRef.current = false;
-          if (transcript.trim()) {
-            finalizeSpeechPrompt(transcript);
-            return;
-          }
-          if (wasStopping) {
-            setSpeechNotice('Captação de voz terminada sem texto suficiente.');
-          }
-        },
-      });
-
+      const recognition = await createRecognitionSession();
       speechRecognitionRef.current = recognition;
-      recognition.start();
+      await recognition.start();
       setSpeechListening(true);
       setSpeechNotice('');
     } catch (error) {
@@ -215,8 +313,11 @@ export default function useSpeechPrompt({
     speechProcessing,
     speechInterimText,
     speechNotice,
+    speechSubmitMode,
+    speechProvider,
     clearSpeechNotice,
     resetSpeechPrompt,
     toggleSpeech,
+    toggleSpeechSubmitMode,
   };
 }
