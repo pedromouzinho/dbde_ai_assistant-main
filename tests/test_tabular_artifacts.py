@@ -8,6 +8,7 @@ import pytest
 import tools
 from tabular_artifacts import (
     build_tabular_artifact,
+    export_tabular_artifact_as_csv_bytes,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
 )
@@ -49,6 +50,15 @@ def test_load_tabular_artifact_preview_returns_expected_shape():
     assert "2026-01-01" in preview["data_text"]
 
 
+def test_export_tabular_artifact_as_csv_bytes_returns_csv():
+    artifact = build_tabular_artifact(_sample_xlsx_bytes(), "sample.xlsx", batch_rows=2)
+    csv_bytes = export_tabular_artifact_as_csv_bytes(artifact["artifact_bytes"])
+    text = csv_bytes.decode("utf-8")
+
+    assert "Date,Category,Revenue" in text
+    assert "2026-01-01,A,10" in text
+
+
 @pytest.mark.asyncio
 async def test_resolve_uploaded_tabular_source_prefers_artifact(monkeypatch):
     async def _fake_table_query(*_args, **_kwargs):
@@ -77,3 +87,29 @@ async def test_resolve_uploaded_tabular_source_prefers_artifact(monkeypatch):
     assert resolved["source_kind"] == "artifact"
     assert resolved["artifact_format"] == "parquet"
     assert downloads == ["upload-artifacts/sample.parquet"]
+
+
+@pytest.mark.asyncio
+async def test_load_uploaded_files_for_code_falls_back_to_artifact(monkeypatch):
+    async def _fake_table_query(*_args, **_kwargs):
+        return [
+            {
+                "Filename": "sample.xlsx",
+                "TabularArtifactBlobRef": "upload-artifacts/sample.parquet",
+                "UploadedAt": "2026-03-13T10:00:00+00:00",
+            }
+        ]
+
+    async def _fake_blob_download_bytes(container, blob_name):
+        assert container == "upload-artifacts"
+        assert blob_name == "sample.parquet"
+        artifact = build_tabular_artifact(_sample_xlsx_bytes(), "sample.xlsx")
+        return artifact["artifact_bytes"]
+
+    monkeypatch.setattr(tools, "table_query", _fake_table_query)
+    monkeypatch.setattr(tools, "blob_download_bytes", _fake_blob_download_bytes)
+
+    mounted = await tools._load_uploaded_files_for_code("conv-1", user_sub="pedro", filename="sample.xlsx")
+
+    assert list(mounted.keys()) == ["sample.csv"]
+    assert b"Date,Category,Revenue" in mounted["sample.csv"]

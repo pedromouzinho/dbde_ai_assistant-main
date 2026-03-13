@@ -137,6 +137,33 @@ def load_tabular_artifact_preview(
     return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
 
 
+def export_tabular_artifact_as_csv_bytes(artifact_bytes: bytes) -> bytes:
+    import duckdb
+
+    if not artifact_bytes:
+        raise TabularLoaderError("Artefacto tabular vazio.")
+
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as parquet_path:
+        with tempfile.NamedTemporaryFile(prefix="dbde_artifact_", suffix=".csv", delete=False) as tmp_csv:
+            csv_path = tmp_csv.name
+        conn = duckdb.connect(database=":memory:")
+        try:
+            safe_parquet_path = str(parquet_path).replace("'", "''")
+            safe_csv_path = str(csv_path).replace("'", "''")
+            conn.execute(
+                f"COPY (SELECT * FROM read_parquet('{safe_parquet_path}')) "
+                f"TO '{safe_csv_path}' (FORMAT CSV, HEADER, DELIMITER ',')",
+            )
+            with open(csv_path, "rb") as fh:
+                return fh.read()
+        finally:
+            conn.close()
+            try:
+                os.unlink(csv_path)
+            except OSError:
+                pass
+
+
 def _insert_batch(conn, columns: list[str], batch: list[list[str]]) -> None:
     placeholders = ", ".join(["?"] * len(columns))
     conn.executemany(f"INSERT INTO uploaded VALUES ({placeholders})", batch)

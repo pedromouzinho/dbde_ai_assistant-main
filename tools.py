@@ -56,7 +56,11 @@ from tools_email import tool_prepare_outlook_draft, tool_classify_uploaded_email
 from tools_learning import tool_get_writer_profile, tool_save_writer_profile
 from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
 from tabular_loader import TabularLoaderError, load_tabular_dataset, load_tabular_preview
-from tabular_artifacts import load_tabular_artifact_dataset, load_tabular_artifact_preview
+from tabular_artifacts import (
+    export_tabular_artifact_as_csv_bytes,
+    load_tabular_artifact_dataset,
+    load_tabular_artifact_preview,
+)
 from data_dictionary import (
     format_dictionary_for_prompt as format_data_dictionary_for_prompt,
     get_dictionary as get_data_dictionary_entries,
@@ -1958,7 +1962,8 @@ async def _load_uploaded_files_for_code(
             continue
         fname = str(row.get("Filename", "") or "")
         raw_ref = str(row.get("RawBlobRef", "") or "")
-        if not fname or not raw_ref:
+        artifact_ref = str(row.get("TabularArtifactBlobRef", "") or "")
+        if not fname or (not raw_ref and not artifact_ref):
             continue
         norm = _normalize_lookup_key(fname)
         if wanted_filename and wanted_filename not in norm and norm != wanted_filename:
@@ -1977,20 +1982,38 @@ async def _load_uploaded_files_for_code(
         fname = str(row.get("Filename", "") or "").strip()
         safe_name = fname.replace("\\", "_").replace("/", "_")
         raw_blob_ref = str(row.get("RawBlobRef", "") or "")
-        container, blob_name = parse_blob_ref(raw_blob_ref)
-        if not container or not blob_name:
+        artifact_blob_ref = str(row.get("TabularArtifactBlobRef", "") or "")
+        mounted_name = safe_name
+        mounted_bytes = b""
+
+        if raw_blob_ref:
+            container, blob_name = parse_blob_ref(raw_blob_ref)
+            if not container or not blob_name:
+                continue
+            try:
+                mounted_bytes = await blob_download_bytes(container, blob_name)
+            except Exception as e:
+                logging.warning("[Tools] run_code failed to download upload %s: %s", safe_name, e)
+                continue
+        elif artifact_blob_ref:
+            container, blob_name = parse_blob_ref(artifact_blob_ref)
+            if not container or not blob_name:
+                continue
+            try:
+                artifact_bytes = await blob_download_bytes(container, blob_name)
+                mounted_bytes = export_tabular_artifact_as_csv_bytes(artifact_bytes)
+                base_name = safe_name.rsplit(".", 1)[0] if "." in safe_name else safe_name
+                mounted_name = f"{base_name}.csv"
+            except Exception as e:
+                logging.warning("[Tools] run_code failed to hydrate tabular artifact %s: %s", safe_name, e)
+                continue
+
+        if not mounted_bytes:
             continue
-        try:
-            raw_bytes = await blob_download_bytes(container, blob_name)
-        except Exception as e:
-            logging.warning("[Tools] run_code failed to download upload %s: %s", safe_name, e)
-            continue
-        if not raw_bytes:
-            continue
-        if total + len(raw_bytes) > max_total_bytes:
+        if total + len(mounted_bytes) > max_total_bytes:
             break
-        uploaded_files[safe_name] = raw_bytes
-        total += len(raw_bytes)
+        uploaded_files[mounted_name] = mounted_bytes
+        total += len(mounted_bytes)
     return uploaded_files
 
 
