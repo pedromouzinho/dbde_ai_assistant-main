@@ -103,6 +103,7 @@ from config import (
     UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS,
     UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE,
     UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
+    UPLOAD_FRONTEND_ASYNC_THRESHOLD_BYTES,
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
     CHAT_TOOLRESULT_BLOB_CONTAINER,
     EXPORT_AUTO_ASYNC_ENABLED, EXPORT_ASYNC_THRESHOLD_ROWS, EXPORT_MAX_CONCURRENT_JOBS,
@@ -1647,7 +1648,7 @@ MAX_UPLOAD_FILE_BYTES = UPLOAD_MAX_FILE_BYTES
 UPLOAD_JOB_TTL_SECONDS = 24 * 3600
 MAX_CONCURRENT_UPLOAD_JOBS = UPLOAD_MAX_CONCURRENT_JOBS
 WORKER_INSTANCE_ID = os.getenv("UPLOAD_WORKER_INSTANCE_ID", f"web-{uuid.uuid4().hex[:8]}")
-INLINE_WORKER_RUNTIME_GUARD = os.getenv("UPLOAD_INLINE_WORKER_RUNTIME_ENABLED", "false").strip().lower() == "true"
+INLINE_WORKER_RUNTIME_GUARD = os.getenv("UPLOAD_INLINE_WORKER_RUNTIME_ENABLED", "true").strip().lower() == "true"
 INLINE_WORKER_ENABLED_EFFECTIVE = bool(UPLOAD_INLINE_WORKER_ENABLED and INLINE_WORKER_RUNTIME_GUARD)
 EXPORT_WORKER_INSTANCE_ID = os.getenv("EXPORT_WORKER_INSTANCE_ID", f"export-web-{uuid.uuid4().hex[:8]}")
 EXPORT_INLINE_WORKER_ENABLED_EFFECTIVE = bool(EXPORT_INLINE_WORKER_ENABLED and INLINE_WORKER_RUNTIME_GUARD)
@@ -2905,6 +2906,16 @@ async def _queue_upload_job_from_blob(
     return job
 
 
+async def _nudge_upload_worker(max_jobs: int = 1, delay_seconds: float = 0.05) -> None:
+    """Best-effort local pickup so async uploads don't depend only on sidecars."""
+    if delay_seconds > 0:
+        await asyncio.sleep(delay_seconds)
+    try:
+        await process_upload_jobs_once(max_jobs=max_jobs)
+    except Exception as e:
+        logger.warning("[App] upload worker nudge failed: %s", e)
+
+
 async def process_upload_jobs_once(max_jobs: int = UPLOAD_WORKER_BATCH_SIZE) -> dict:
     _cleanup_upload_jobs()
     target = max(1, min(int(max_jobs or 1), 50))
@@ -3046,6 +3057,7 @@ async def upload_file_async(
             ),
         )
     job = await _queue_upload_job(conv_id, user_sub, filename, content, file.content_type or "")
+    create_logged_task(_nudge_upload_worker(), name=f"upload-nudge-{str(job.get('job_id', ''))[:8]}")
     return {
         "status": "queued",
         "job_id": job.get("job_id"),
@@ -3125,6 +3137,7 @@ async def upload_file_stream_async(
         content_type,
         job_id=job_id,
     )
+    create_logged_task(_nudge_upload_worker(), name=f"upload-nudge-{str(job.get('job_id', ''))[:8]}")
     return {
         "status": "queued",
         "job_id": job.get("job_id"),
@@ -3218,6 +3231,7 @@ async def upload_files_async_batch(
             continue
         batch_total_bytes += len(content)
         job = await _queue_upload_job(conv_id, user_sub, filename, content, uf.content_type or "")
+        create_logged_task(_nudge_upload_worker(), name=f"upload-nudge-{str(job.get('job_id', ''))[:8]}")
         queued_jobs.append(
             {
                 "job_id": job.get("job_id"),
@@ -4684,6 +4698,7 @@ def _build_admin_info_payload() -> dict:
             "max_file_bytes": MAX_UPLOAD_FILE_BYTES,
             "max_file_bytes_by_extension": get_tabular_upload_limits(),
             "max_batch_total_bytes": UPLOAD_MAX_BATCH_TOTAL_BYTES,
+            "frontend_async_threshold_bytes": UPLOAD_FRONTEND_ASYNC_THRESHOLD_BYTES,
             "max_concurrent_jobs": MAX_CONCURRENT_UPLOAD_JOBS,
             "max_pending_jobs_per_user": UPLOAD_MAX_PENDING_JOBS_PER_USER,
             "embedding_concurrency": UPLOAD_EMBEDDING_CONCURRENCY,
@@ -4734,6 +4749,7 @@ async def api_info(request: Request):
             "max_file_bytes": MAX_UPLOAD_FILE_BYTES,
             "max_file_bytes_by_extension": get_tabular_upload_limits(),
             "max_batch_total_bytes": UPLOAD_MAX_BATCH_TOTAL_BYTES,
+            "frontend_async_threshold_bytes": UPLOAD_FRONTEND_ASYNC_THRESHOLD_BYTES,
         },
         "features": {
             "user_story_lane": STORY_LANE_ENABLED,

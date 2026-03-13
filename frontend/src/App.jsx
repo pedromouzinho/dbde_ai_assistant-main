@@ -87,6 +87,7 @@ function App() {
     const [maxBatchTotalBytes, setMaxBatchTotalBytes] = useState(DEFAULT_MAX_BATCH_TOTAL_BYTES);
     const [maxUploadFileBytes, setMaxUploadFileBytes] = useState(10 * 1024 * 1024);
     const [maxUploadFileBytesByExtension, setMaxUploadFileBytesByExtension] = useState({});
+    const [uploadFrontendAsyncThresholdBytes, setUploadFrontendAsyncThresholdBytes] = useState(2 * 1024 * 1024);
     const [dragOver, setDragOver] = useState(false);
     const [auth, setAuth] = useState(null);
     const [authInitializing, setAuthInitializing] = useState(true);
@@ -304,10 +305,7 @@ function App() {
         setDeleteTarget(null);
     }
 
-    function authHeaders() {
-        return getAuthHeaders();
-    }
-    // ─── Hooks that must be called before any early return ───────────────
+    function authHeaders() { return getAuthHeaders(); }
     const saveTimerRef = useRef(null);
 
     useEffect(() => {
@@ -355,6 +353,7 @@ function App() {
                 const maxBatchBytes = Number(limits.max_batch_total_bytes);
                 const maxFileBytes = Number(limits.max_file_bytes);
                 const maxConcurrency = Number(limits.max_concurrent_jobs);
+                const asyncThreshold = Number(limits.frontend_async_threshold_bytes);
                 const byExtension = limits.max_file_bytes_by_extension && typeof limits.max_file_bytes_by_extension === "object"
                     ? limits.max_file_bytes_by_extension
                     : {};
@@ -373,6 +372,9 @@ function App() {
                 if (!cancelled) {
                     setMaxUploadFileBytesByExtension(byExtension);
                 }
+                if (!cancelled && Number.isFinite(asyncThreshold) && asyncThreshold > 0) {
+                    setUploadFrontendAsyncThresholdBytes(Math.floor(asyncThreshold));
+                }
                 if (!cancelled && Number.isFinite(maxConcurrency) && maxConcurrency > 0) {
                     setUploadWorkerConcurrency(Math.max(1, Math.min(4, Math.floor(maxConcurrency))));
                 }
@@ -384,11 +386,9 @@ function App() {
         return () => { cancelled = true; };
     }, []);
 
-    // ─── Auth gate ──────────────────────────────────────────────────────
     if (authInitializing) return React.createElement("div", { style: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#777", fontSize: 14 } }, "A iniciar sessão...");
     if (!auth) return React.createElement(LoginScreen, { onLogin: handleLogin });
 
-    // ─── Chat persistence ────────────────────────────────────────────────
     async function loadChats(uid) {
         try {
             const res = await authFetch(API_URL + "/api/chats/" + uid, { headers: authHeaders() });
@@ -567,7 +567,6 @@ function App() {
         closeDeleteDialog();
     }
 
-    // ─── File upload ─────────────────────────────────────────────────────
     async function handleFileUpload(e) {
         const selectedFiles = Array.from((e.target && e.target.files) || []);
         if (selectedFiles.length === 0) return;
@@ -625,8 +624,15 @@ function App() {
                 filename: item.filename,
                 error: `Ficheiro excede o limite máximo de ${item.limitBytes} bytes`,
             }));
-            const streamFiles = filesToUpload.filter(file => isTabularFile(file));
-            const regularFiles = filesToUpload.filter(file => !isTabularFile(file));
+            const hasLargeFiles = filesToUpload.some(file => Number(file.size || 0) > uploadFrontendAsyncThresholdBytes);
+            const syncCandidates = hasLargeFiles ? [] : filesToUpload;
+            const asyncCandidates = hasLargeFiles ? filesToUpload : [];
+            const streamFiles = asyncCandidates.filter(file => isTabularFile(file));
+            const regularFiles = asyncCandidates.filter(file => !isTabularFile(file));
+
+            if (!hasLargeFiles) {
+                useAsyncJobs = false;
+            }
 
             if (useAsyncJobs && regularFiles.length > 0) {
                 setUploadProgressText(`A enfileirar ${filesToUpload.length} ficheiro(s)...`);
@@ -750,7 +756,7 @@ function App() {
             } else {
                 const uploadedNow = [];
                 const failedNow = [];
-                for (const file of filesToUpload) {
+                for (const file of syncCandidates) {
                     setUploadProgressText(`A processar ${file.name}...`);
                     try {
                         const data = await uploadSingleFileSync(authFetch, API_URL, file, convId);
@@ -815,7 +821,6 @@ function App() {
         }
     }
 
-    // ─── Image upload ────────────────────────────────────────────────────
     function addImageFiles(files) {
         const candidates = Array.from(files).filter(f => f.type.startsWith("image/"));
         const allowedSlots = Math.max(0, maxImagesPerMessage - imagePreviews.length);
@@ -897,7 +902,6 @@ function App() {
         }
     }
 
-    // ─── Mode switch ─────────────────────────────────────────────────────
     async function switchMode(newMode) {
         setAgentMode(newMode);
         if (active && active.id) {
@@ -922,7 +926,6 @@ function App() {
         }
     }
 
-    // ─── SEND MESSAGE (SSE Streaming) ────────────────────────────────────
     async function send(promptOverride = null) {
         const nextPrompt = typeof promptOverride === "string" ? promptOverride : input;
         if (!nextPrompt.trim() || loading || uploadBusy || !active) return;
@@ -1225,7 +1228,6 @@ function App() {
         }
     }
 
-    // ─── Data export ─────────────────────────────────────────────────────
     function getAllChatMessages() {
         if (!active || !Array.isArray(active.messages)) return [];
         return active.messages

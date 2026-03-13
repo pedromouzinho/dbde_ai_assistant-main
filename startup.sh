@@ -9,7 +9,7 @@ if [[ ! -f "$APP_ROOT/app.py" && -f "/home/site/wwwroot/app.py" ]]; then
 fi
 
 cd "$APP_ROOT"
-export UPLOAD_INLINE_WORKER_RUNTIME_ENABLED="${UPLOAD_INLINE_WORKER_RUNTIME_ENABLED:-false}"
+export UPLOAD_INLINE_WORKER_RUNTIME_ENABLED="${UPLOAD_INLINE_WORKER_RUNTIME_ENABLED:-true}"
 
 APP_VENV_ROOT="$APP_ROOT/antenv"
 if [[ -x "$APP_VENV_ROOT/bin/python" ]]; then
