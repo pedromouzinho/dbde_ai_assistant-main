@@ -23,7 +23,7 @@ from urllib.parse import urlsplit, unquote
 from pathlib import Path
 from collections import deque, OrderedDict
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List, Callable, Tuple
 
 import httpx
@@ -96,7 +96,7 @@ from config import (
     UPLOAD_MAX_BATCH_TOTAL_BYTES,
     UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS,
     UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
-    UPLOAD_WORKER_BATCH_SIZE,
+    UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
     CHAT_TOOLRESULT_BLOB_CONTAINER,
     EXPORT_AUTO_ASYNC_ENABLED, EXPORT_ASYNC_THRESHOLD_ROWS, EXPORT_MAX_CONCURRENT_JOBS,
@@ -226,6 +226,7 @@ UPLOAD_WORKER_PID_FILE = os.getenv("UPLOAD_WORKER_PID_FILE", f"{WORKER_RUN_DIR}/
 EXPORT_WORKER_PID_FILE = os.getenv("EXPORT_WORKER_PID_FILE", f"{WORKER_RUN_DIR}/export-worker.pid")
 _inline_worker_task: Optional[asyncio.Task] = None
 _inline_export_worker_task: Optional[asyncio.Task] = None
+_upload_retention_task: Optional[asyncio.Task] = None
 
 
 def _client_ip(request: Request) -> str:
@@ -1213,7 +1214,7 @@ async def _export_worker_loop() -> None:
         await asyncio.sleep(max(0.5, float(EXPORT_WORKER_POLL_SECONDS)))
 
 async def startup_event():
-    global http_client, _inline_worker_task, _inline_export_worker_task
+    global http_client, _inline_worker_task, _inline_export_worker_task, _upload_retention_task
     configure_logging(LOG_FORMAT)
     http_client = httpx.AsyncClient(timeout=60)
     init_http_client(http_client)
@@ -1262,6 +1263,14 @@ async def startup_event():
     _tq_module.token_quota_manager = TokenQuotaManager(TOKEN_QUOTA_CONFIG)
     logger.info("[Startup] Token quota manager initialised: %s", list(TOKEN_QUOTA_CONFIG.keys()))
 
+    await _purge_expired_upload_artifacts(limit=80)
+    _upload_retention_task = create_logged_task(_upload_retention_loop(), name="upload-retention-worker")
+    logger.info(
+        "Upload retention worker enabled (interval=%ss, retention=%sh)",
+        UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
+        UPLOAD_ARTIFACT_RETENTION_HOURS,
+    )
+
     if INLINE_WORKER_ENABLED_EFFECTIVE:
         _inline_worker_task = create_logged_task(_upload_worker_loop(), name="upload-inline-worker")
         logger.info(
@@ -1291,7 +1300,7 @@ async def startup_event():
     logger.info("DBDE AI Agent v%s ready", APP_VERSION)
 
 async def shutdown_event():
-    global _inline_worker_task, _inline_export_worker_task
+    global _inline_worker_task, _inline_export_worker_task, _upload_retention_task
     if _inline_worker_task:
         _inline_worker_task.cancel()
         try:
@@ -1306,6 +1315,13 @@ async def shutdown_event():
         except Exception:
             pass
         _inline_export_worker_task = None
+    if _upload_retention_task:
+        _upload_retention_task.cancel()
+        try:
+            await _upload_retention_task
+        except Exception:
+            pass
+        _upload_retention_task = None
     if http_client:
         await http_client.aclose()
     await _close_pii_http_client()
@@ -1335,10 +1351,34 @@ async def _index_example(example_id, question, answer, rating, tools_used=None, 
     except Exception as e:
         logger.error("[App] _index_example failed: %s", e)
 
-async def log_audit(user_id, action, question="", tools_used=None, tokens=None, duration_ms=0):
+def _audit_clip(value: Any, limit: int) -> str:
+    return str(value or "")[: max(1, int(limit or 1))]
+
+
+async def log_audit(user_id, action, question="", tools_used=None, tokens=None, duration_ms=0, metadata: Optional[dict] = None):
     try:
         ts = datetime.now(timezone.utc)
-        await table_insert("AuditLog", {"PartitionKey":ts.strftime("%Y-%m"),"RowKey":f"{ts.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}","UserId":user_id or "anon","Action":action,"Question":(question or "")[:500],"ToolsUsed":",".join(tools_used) if tools_used else "","TotalTokens":tokens.get("total_tokens",0) if tokens else 0,"DurationMs":duration_ms,"Timestamp":ts.isoformat()})
+        safe_meta = metadata if isinstance(metadata, dict) else {}
+        await table_insert(
+            "AuditLog",
+            {
+                "PartitionKey": ts.strftime("%Y-%m"),
+                "RowKey": f"{ts.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}",
+                "UserId": user_id or "anon",
+                "Action": _audit_clip(action, 120),
+                "Question": _audit_clip(question, 500),
+                "ToolsUsed": ",".join(tools_used) if tools_used else "",
+                "TotalTokens": tokens.get("total_tokens", 0) if tokens else 0,
+                "DurationMs": int(duration_ms or 0),
+                "Timestamp": ts.isoformat(),
+                "Mode": _audit_clip(safe_meta.get("mode", ""), 32),
+                "ModelUsed": _audit_clip(safe_meta.get("model_used", ""), 160),
+                "ProviderUsed": _audit_clip(safe_meta.get("provider_used", ""), 80),
+                "ConversationId": _audit_clip(safe_meta.get("conversation_id", ""), 128),
+                "Confidence": _audit_clip(safe_meta.get("confidence", ""), 32),
+                "MetadataJson": _audit_clip(json.dumps(safe_meta, ensure_ascii=False, default=str), 4000),
+            },
+        )
     except Exception as e:
         logger.error("[App] log_audit failed: %s", e)
 
@@ -1358,7 +1398,20 @@ async def agent_chat_endpoint(request: Request, chat_request: AgentChatRequest, 
     result = await _agent_chat(chat_request, user)
     
     # Audit
-    try: await log_audit(user.get("sub"), "agent_chat", chat_request.question, result.tools_used, result.tokens_used, result.total_time_ms)
+    try:
+        await log_audit(
+            user.get("sub"),
+            "agent_chat",
+            chat_request.question,
+            result.tools_used,
+            result.tokens_used,
+            result.total_time_ms,
+            metadata={
+                "mode": result.mode,
+                "model_used": result.model_used,
+                "conversation_id": result.conversation_id,
+            },
+        )
     except Exception as e:
         logger.error("[App] log_audit in chat failed: %s", e)
     
@@ -1393,6 +1446,11 @@ async def chat_with_file(request: Request, chat_request: AgentChatRequest, crede
             result.tools_used,
             result.tokens_used,
             result.total_time_ms,
+            metadata={
+                "mode": result.mode,
+                "model_used": result.model_used,
+                "conversation_id": result.conversation_id,
+            },
         )
     except Exception as e:
         logger.error("[App] log_audit in chat_file failed: %s", e)
@@ -1437,6 +1495,11 @@ async def api_user_story_context_preview(
             payload.objective,
             tools_used=["user_story_lane"],
             duration_ms=sum(int(stage.get("duration_ms", 0) or 0) for stage in result.get("stages", [])),
+            metadata={
+                "mode": "userstory",
+                "conversation_id": payload.conversation_id or "",
+                "team_scope": payload.team_scope,
+            },
         )
     except Exception as exc:
         logger.warning("[App] user story context audit failed: %s", exc)
@@ -1462,6 +1525,11 @@ async def api_user_story_generate(
             payload.objective,
             tools_used=["user_story_lane"],
             duration_ms=sum(int(stage.get("duration_ms", 0) or 0) for stage in result.get("stages", [])),
+            metadata={
+                "mode": "userstory",
+                "conversation_id": payload.conversation_id or "",
+                "team_scope": payload.team_scope,
+            },
         )
     except Exception as exc:
         logger.warning("[App] user story generate audit failed: %s", exc)
@@ -1500,6 +1568,7 @@ async def api_user_story_publish(
             "user_story_publish",
             payload.draft_id,
             tools_used=["azure_devops_publish"],
+            metadata={"mode": "userstory"},
         )
     except Exception as exc:
         logger.warning("[App] user story publish audit failed: %s", exc)
@@ -1717,9 +1786,25 @@ def _parse_iso_dt(value: str) -> Optional[datetime]:
         txt = str(value or "").strip()
         if not txt:
             return None
-        return datetime.fromisoformat(txt)
+        parsed = datetime.fromisoformat(txt)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
     except Exception:
         return None
+
+
+def _retention_until_iso(*, hours: int) -> str:
+    safe_hours = max(1, int(hours or 1))
+    return (datetime.now(timezone.utc) + timedelta(hours=safe_hours)).isoformat()
+
+
+def _is_retention_expired(value: str, now: Optional[datetime] = None) -> bool:
+    expires_at = _parse_iso_dt(value)
+    if not expires_at:
+        return False
+    now_dt = now or datetime.now(timezone.utc)
+    return now_dt >= expires_at
 
 
 def _is_job_stale(job: dict, now: Optional[datetime] = None) -> bool:
@@ -1814,6 +1899,7 @@ def _job_from_storage_row(row: dict, fallback_job_id: str = "") -> dict:
         "raw_blob_ref": row.get("RawBlobRef", ""),
         "text_blob_name": row.get("TextBlobName", ""),
         "chunks_blob_name": row.get("ChunksBlobName", ""),
+        "retention_until": row.get("RetentionUntil", ""),
     }
 
 
@@ -2023,6 +2109,7 @@ async def _persist_upload_job(job: dict) -> None:
             "RawBlobRef": str(job.get("raw_blob_ref", ""))[:800],
             "TextBlobName": str(job.get("text_blob_name", ""))[:500],
             "ChunksBlobName": str(job.get("chunks_blob_name", ""))[:500],
+            "RetentionUntil": str(job.get("retention_until", ""))[:64],
             "ResultJson": result_json,
         }
         rows = await table_query(
@@ -2435,6 +2522,7 @@ async def _process_upload_job(job: dict) -> None:
         "PivotColumn": str((polymorphic_schema or {}).get("pivot_column", "") or "")[:240],
         "PivotValuesCount": int((polymorphic_schema or {}).get("pivot_values_count", 0) or 0),
         "PolymorphicSchemaJson": json.dumps(polymorphic_schema, ensure_ascii=False)[:32000] if polymorphic_schema else "",
+        "RetentionUntil": str(job.get("retention_until", "") or _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS))[:64],
     }
     await _upsert_upload_index(upload_index_entity)
 
@@ -2516,6 +2604,7 @@ async def _queue_upload_job(
         "raw_blob_ref": raw_blob.get("blob_ref", build_blob_ref(UPLOAD_BLOB_CONTAINER_RAW, blob_paths["raw_blob_name"])),
         "text_blob_name": blob_paths["text_blob_name"],
         "chunks_blob_name": blob_paths["chunks_blob_name"],
+        "retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
     }
     await upload_jobs_store.put(job_id, job)
     await _persist_upload_job(job)
@@ -2553,6 +2642,7 @@ async def _queue_upload_job_from_blob(
         "raw_blob_ref": raw_blob_ref,
         "text_blob_name": blob_paths["text_blob_name"],
         "chunks_blob_name": blob_paths["chunks_blob_name"],
+        "retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
     }
     await upload_jobs_store.put(resolved_job_id, job)
     await _persist_upload_job(job)
@@ -3615,7 +3705,7 @@ async def normalize_speech_prompt(
     payload: SpeechPromptNormalizeRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    get_current_user(credentials)
+    user = get_current_user(credentials)
     transcript = str(payload.transcript or "").strip()
     if not transcript:
         raise HTTPException(400, "Transcrição vazia")
@@ -3633,6 +3723,24 @@ async def normalize_speech_prompt(
         result.get("auto_send_allowed", False),
         int((time.perf_counter() - started) * 1000),
     )
+    try:
+        await log_audit(
+            user.get("sub"),
+            "speech_prompt",
+            transcript,
+            tools_used=["speech_prompt"],
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            metadata={
+                "mode": str(payload.mode or "general"),
+                "provider_used": result.get("provider_used", "unknown"),
+                "model_used": result.get("model_used", ""),
+                "confidence": result.get("confidence", "unknown"),
+                "auto_send_allowed": bool(result.get("auto_send_allowed", False)),
+                "conversation_id": payload.conversation_id or "",
+            },
+        )
+    except Exception as exc:
+        logger.warning("[App] speech prompt audit failed: %s", exc)
     return SpeechPromptNormalizeResponse(**result)
 
 
@@ -3777,43 +3885,154 @@ async def update_chat_title(request: Request, user_id: str, conversation_id: str
     return {"status": "ok", "conversation_id": conversation_id, "title": entity["Title"], "updated_at": entity["UpdatedAt"]}
 
 
+async def _purge_upload_index_row(row: dict, *, delete_job: bool = True) -> dict:
+    row_pk = str(row.get("PartitionKey", "") or "").strip()
+    row_key = str(row.get("RowKey", "") or "").strip()
+    blobs_deleted = 0
+    blob_fields = ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef")
+    for field in blob_fields:
+        ref = str(row.get(field, "") or "").strip()
+        if not ref:
+            continue
+        container, blob_name = parse_blob_ref(ref)
+        if not container or not blob_name:
+            continue
+        try:
+            await blob_delete(container, blob_name)
+            blobs_deleted += 1
+        except Exception as e:
+            logger.warning("[App] upload artifact blob delete failed for %s: %s", ref, e)
+    row_deleted = 0
+    if row_pk and row_key:
+        try:
+            await table_delete("UploadIndex", row_pk, row_key)
+            row_deleted = 1
+        except Exception as e:
+            logger.warning("[App] upload index delete failed for %s/%s: %s", row_pk, row_key, e)
+    if row_pk:
+        uploaded_files_store.pop(row_pk, None)
+        if row_pk in conversation_meta:
+            conversation_meta[row_pk]["file_injected"] = False
+    if delete_job and row_key:
+        try:
+            await upload_jobs_store.delete(row_key, partition_key="upload")
+            job_deleted = 1
+        except Exception as e:
+            logger.warning("[App] upload job delete failed for %s: %s", row_key, e)
+            job_deleted = 0
+    else:
+        job_deleted = 0
+    return {"rows_deleted": row_deleted, "blobs_deleted": blobs_deleted, "jobs_deleted": job_deleted}
+
+
+async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
+    now = datetime.now(timezone.utc)
+    safe_limit = max(1, min(int(limit or 120), 500))
+    rows_deleted = 0
+    blobs_deleted = 0
+    jobs_deleted = 0
+    deleted_job_ids: set[str] = set()
+    try:
+        upload_index_rows = await table_query("UploadIndex", top=safe_limit)
+    except Exception as e:
+        logger.warning("[App] expired upload artifact sweep query failed: %s", e)
+        upload_index_rows = []
+
+    active_index_ids = set()
+    for row in upload_index_rows:
+        row_key = str(row.get("RowKey", "") or "").strip()
+        if row_key:
+            active_index_ids.add(row_key)
+        retention_until = str(row.get("RetentionUntil", "") or "").strip()
+        if not _is_retention_expired(retention_until, now=now):
+            continue
+        result = await _purge_upload_index_row(row)
+        rows_deleted += int(result.get("rows_deleted", 0) or 0)
+        blobs_deleted += int(result.get("blobs_deleted", 0) or 0)
+        jobs_deleted += int(result.get("jobs_deleted", 0) or 0)
+        if row_key:
+            active_index_ids.discard(row_key)
+            if int(result.get("jobs_deleted", 0) or 0) > 0:
+                deleted_job_ids.add(row_key)
+
+    try:
+        upload_job_rows = await table_query("UploadJobs", "PartitionKey eq 'upload'", top=safe_limit)
+    except Exception as e:
+        logger.warning("[App] expired upload jobs sweep query failed: %s", e)
+        upload_job_rows = []
+
+    for row in upload_job_rows:
+        job_id = str(row.get("RowKey", "") or "").strip()
+        if not job_id:
+            continue
+        if job_id in deleted_job_ids:
+            continue
+        status = str(row.get("Status", "") or "").strip().lower()
+        if status not in ("completed", "failed"):
+            continue
+        if job_id in active_index_ids:
+            continue
+        retention_until = str(row.get("RetentionUntil", "") or "").strip()
+        if not _is_retention_expired(retention_until, now=now):
+            continue
+        raw_blob_ref = str(row.get("RawBlobRef", "") or "").strip()
+        if raw_blob_ref:
+            container, blob_name = parse_blob_ref(raw_blob_ref)
+            if container and blob_name:
+                try:
+                    await blob_delete(container, blob_name)
+                    blobs_deleted += 1
+                except Exception as e:
+                    logger.warning("[App] raw upload blob delete failed for %s: %s", raw_blob_ref, e)
+        try:
+            await upload_jobs_store.delete(job_id, partition_key="upload")
+            jobs_deleted += 1
+        except Exception as e:
+            logger.warning("[App] stale upload job delete failed for %s: %s", job_id, e)
+
+    return {
+        "rows_deleted": rows_deleted,
+        "blobs_deleted": blobs_deleted,
+        "jobs_deleted": jobs_deleted,
+    }
+
+
+async def _upload_retention_loop() -> None:
+    sleep_for = max(300, int(UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS or 1800))
+    while True:
+        try:
+            await _purge_expired_upload_artifacts()
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.warning("[App] upload retention loop failed: %s", e)
+        await asyncio.sleep(float(sleep_for))
+
+
 async def _purge_upload_artifacts_for_conversation(conversation_id: str, user_sub: str = "", include_all_users: bool = False) -> dict:
     safe_conv = str(conversation_id or "").strip()
     if not safe_conv:
-        return {"rows_deleted": 0, "blobs_deleted": 0}
+        return {"rows_deleted": 0, "blobs_deleted": 0, "jobs_deleted": 0}
     rows_deleted = 0
     blobs_deleted = 0
+    jobs_deleted = 0
     try:
         rows = await table_query("UploadIndex", f"PartitionKey eq '{odata_escape(safe_conv)}'", top=500)
     except Exception as e:
         logger.warning("[App] upload artifact purge query failed for %s: %s", safe_conv, e)
-        return {"rows_deleted": 0, "blobs_deleted": 0}
+        return {"rows_deleted": 0, "blobs_deleted": 0, "jobs_deleted": 0}
 
     allowed_user = str(user_sub or "").strip()
-    blob_fields = ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef")
     for row in rows:
         row_owner = str(row.get("UserSub", "") or "").strip()
         if not include_all_users and allowed_user and row_owner and row_owner != allowed_user:
             continue
-        for field in blob_fields:
-            ref = str(row.get(field, "") or "").strip()
-            if not ref:
-                continue
-            container, blob_name = parse_blob_ref(ref)
-            if not container or not blob_name:
-                continue
-            try:
-                await blob_delete(container, blob_name)
-                blobs_deleted += 1
-            except Exception as e:
-                logger.warning("[App] upload artifact blob delete failed for %s: %s", ref, e)
-        try:
-            await table_delete("UploadIndex", safe_conv, str(row.get("RowKey", "") or ""))
-            rows_deleted += 1
-        except Exception as e:
-            logger.warning("[App] upload index delete failed for %s/%s: %s", safe_conv, row.get("RowKey", ""), e)
+        result = await _purge_upload_index_row(row)
+        rows_deleted += int(result.get("rows_deleted", 0) or 0)
+        blobs_deleted += int(result.get("blobs_deleted", 0) or 0)
+        jobs_deleted += int(result.get("jobs_deleted", 0) or 0)
     uploaded_files_store.pop(safe_conv, None)
-    return {"rows_deleted": rows_deleted, "blobs_deleted": blobs_deleted}
+    return {"rows_deleted": rows_deleted, "blobs_deleted": blobs_deleted, "jobs_deleted": jobs_deleted}
 
 @app.delete("/api/chats/{user_id}/{conversation_id}")
 @limiter.limit("30/minute", key_func=_user_or_ip_rate_key)

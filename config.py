@@ -279,6 +279,7 @@ UPLOAD_BLOB_CONTAINER_TEXT = _get_env("UPLOAD_BLOB_CONTAINER_TEXT", "upload-text
 UPLOAD_BLOB_CONTAINER_CHUNKS = _get_env("UPLOAD_BLOB_CONTAINER_CHUNKS", "upload-chunks")
 CHAT_TOOLRESULT_BLOB_CONTAINER = _get_env("CHAT_TOOLRESULT_BLOB_CONTAINER", "chat-tool-results")
 GENERATED_FILES_BLOB_CONTAINER = _get_env("GENERATED_FILES_BLOB_CONTAINER", "generated-files")
+GENERATED_FILE_TTL_SECONDS = int(_get_env("GENERATED_FILE_TTL_SECONDS", "1800"))
 
 # =============================================================================
 # AUTH
@@ -384,6 +385,8 @@ UPLOAD_INDEX_TOP = int(_get_env("UPLOAD_INDEX_TOP", "200"))
 UPLOAD_INLINE_WORKER_ENABLED = _get_env("UPLOAD_INLINE_WORKER_ENABLED", "true").lower() == "true"
 UPLOAD_WORKER_POLL_SECONDS = float(_get_env("UPLOAD_WORKER_POLL_SECONDS", "2.5"))
 UPLOAD_WORKER_BATCH_SIZE = int(_get_env("UPLOAD_WORKER_BATCH_SIZE", "4"))
+UPLOAD_ARTIFACT_RETENTION_HOURS = int(_get_env("UPLOAD_ARTIFACT_RETENTION_HOURS", "72"))
+UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS = int(_get_env("UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS", "1800"))
 
 # =============================================================================
 # EXPORT CONFIG

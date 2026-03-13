@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from config import GENERATED_FILES_BLOB_CONTAINER
+from config import GENERATED_FILES_BLOB_CONTAINER, GENERATED_FILE_TTL_SECONDS
 from storage import blob_delete, blob_download_bytes, blob_download_json, blob_list, blob_upload_bytes, blob_upload_json
 from utils import create_logged_task
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 _generated_files_store: dict[str, dict] = {}
 _generated_files_lock = asyncio.Lock()
-_GENERATED_FILE_TTL_SECONDS = 30 * 60
+_GENERATED_FILE_TTL_SECONDS = max(300, int(GENERATED_FILE_TTL_SECONDS or 1800))
 _GENERATED_FILE_MAX = 100
 _GENERATED_FILE_MAX_TOTAL_BYTES = 500 * 1024 * 1024  # 500 MB
 _LAST_REMOTE_SWEEP_AT: Optional[datetime] = None
