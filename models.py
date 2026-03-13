@@ -154,6 +154,13 @@ class SpeechPromptNormalizeResponse(BaseModel):
     inferred_mode: Literal["general", "userstory"] = "general"
     auto_send_allowed: bool = False
     notes: List[str] = Field(default_factory=list, max_length=10)
+    provider_used: Optional[str] = Field(default=None, max_length=160)
+    model_used: Optional[str] = Field(default=None, max_length=160)
+    provider_policy_mode: Optional[str] = Field(default=None, max_length=32)
+    provider_family: Optional[str] = Field(default=None, max_length=64)
+    external_provider: bool = False
+    data_sensitivity: Optional[str] = Field(default=None, max_length=32)
+    provider_policy_note: Optional[str] = Field(default=None, max_length=500)
 
 
 class SpeechPromptTokenResponse(BaseModel):

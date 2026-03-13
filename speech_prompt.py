@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from config import SPEECH_PROMPT_FALLBACK_SPEC, SPEECH_PROMPT_PRIMARY_SPEC
 from llm_provider import get_provider_for_spec
+from provider_governance import evaluate_provider_governance
 from pii_shield import PIIMaskingContext, mask_messages
 from prompt_shield import check_messages
 from structured_schemas import SPEECH_PROMPT_NORMALIZATION_SCHEMA
@@ -48,6 +49,13 @@ def _fallback_response(cleaned: str, requested_mode: str, note: Optional[str] = 
     elif cleaned:
         notes.append("Foi usada uma normalização conservadora porque a interpretação avançada não ficou disponível.")
     confidence = "medium" if cleaned else "low"
+    governance = evaluate_provider_governance(
+        provider_used="fallback",
+        model_used="fallback",
+        action="speech_prompt",
+        mode=requested_mode,
+        tools_used=["speech_prompt"],
+    )
     return {
         "raw_transcript": cleaned,
         "normalized_prompt": cleaned or "Ajuda-me com este pedido.",
@@ -57,6 +65,11 @@ def _fallback_response(cleaned: str, requested_mode: str, note: Optional[str] = 
         "notes": notes[:5],
         "provider_used": "fallback",
         "model_used": "fallback",
+        "provider_policy_mode": governance["policy_mode"],
+        "provider_family": governance["provider_family"],
+        "external_provider": governance["external_provider"],
+        "data_sensitivity": governance["data_sensitivity"],
+        "provider_policy_note": governance["policy_note"] or None,
     }
 
 
@@ -155,6 +168,13 @@ def _normalize_result(
         if str(note or "").strip()
     ]
 
+    governance = evaluate_provider_governance(
+        provider_used=provider_used,
+        model_used=provider_used,
+        action="speech_prompt",
+        mode=requested_mode,
+        tools_used=["speech_prompt"],
+    )
     return {
         "raw_transcript": cleaned,
         "normalized_prompt": normalized_prompt,
@@ -164,6 +184,11 @@ def _normalize_result(
         "notes": notes[:5],
         "provider_used": provider_used,
         "model_used": provider_used,
+        "provider_policy_mode": governance["policy_mode"],
+        "provider_family": governance["provider_family"],
+        "external_provider": governance["external_provider"],
+        "data_sensitivity": governance["data_sensitivity"],
+        "provider_policy_note": governance["policy_note"] or None,
     }
 
 
@@ -183,6 +208,11 @@ async def normalize_spoken_prompt(
             "notes": ["Não foi possível recolher texto suficiente a partir da fala."],
             "provider_used": "none",
             "model_used": "none",
+            "provider_policy_mode": "advisory",
+            "provider_family": "none",
+            "external_provider": False,
+            "data_sensitivity": "elevated",
+            "provider_policy_note": None,
         }
 
     requested_mode = _guess_mode(cleaned, mode)
@@ -227,6 +257,8 @@ async def normalize_spoken_prompt(
             normalized["notes"].append("Foi usado o modelo de fallback por indisponibilidade da interpretação principal.")
         else:
             normalized["notes"].append("Foi usado o modelo de fallback para melhorar uma interpretação com baixa confiança.")
+        if normalized.get("external_provider") and normalized.get("provider_policy_note"):
+            normalized["notes"].append(normalized["provider_policy_note"])
         normalized["notes"] = normalized["notes"][:5]
         return normalized
     except Exception as exc:

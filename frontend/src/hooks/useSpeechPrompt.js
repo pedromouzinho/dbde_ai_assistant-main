@@ -139,6 +139,8 @@ export default function useSpeechPrompt({
       const notes = Array.isArray(normalized?.notes)
         ? normalized.notes.filter(Boolean).map(item => String(item).trim()).filter(Boolean)
         : [];
+      const providerPolicyNote = String(normalized?.provider_policy_note || '').trim();
+      const externalProvider = Boolean(normalized?.external_provider);
       const autoSendAllowed = Boolean(normalized?.auto_send_allowed);
       const hasDraftText = Boolean(hasPendingInput?.());
       const shouldAutoSend = speechSubmitMode === 'auto' && autoSendAllowed && !hasDraftText;
@@ -160,6 +162,9 @@ export default function useSpeechPrompt({
       }
       if (notes.length > 0) {
         noticeParts.push(notes[0]);
+      }
+      if (externalProvider && providerPolicyNote) {
+        noticeParts.push(providerPolicyNote);
       }
       const finalNotice = noticeParts.join(' ');
 

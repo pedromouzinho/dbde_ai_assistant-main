@@ -92,6 +92,20 @@ AZURE_SPEECH_PHRASE_LIST_USERSTORY = tuple(
 )
 SPEECH_PROMPT_PRIMARY_SPEC = _get_env("SPEECH_PROMPT_PRIMARY_SPEC", "azure_openai:gpt-4-1-mini-dz")
 SPEECH_PROMPT_FALLBACK_SPEC = _get_env("SPEECH_PROMPT_FALLBACK_SPEC", "anthropic:sonnet")
+PROVIDER_GOVERNANCE_MODE = _get_env("PROVIDER_GOVERNANCE_MODE", "advisory").lower()
+PROVIDER_EXTERNAL_MODEL_FAMILIES = tuple(
+    item.strip().lower()
+    for item in _get_env("PROVIDER_EXTERNAL_MODEL_FAMILIES", "anthropic").split(",")
+    if item.strip()
+)
+PROVIDER_GOVERNANCE_EXPERIMENTAL_ALLOW_EXTERNAL = _get_env(
+    "PROVIDER_GOVERNANCE_EXPERIMENTAL_ALLOW_EXTERNAL",
+    "true",
+).lower() == "true"
+PROVIDER_GOVERNANCE_NOTE = _get_env(
+    "PROVIDER_GOVERNANCE_NOTE",
+    "Modelos Anthropic permanecem ativos como risco experimental conhecido e aceite nesta fase.",
+)
 
 # =============================================================================
 # ANTHROPIC (Claude) — via API directa OU via Azure AI Foundry

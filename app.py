@@ -82,6 +82,8 @@ from config import (
     SEARCH_SERVICE, SEARCH_KEY, API_VERSION_SEARCH,
     LLM_TIER_FAST, LLM_TIER_STANDARD, LLM_TIER_PRO, LLM_TIER_VISION, VISION_ENABLED,
     SPEECH_PROMPT_PRIMARY_SPEC, SPEECH_PROMPT_FALLBACK_SPEC,
+    PROVIDER_GOVERNANCE_MODE, PROVIDER_EXTERNAL_MODEL_FAMILIES,
+    PROVIDER_GOVERNANCE_EXPERIMENTAL_ALLOW_EXTERNAL,
     MODEL_ROUTER_ENABLED, MODEL_ROUTER_SPEC, MODEL_ROUTER_TARGET_TIERS, MODEL_ROUTER_NON_PROD_ONLY,
     IS_PRODUCTION,
     RERANK_ENABLED, RERANK_MODEL, RERANK_ENDPOINT, RERANK_TOP_N, RERANK_AUTH_MODE,
@@ -213,6 +215,7 @@ from story_knowledge_assets import (
 from story_knowledge_index import sync_story_knowledge_index
 from speech_prompt import normalize_spoken_prompt
 from privacy_service import build_user_privacy_export, delete_user_personal_data
+from provider_governance import evaluate_provider_governance
 
 # =============================================================================
 # APP SETUP
@@ -1363,6 +1366,21 @@ async def log_audit(user_id, action, question="", tools_used=None, tokens=None, 
     try:
         ts = datetime.now(timezone.utc)
         safe_meta = metadata if isinstance(metadata, dict) else {}
+        governance = evaluate_provider_governance(
+            provider_used=safe_meta.get("provider_used", ""),
+            model_used=safe_meta.get("model_used", ""),
+            action=action,
+            mode=safe_meta.get("mode", ""),
+            tools_used=tools_used,
+        )
+        safe_meta = {
+            **safe_meta,
+            "provider_policy_mode": governance["policy_mode"],
+            "provider_family": governance["provider_family"],
+            "external_provider": governance["external_provider"],
+            "data_sensitivity": governance["data_sensitivity"],
+            "provider_policy_note": governance["policy_note"],
+        }
         await table_insert(
             "AuditLog",
             {
@@ -1378,6 +1396,10 @@ async def log_audit(user_id, action, question="", tools_used=None, tokens=None, 
                 "Mode": _audit_clip(safe_meta.get("mode", ""), 32),
                 "ModelUsed": _audit_clip(safe_meta.get("model_used", ""), 160),
                 "ProviderUsed": _audit_clip(safe_meta.get("provider_used", ""), 80),
+                "ProviderFamily": _audit_clip(safe_meta.get("provider_family", ""), 64),
+                "ExternalProvider": _audit_clip(safe_meta.get("external_provider", ""), 8),
+                "DataSensitivity": _audit_clip(safe_meta.get("data_sensitivity", ""), 32),
+                "PolicyMode": _audit_clip(safe_meta.get("provider_policy_mode", ""), 32),
                 "ConversationId": _audit_clip(safe_meta.get("conversation_id", ""), 128),
                 "Confidence": _audit_clip(safe_meta.get("confidence", ""), 32),
                 "MetadataJson": _audit_clip(json.dumps(safe_meta, ensure_ascii=False, default=str), 4000),
@@ -3787,6 +3809,11 @@ async def normalize_speech_prompt(
                 "confidence": result.get("confidence", "unknown"),
                 "auto_send_allowed": bool(result.get("auto_send_allowed", False)),
                 "conversation_id": payload.conversation_id or "",
+                "provider_family": result.get("provider_family", ""),
+                "external_provider": bool(result.get("external_provider", False)),
+                "data_sensitivity": result.get("data_sensitivity", ""),
+                "provider_policy_mode": result.get("provider_policy_mode", ""),
+                "provider_policy_note": result.get("provider_policy_note", ""),
             },
         )
     except Exception as exc:
@@ -4329,6 +4356,9 @@ async def api_info(request: Request):
             "speech_prompt_primary": SPEECH_PROMPT_PRIMARY_SPEC,
             "speech_prompt_fallback": SPEECH_PROMPT_FALLBACK_SPEC,
             "speech_submit_modes": ["auto", "text"],
+            "provider_governance_mode": PROVIDER_GOVERNANCE_MODE,
+            "provider_external_model_families": list(PROVIDER_EXTERNAL_MODEL_FAMILIES),
+            "provider_external_models_experimental_allowed": PROVIDER_GOVERNANCE_EXPERIMENTAL_ALLOW_EXTERNAL,
         },
     }
 

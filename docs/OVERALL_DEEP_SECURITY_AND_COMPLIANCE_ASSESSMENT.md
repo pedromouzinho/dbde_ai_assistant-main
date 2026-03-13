@@ -98,6 +98,22 @@ Isto é importante para:
 - apoiar futuros processos de DSR;
 - preparar melhor a aplicação para produção séria.
 
+### 5. Governação consultiva de providers
+
+Foi introduzida uma camada explícita de governação consultiva dos providers:
+
+- classificação de sensibilidade por ação/modo;
+- identificação de `provider_family` e uso de provider externo;
+- registo disso no audit trail;
+- exposição do modo de governação no `/api/info`;
+- sinalização no fluxo de voz quando entra um fallback externo.
+
+Nesta fase, esta governação é deliberadamente **consultiva** e não bloqueante:
+
+- melhora visibilidade e rastreabilidade;
+- não cria retrabalho antes da intervenção da DSI;
+- mantém a flexibilidade experimental atual.
+
 ## Riscos ainda presentes
 
 ### 1. Identidade e controlo de acesso

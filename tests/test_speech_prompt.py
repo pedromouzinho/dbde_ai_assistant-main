@@ -58,6 +58,8 @@ async def test_normalize_spoken_prompt_uses_primary_structured_output(monkeypatc
     assert result["inferred_mode"] == "userstory"
     assert result["auto_send_allowed"] is True
     assert result["notes"] == ["O pedido referia Via Verde e um step específico."]
+    assert result["external_provider"] is False
+    assert result["provider_family"] == "azure_openai"
 
 
 @pytest.mark.asyncio
@@ -100,4 +102,7 @@ async def test_normalize_spoken_prompt_uses_fallback_on_low_confidence(monkeypat
     assert calls == [speech_prompt.SPEECH_PROMPT_PRIMARY_SPEC, speech_prompt.SPEECH_PROMPT_FALLBACK_SPEC]
     assert result["confidence"] == "medium"
     assert result["auto_send_allowed"] is True
-    assert "fallback" in result["notes"][-1].lower()
+    assert any("fallback" in note.lower() for note in result["notes"])
+    assert result["external_provider"] is True
+    assert result["provider_family"] == "anthropic"
+    assert result["provider_policy_note"]
