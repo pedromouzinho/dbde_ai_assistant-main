@@ -123,8 +123,11 @@ class TestUploadLimitsAndExtraction:
         assert result_payload["rows"] == 2
 
     @pytest.mark.asyncio
-    async def test_extract_upload_entry_uses_full_dataset_for_semantic_chunks(self, monkeypatch):
-        captured = {}
+    async def test_extract_upload_entry_deep_ingest_produces_full_text(self, monkeypatch):
+        """When deep ingest is enabled, full_text should be built from
+        load_tabular_dataset (not just the preview).  Semantic chunk
+        building is now deferred to background, so we verify via the
+        tabular_ingest_mode flag instead."""
         preview_rows = [f"row-{idx}" for idx in range(200)]
         full_records = [{"Body": f"line-{idx}-" + ("x" * 260)} for idx in range(300)]
         monkeypatch.setattr(app, "UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES", 1024 * 1024)
@@ -139,29 +142,25 @@ class TestUploadLimitsAndExtraction:
                 "data_text": "Body\n" + "\n".join(preview_rows),
                 "delimiter": "\t",
                 "col_analysis": [{"name": "Body", "type": "text", "sample": ["row-0"]}],
+                "sample_records": [{"Body": f"row-{idx}"} for idx in range(200)],
+                "column_types": {"Body": "text"},
                 "truncated": True,
             },
         )
         monkeypatch.setattr(
             app,
             "load_tabular_dataset",
-            lambda _content, _filename, **_kwargs: {
+            lambda _content, _filename, *_args, **_kwargs: {
                 "columns": ["Body"],
                 "records": full_records,
                 "row_count": 300,
             },
         )
 
-        async def _fake_build_semantic_chunks(text):
-            captured["text"] = text
-            return [{"text": "ok"}]
+        store_entry, resp = await app._extract_upload_entry("sample.csv", b"Body\nx\n", "text/csv")
 
-        monkeypatch.setattr(app, "_build_semantic_chunks", _fake_build_semantic_chunks)
-
-        store_entry, _ = await app._extract_upload_entry("sample.csv", b"Body\nx\n", "text/csv")
-
-        assert len(captured["text"].splitlines()) == 301
-        assert store_entry["data_text"].count("\n") < len(captured["text"].splitlines())
+        assert store_entry.get("tabular_ingest_mode") == "deep"
+        assert resp.get("tabular_ingest_mode") == "deep"
 
     @pytest.mark.asyncio
     async def test_extract_upload_entry_uses_preview_only_mode_for_large_tabular_files(self, monkeypatch):
@@ -365,7 +364,7 @@ class TestUploadLimitsAndExtraction:
             uploaded_json["payload"] = payload
             return {"blob_ref": f"{container}/{blob_name}"}
 
-        async def _fake_extract_upload_entry(_filename, _raw_bytes, _content_type):
+        async def _fake_extract_upload_entry(_filename, _raw_bytes, _content_type, **_kwargs):
             return (
                 {
                     "filename": "sample.csv",
@@ -402,9 +401,11 @@ class TestUploadLimitsAndExtraction:
 
         await app._process_upload_job(job)
 
-        assert uploaded_json["payload"]["chunks"][0]["text"] == "chunk"
-        assert uploaded_json["store_entry"]["has_artifact_semantic_chunks"] is True
-        assert uploaded_json["index_entity"]["HasChunks"] is True
+        # Semantic chunks are now deferred to background / first-query,
+        # so they are NOT uploaded inline during _process_upload_job.
+        # Instead, needs_artifact_semantic_chunks is flagged in store_entry.
+        assert uploaded_json["store_entry"]["needs_artifact_semantic_chunks"] is True
+        assert uploaded_json["store_entry"]["tabular_artifact_blob_ref"] != ""
         assert job["status"] == "completed"
 
     def test_request_body_limit_bytes_uses_stream_limit_for_tabular_uploads(self, monkeypatch):

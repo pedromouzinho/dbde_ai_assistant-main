@@ -189,7 +189,12 @@ from tabular_loader import (
     load_tabular_dataset,
     load_tabular_preview,
 )
-from tabular_artifacts import build_tabular_artifact, iter_tabular_artifact_batches
+from tabular_artifacts import (
+    build_tabular_artifact,
+    iter_tabular_artifact_batches,
+    load_tabular_artifact_dataset,
+    load_tabular_artifact_preview,
+)
 from job_store import PersistentJobStore
 from utils import odata_escape, safe_blob_component, create_logged_task
 from tool_metrics import tool_metrics
@@ -2332,7 +2337,13 @@ async def _mark_job_failed(job: dict, reason: str) -> dict:
     return job
 
 
-async def _extract_upload_entry(filename: str, content: bytes, content_type: str = "") -> tuple[dict, dict]:
+async def _extract_upload_entry(
+    filename: str,
+    content: bytes,
+    content_type: str = "",
+    *,
+    prebuilt_artifact: dict | None = None,
+) -> tuple[dict, dict]:
     data_text, row_count, col_names, truncated = "", 0, [], False
     semantic_chunks = None
     col_analysis = []
@@ -2381,61 +2392,121 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
             )
 
     if is_tabular_filename(filename_lower):
-        try:
-            preview = await asyncio.to_thread(load_tabular_preview, content, filename_lower)
-        except TabularLoaderError as exc:
-            raise HTTPException(400, str(exc)) from exc
-        col_names = list(preview.get("columns") or [])
-        row_count = int(preview.get("row_count", 0) or 0)
-        data_text = str(preview.get("data_text", "") or "")
-        detected_delimiter = str(preview.get("delimiter", "\t") or "\t")
-        col_analysis = list(preview.get("col_analysis") or [])
-        polymorphic_schema = detect_polymorphic_schema(
-            col_names,
-            list(preview.get("sample_records") or []),
-            dict(preview.get("column_types") or {}),
-            row_count,
-        )
-        truncated = bool(preview.get("truncated", False))
-        sample_records = list(preview.get("sample_records") or [])
-        should_deep_ingest = (
-            len(content) <= UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES
-            and row_count <= UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS
-        )
-        if row_count > 0 and should_deep_ingest:
+        # ── Fast path: if we already built a Parquet artifact, derive
+        # preview + dataset from it (DuckDB reads Parquet in ms) instead
+        # of re-parsing the raw XLSX/XLS with openpyxl again.
+        if prebuilt_artifact and prebuilt_artifact.get("artifact_bytes"):
+            artifact_bytes = prebuilt_artifact["artifact_bytes"]
             try:
-                full_dataset = await asyncio.to_thread(
-                    load_tabular_dataset,
-                    content,
-                    filename_lower,
-                    UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
+                preview = await asyncio.to_thread(
+                    load_tabular_artifact_preview,
+                    artifact_bytes,
                 )
-                full_records = list(full_dataset.get("records") or [])
-                if full_records and col_names:
-                    full_lines = [detected_delimiter.join(col_names)]
-                    for rec in full_records:
-                        full_lines.append(
-                            detected_delimiter.join(str(rec.get(column, "")) for column in col_names)
-                        )
-                    full_text = "\n".join(full_lines)
-                else:
-                    full_text = data_text
-                tabular_ingest_mode = "deep"
             except Exception:
-                full_text = data_text
-                tabular_ingest_mode = "preview_only"
-        else:
-            full_text = data_text
-            tabular_ingest_mode = "preview_only"
-            if row_count > len(sample_records):
-                truncated = True
-        if tabular_ingest_mode == "preview_only":
-            logger.info(
-                "[Upload] tabular preview-only ingest filename=%s size_bytes=%s rows=%s",
-                filename,
-                len(content),
+                preview = {}
+            col_names = list(prebuilt_artifact.get("columns") or preview.get("columns") or [])
+            row_count = int(prebuilt_artifact.get("row_count", 0) or preview.get("row_count", 0) or 0)
+            data_text = str(preview.get("data_text", "") or "")
+            detected_delimiter = str(preview.get("delimiter", "\t") or "\t")
+            col_analysis = list(preview.get("col_analysis") or [])
+            sample_records = list(preview.get("sample_records") or [])
+            column_types = dict(preview.get("column_types") or {})
+            polymorphic_schema = detect_polymorphic_schema(
+                col_names,
+                sample_records,
+                column_types,
                 row_count,
             )
+            truncated = bool(preview.get("truncated", False))
+            # Deep ingest from Parquet (instant via DuckDB)
+            should_deep_ingest = row_count <= UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS
+            if row_count > 0 and should_deep_ingest:
+                try:
+                    full_dataset = await asyncio.to_thread(
+                        load_tabular_artifact_dataset,
+                        artifact_bytes,
+                        max_rows=UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
+                    )
+                    full_records = list(full_dataset.get("records") or [])
+                    if full_records and col_names:
+                        full_lines = [detected_delimiter.join(col_names)]
+                        for rec in full_records:
+                            full_lines.append(
+                                detected_delimiter.join(str(rec.get(column, "")) for column in col_names)
+                            )
+                        full_text = "\n".join(full_lines)
+                    else:
+                        full_text = data_text
+                    tabular_ingest_mode = "deep"
+                except Exception:
+                    full_text = data_text
+                    tabular_ingest_mode = "preview_only"
+            else:
+                full_text = data_text
+                tabular_ingest_mode = "preview_only"
+                if row_count > len(sample_records):
+                    truncated = True
+            logger.info(
+                "[Upload] artifact-first tabular extract filename=%s rows=%s mode=%s (zero extra openpyxl passes)",
+                filename, row_count, tabular_ingest_mode,
+            )
+        else:
+            # ── Legacy path: no pre-built artifact, parse raw bytes directly
+            try:
+                preview = await asyncio.to_thread(load_tabular_preview, content, filename_lower)
+            except TabularLoaderError as exc:
+                raise HTTPException(400, str(exc)) from exc
+            col_names = list(preview.get("columns") or [])
+            row_count = int(preview.get("row_count", 0) or 0)
+            data_text = str(preview.get("data_text", "") or "")
+            detected_delimiter = str(preview.get("delimiter", "\t") or "\t")
+            col_analysis = list(preview.get("col_analysis") or [])
+            polymorphic_schema = detect_polymorphic_schema(
+                col_names,
+                list(preview.get("sample_records") or []),
+                dict(preview.get("column_types") or {}),
+                row_count,
+            )
+            truncated = bool(preview.get("truncated", False))
+            sample_records = list(preview.get("sample_records") or [])
+            should_deep_ingest = (
+                len(content) <= UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES
+                and row_count <= UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS
+            )
+            if row_count > 0 and should_deep_ingest:
+                try:
+                    full_dataset = await asyncio.to_thread(
+                        load_tabular_dataset,
+                        content,
+                        filename_lower,
+                        UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
+                    )
+                    full_records = list(full_dataset.get("records") or [])
+                    if full_records and col_names:
+                        full_lines = [detected_delimiter.join(col_names)]
+                        for rec in full_records:
+                            full_lines.append(
+                                detected_delimiter.join(str(rec.get(column, "")) for column in col_names)
+                            )
+                        full_text = "\n".join(full_lines)
+                    else:
+                        full_text = data_text
+                    tabular_ingest_mode = "deep"
+                except Exception:
+                    full_text = data_text
+                    tabular_ingest_mode = "preview_only"
+            else:
+                full_text = data_text
+                tabular_ingest_mode = "preview_only"
+                if row_count > len(sample_records):
+                    truncated = True
+            if tabular_ingest_mode == "preview_only":
+                logger.info(
+                    "[Upload] tabular preview-only ingest filename=%s size_bytes=%s rows=%s",
+                    filename,
+                    len(content),
+                    row_count,
+                )
     elif filename_lower.endswith(".pdf"):
         used_doc_intel = False
         if DOC_INTEL_ENABLED:
@@ -2644,8 +2715,9 @@ async def _process_upload_job(job: dict, *, inline_content: bytes | None = None)
     if raw_bytes is None:
         raise RuntimeError("Blob original não encontrado para este upload job")
 
-    store_entry, result_payload = await _extract_upload_entry(filename, raw_bytes, content_type)
-
+    # ── Build tabular artifact FIRST (single openpyxl/CSV pass) so that
+    # _extract_upload_entry can derive preview + dataset from the fast
+    # Parquet artifact instead of re-parsing the raw file again.
     artifact_blob_ref = ""
     artifact_format = ""
     artifact_row_count = 0
@@ -2668,6 +2740,11 @@ async def _process_upload_job(job: dict, *, inline_content: bytes | None = None)
                 job["artifact_format"] = artifact_format
         except Exception as exc:
             logger.warning("[Upload] tabular artifact build failed for %s: %s", filename, exc)
+
+    store_entry, result_payload = await _extract_upload_entry(
+        filename, raw_bytes, content_type,
+        prebuilt_artifact=artifact if artifact.get("artifact_bytes") else None,
+    )
 
     raw_blob_retention_until = str(
         job.get("raw_blob_retention_until", "") or _raw_blob_retention_until_iso(

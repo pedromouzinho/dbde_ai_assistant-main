@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 env:
   EVAL_MOCK_LLM: "true"
   PYTHONPATH: "."
@@ -31,9 +34,10 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Audit Python dependencies
+        timeout-minutes: 5
         run: |
           pip install pip-audit
-          pip-audit -r requirements.txt --desc on 2>&1 || true
+          pip-audit -r requirements.txt --desc on --timeout 30 2>&1 || true
 
       - name: Run tests
         run: python -m pytest tests/ -x --tb=short -q

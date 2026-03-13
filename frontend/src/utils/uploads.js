@@ -93,7 +93,7 @@ export async function queueUploadJobsBatch(authFetchFn, apiUrl, files, conversat
   return await res.json();
 }
 
-export async function waitUploadJob(authFetchFn, apiUrl, jobId, uploadJobTimeoutMs = 180000, uploadPollIntervalMs = 1200) {
+export async function waitUploadJob(authFetchFn, apiUrl, jobId, uploadJobTimeoutMs = 600000, uploadPollIntervalMs = 1200) {
   const deadline = Date.now() + uploadJobTimeoutMs;
   while (Date.now() < deadline) {
     const res = await authFetchFn(apiUrl + "/api/upload/status/" + encodeURIComponent(jobId), { method: "GET" });

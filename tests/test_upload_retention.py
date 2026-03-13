@@ -272,7 +272,7 @@ async def test_process_upload_job_shortens_raw_retention_once_tabular_chunks_exi
         uploaded["chunks_payload"] = payload
         return {"blob_ref": f"{container}/{blob_name}"}
 
-    async def _fake_extract_upload_entry(_filename, _raw_bytes, _content_type):
+    async def _fake_extract_upload_entry(_filename, _raw_bytes, _content_type, **_kwargs):
         return (
             {
                 "filename": "sample.csv",
@@ -314,9 +314,12 @@ async def test_process_upload_job_shortens_raw_retention_once_tabular_chunks_exi
 
     retention_until = datetime.fromisoformat(uploaded["index_entity"]["RawBlobRetentionUntil"])
     delta = retention_until - datetime.now(timezone.utc)
+    # With deferred semantic chunks, raw retention uses the longer
+    # UPLOAD_TABULAR_RAW_RETENTION_HOURS (6h) instead of the short 1h.
     assert delta.total_seconds() > 0.5 * 3600
-    assert delta.total_seconds() < 1.5 * 3600
-    assert uploaded["store_entry"]["has_chunks"] is True
+    assert delta.total_seconds() < 7 * 3600
+    # Chunks are now deferred — not built inline during _process_upload_job.
+    assert uploaded["store_entry"].get("needs_artifact_semantic_chunks") is True
 
 
 @pytest.mark.asyncio
