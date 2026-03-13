@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone, timedelta
 
 import pytest
@@ -18,6 +19,7 @@ def test_retention_expiry_helper():
 
 def test_raw_blob_retention_for_tabular_artifact_uses_shorter_window(monkeypatch):
     monkeypatch.setattr(app, "UPLOAD_TABULAR_RAW_RETENTION_HOURS", 6)
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS", 1)
 
     retention_until = app._raw_blob_retention_until_iso(
         filename="sample.xlsx",
@@ -28,6 +30,22 @@ def test_raw_blob_retention_for_tabular_artifact_uses_shorter_window(monkeypatch
     delta = datetime.fromisoformat(retention_until) - datetime.now(timezone.utc)
     assert delta.total_seconds() > 5 * 3600
     assert delta.total_seconds() < 7 * 3600
+
+
+def test_raw_blob_retention_for_ready_tabular_artifact_uses_one_hour_window(monkeypatch):
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_RAW_RETENTION_HOURS", 6)
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS", 1)
+
+    retention_until = app._raw_blob_retention_until_iso(
+        filename="sample.xlsx",
+        artifact_blob_ref="upload-artifacts/sample.parquet",
+        has_chunks=True,
+        fallback_hours=72,
+    )
+
+    delta = datetime.fromisoformat(retention_until) - datetime.now(timezone.utc)
+    assert delta.total_seconds() > 0.5 * 3600
+    assert delta.total_seconds() < 1.5 * 3600
 
 
 @pytest.mark.asyncio
@@ -222,3 +240,80 @@ async def test_purge_expired_upload_artifacts_can_drop_only_raw_blob_when_artifa
         for table_name, entity in merged_rows
     )
     assert put_payloads and put_payloads[0][1]["raw_blob_ref"] == ""
+
+
+@pytest.mark.asyncio
+async def test_process_upload_job_shortens_raw_retention_once_tabular_chunks_exist(monkeypatch):
+    job = {
+        "job_id": "job-retention",
+        "conversation_id": "conv-1",
+        "user_sub": "tester",
+        "filename": "sample.csv",
+        "content_type": "text/csv",
+        "raw_blob_ref": "upload-raw/conv-1/job-retention/raw/sample.csv",
+        "artifact_blob_name": "conv-1/job-retention/artifact/data.parquet",
+        "text_blob_name": "conv-1/job-retention/extracted/text.txt",
+        "chunks_blob_name": "conv-1/job-retention/extracted/chunks.json",
+        "size_bytes": 32,
+        "retention_until": app._retention_until_iso(hours=24),
+    }
+    uploaded = {}
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_RAW_RETENTION_HOURS", 6)
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS", 1)
+
+    async def _fake_blob_download_bytes(_container, _blob_name):
+        return b"Date,Value\n2026-01-01,10\n"
+
+    async def _fake_blob_upload_bytes(container, blob_name, payload, **kwargs):
+        _ = kwargs
+        return {"blob_ref": f"{container}/{blob_name}", "size_bytes": len(payload)}
+
+    async def _fake_blob_upload_json(container, blob_name, payload):
+        uploaded["chunks_payload"] = payload
+        return {"blob_ref": f"{container}/{blob_name}"}
+
+    async def _fake_extract_upload_entry(_filename, _raw_bytes, _content_type):
+        return (
+            {
+                "filename": "sample.csv",
+                "data_text": "Date\tValue\n2026-01-01\t10",
+                "row_count": 1,
+                "col_names": ["Date", "Value"],
+                "col_analysis": [],
+                "truncated": True,
+                "uploaded_at": datetime.now(timezone.utc).isoformat(),
+                "tabular_ingest_mode": "preview_only",
+            },
+            {"tabular_ingest_mode": "preview_only"},
+        )
+
+    async def _fake_append_uploaded_entry_safe(_conv_id, store_entry):
+        uploaded["store_entry"] = dict(store_entry)
+        return [{"filename": store_entry["filename"], "rows": store_entry["row_count"]}]
+
+    async def _fake_upsert_upload_index(entity):
+        uploaded["index_entity"] = dict(entity)
+
+    monkeypatch.setattr(app, "blob_download_bytes", _fake_blob_download_bytes)
+    monkeypatch.setattr(app, "blob_upload_bytes", _fake_blob_upload_bytes)
+    monkeypatch.setattr(app, "blob_upload_json", _fake_blob_upload_json)
+    monkeypatch.setattr(app, "_extract_upload_entry", _fake_extract_upload_entry)
+    monkeypatch.setattr(
+        app,
+        "_build_tabular_semantic_chunks_from_artifact",
+        lambda *_args, **_kwargs: asyncio.sleep(
+            0,
+            result=[{"index": 0, "start": 0, "end": 1, "text": "chunk", "embedding": [1.0]}],
+        ),
+    )
+    monkeypatch.setattr(app, "_append_uploaded_entry_safe", _fake_append_uploaded_entry_safe)
+    monkeypatch.setattr(app, "_upsert_upload_index", _fake_upsert_upload_index)
+    monkeypatch.setattr(app, "_count_files_for_conversation", lambda *_args, **_kwargs: asyncio.sleep(0, result=0))
+
+    await app._process_upload_job(job)
+
+    retention_until = datetime.fromisoformat(uploaded["index_entity"]["RawBlobRetentionUntil"])
+    delta = retention_until - datetime.now(timezone.utc)
+    assert delta.total_seconds() > 0.5 * 3600
+    assert delta.total_seconds() < 1.5 * 3600
+    assert uploaded["store_entry"]["has_chunks"] is True

@@ -100,6 +100,7 @@ from config import (
     UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS, UPLOAD_BLOB_CONTAINER_ARTIFACTS,
     UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
     UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_TABULAR_RAW_RETENTION_HOURS,
+    UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS,
     UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
     CHAT_TOOLRESULT_BLOB_CONTAINER,
@@ -1838,11 +1839,13 @@ def _raw_blob_retention_until_iso(
     *,
     filename: str = "",
     artifact_blob_ref: str = "",
+    has_chunks: bool = False,
     fallback_hours: int = UPLOAD_ARTIFACT_RETENTION_HOURS,
 ) -> str:
     safe_fallback_hours = max(1, int(fallback_hours or 1))
     if artifact_blob_ref and is_tabular_filename(str(filename or "")):
-        return _retention_until_iso(hours=UPLOAD_TABULAR_RAW_RETENTION_HOURS)
+        raw_hours = UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS if has_chunks else UPLOAD_TABULAR_RAW_RETENTION_HOURS
+        return _retention_until_iso(hours=max(1, int(raw_hours or 1)))
     return _retention_until_iso(hours=safe_fallback_hours)
 
 
@@ -2691,6 +2694,17 @@ async def _process_upload_job(job: dict) -> None:
                 {"chunks": chunks},
             )
             chunks_blob_ref = chunks_blob.get("blob_ref", "")
+
+    if artifact_blob_ref and is_tabular_filename(filename):
+        raw_blob_retention_until = str(
+            _raw_blob_retention_until_iso(
+                filename=filename,
+                artifact_blob_ref=artifact_blob_ref,
+                has_chunks=bool(chunks_blob_ref),
+                fallback_hours=UPLOAD_ARTIFACT_RETENTION_HOURS,
+            )
+        )[:64]
+        job["raw_blob_retention_until"] = raw_blob_retention_until
 
     store_entry["extracted_blob_ref"] = extracted_blob_ref
     store_entry["chunks_blob_ref"] = chunks_blob_ref

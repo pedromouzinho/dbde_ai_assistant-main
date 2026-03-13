@@ -55,6 +55,7 @@ Foi introduzido controlo explícito de retenção para:
 - sweep automático de uploads expirados;
 - purge seletiva mais cedo do `RawBlobRef` tabular quando já existe artefacto persistente de análise;
 - redução do `RawBlobRef` tabular para retenção curta por defeito (`6h`) quando o artefacto persistente já existe;
+- encurtamento adicional do `RawBlobRef` tabular para uma janela ainda mais curta (`1h`) quando o upload já ficou completo com artefacto persistente **e** chunks semânticos gerados a partir desse artefacto;
 - purge de blobs e rows associadas, reduzindo acumulação e retenção desnecessária.
 
 Isto reduz:
