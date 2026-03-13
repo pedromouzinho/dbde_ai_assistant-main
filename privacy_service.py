@@ -180,7 +180,7 @@ async def delete_user_personal_data(
     upload_index_rows = await _query_all("UploadIndex", f"UserSub eq '{odata_escape(safe_user)}'", top=1000)
     upload_job_ids: set[str] = set()
     for row in upload_index_rows:
-        for field in ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef"):
+        for field in ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef", "TabularArtifactBlobRef"):
             if await _delete_blob_ref(str(row.get(field, "") or ""), deleted_blob_refs):
                 summary["deleted_blobs"] += 1
         try:
@@ -199,7 +199,7 @@ async def delete_user_personal_data(
     )
     for row in upload_job_rows:
         row_key = str(row.get("RowKey", "") or "").strip()
-        for field in ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef"):
+        for field in ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef", "TabularArtifactBlobRef"):
             if await _delete_blob_ref(str(row.get(field, "") or ""), deleted_blob_refs):
                 summary["deleted_blobs"] += 1
         try:

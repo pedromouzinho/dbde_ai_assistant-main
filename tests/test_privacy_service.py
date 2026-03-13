@@ -59,9 +59,16 @@ async def test_delete_user_personal_data_deletes_owned_rows_and_anonymizes_globa
                 "RawBlobRef": "raw/file.xlsx",
                 "ExtractedBlobRef": "",
                 "ChunksBlobRef": "chunks/file.json",
+                "TabularArtifactBlobRef": "artifacts/file.parquet",
             }]
         if table == "UploadJobs":
-            return [{"PartitionKey": "upload", "RowKey": "up-1", "UserSub": "pedro", "RawBlobRef": "raw/file.xlsx"}]
+            return [{
+                "PartitionKey": "upload",
+                "RowKey": "up-1",
+                "UserSub": "pedro",
+                "RawBlobRef": "raw/file.xlsx",
+                "TabularArtifactBlobRef": "artifacts/file.parquet",
+            }]
         if table == "UserStoryDrafts":
             return [{
                 "PartitionKey": "user:pedro",
@@ -130,7 +137,7 @@ async def test_delete_user_personal_data_deletes_owned_rows_and_anonymizes_globa
 
     assert result["deleted_rows"] >= 7
     assert result["anonymized_rows"] >= 2
-    assert result["deleted_blobs"] >= 4
+    assert result["deleted_blobs"] >= 5
     assert ("Users", "user", "pedro") in deleted_rows
     assert synced_drafts == ["draft-1"]
     assert reviewed_assets == [("asset-1", "delete", "pedro")]

@@ -56,6 +56,7 @@ from tools_email import tool_prepare_outlook_draft, tool_classify_uploaded_email
 from tools_learning import tool_get_writer_profile, tool_save_writer_profile
 from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
 from tabular_loader import TabularLoaderError, load_tabular_dataset, load_tabular_preview
+from tabular_artifacts import load_tabular_artifact_dataset, load_tabular_artifact_preview
 from data_dictionary import (
     format_dictionary_for_prompt as format_data_dictionary_for_prompt,
     get_dictionary as get_data_dictionary_entries,
@@ -594,7 +595,7 @@ async def _resolve_uploaded_tabular_source(
         fname = str(row.get("Filename", "") or "")
         if not fname.lower().endswith((".csv", ".tsv", ".xlsx", ".xls", ".xlsb")):
             continue
-        if not str(row.get("RawBlobRef", "") or ""):
+        if not str(row.get("RawBlobRef", "") or "") and not str(row.get("TabularArtifactBlobRef", "") or ""):
             continue
         candidates.append(row)
 
@@ -615,10 +616,29 @@ async def _resolve_uploaded_tabular_source(
         selected = candidates[0]
 
     selected_filename = str(selected.get("Filename", "") or "")
+    artifact_blob_ref = str(selected.get("TabularArtifactBlobRef", "") or "")
+    artifact_format = str(selected.get("TabularArtifactFormat", "") or "parquet")
+    if artifact_blob_ref:
+        container, blob_name = parse_blob_ref(artifact_blob_ref)
+        if container and blob_name:
+            try:
+                artifact_bytes = await blob_download_bytes(container, blob_name)
+            except Exception as exc:
+                artifact_bytes = None
+                logging.warning("[Tools] Falha a descarregar artefacto tabular %s: %s", artifact_blob_ref, exc)
+            if artifact_bytes:
+                return {
+                    "filename": selected_filename,
+                    "artifact_bytes": artifact_bytes,
+                    "artifact_format": artifact_format,
+                    "upload_row": selected,
+                    "source_kind": "artifact",
+                }
+
     raw_blob_ref = str(selected.get("RawBlobRef", "") or "")
     container, blob_name = parse_blob_ref(raw_blob_ref)
     if not container or not blob_name:
-        return {"error": "RawBlobRef inválido para o ficheiro selecionado."}
+        return {"error": "Upload tabular sem artefacto nem RawBlobRef válido."}
 
     try:
         raw_bytes = await blob_download_bytes(container, blob_name)
@@ -633,6 +653,7 @@ async def _resolve_uploaded_tabular_source(
         "filename": selected_filename,
         "raw_bytes": raw_bytes,
         "upload_row": selected,
+        "source_kind": "raw",
     }
 
 
@@ -807,11 +828,15 @@ async def tool_analyze_uploaded_table(
     if source.get("error"):
         return source
     selected_filename = str(source.get("filename", "") or "")
-    raw_bytes = source.get("raw_bytes") or b""
+    source_kind = str(source.get("source_kind", "raw") or "raw")
+    dataset_source = "uploaded_table_artifact" if source_kind == "artifact" else "uploaded_table_raw_blob"
 
     max_rows = 500000
     try:
-        dataset = load_tabular_dataset(raw_bytes, selected_filename, max_rows=max_rows)
+        if source_kind == "artifact":
+            dataset = load_tabular_artifact_dataset(source.get("artifact_bytes") or b"", max_rows=max_rows)
+        else:
+            dataset = load_tabular_dataset(source.get("raw_bytes") or b"", selected_filename, max_rows=max_rows)
     except TabularLoaderError as exc:
         return {"error": str(exc)}
     finally:
@@ -864,7 +889,7 @@ async def tool_analyze_uploaded_table(
     if group_mode == "none" and (schema_profile_intent or not matched_value_col):
         column_profiles = _build_column_profiles(records, columns)
         return {
-            "source": "uploaded_table_raw_blob",
+            "source": dataset_source,
             "conversation_id": safe_conv,
             "filename": selected_filename,
             "row_count": rows_total,
@@ -948,7 +973,7 @@ async def tool_analyze_uploaded_table(
                 delta[key] = round(v2 - v1, 6)
 
         return {
-            "source": "uploaded_table_raw_blob",
+            "source": dataset_source,
             "comparison": True,
             "conversation_id": safe_conv,
             "filename": selected_filename,
@@ -1103,7 +1128,7 @@ async def tool_analyze_uploaded_table(
                 warnings_list.append(f"chart_ready limitado a {len(chart_groups)} de {len(groups)} categorias.")
 
             return {
-                "source": "uploaded_table_raw_blob",
+                "source": dataset_source,
                 "conversation_id": safe_conv,
                 "filename": selected_filename,
                 "row_count": len(records),
@@ -1223,7 +1248,7 @@ async def tool_analyze_uploaded_table(
     )
 
     return {
-        "source": "uploaded_table_raw_blob",
+        "source": dataset_source,
         "conversation_id": safe_conv,
         "filename": selected_filename,
         "row_count": rows_total,
@@ -1789,10 +1814,22 @@ async def tool_chart_uploaded_table(
     if source.get("error"):
         return source
     selected_filename = str(source.get("filename", "") or "")
-    raw_bytes = source.get("raw_bytes") or b""
+    source_kind = str(source.get("source_kind", "raw") or "raw")
 
     try:
-        preview = load_tabular_preview(raw_bytes, selected_filename, preview_rows=200, preview_char_limit=20_000)
+        if source_kind == "artifact":
+            preview = load_tabular_artifact_preview(
+                source.get("artifact_bytes") or b"",
+                preview_rows=200,
+                preview_char_limit=20_000,
+            )
+        else:
+            preview = load_tabular_preview(
+                source.get("raw_bytes") or b"",
+                selected_filename,
+                preview_rows=200,
+                preview_char_limit=20_000,
+            )
     except TabularLoaderError as exc:
         return {"error": str(exc)}
     finally:

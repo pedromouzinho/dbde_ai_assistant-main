@@ -93,8 +93,9 @@ from config import (
     UPLOAD_MAX_CHUNKS_PER_FILE, UPLOAD_JOB_STALE_SECONDS,
     UPLOAD_TABULAR_DEEP_INGEST_MAX_BYTES, UPLOAD_TABULAR_DEEP_INGEST_MAX_ROWS,
     UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
+    UPLOAD_TABULAR_ARTIFACT_ENABLED,
     UPLOAD_MAX_BATCH_TOTAL_BYTES,
-    UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS,
+    UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS, UPLOAD_BLOB_CONTAINER_ARTIFACTS,
     UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
     UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
@@ -182,6 +183,7 @@ from tabular_loader import (
     load_tabular_dataset,
     load_tabular_preview,
 )
+from tabular_artifacts import build_tabular_artifact
 from job_store import PersistentJobStore
 from utils import odata_escape, safe_blob_component, create_logged_task
 from tool_metrics import tool_metrics
@@ -1901,6 +1903,9 @@ def _job_from_storage_row(row: dict, fallback_job_id: str = "") -> dict:
         "raw_blob_ref": row.get("RawBlobRef", ""),
         "text_blob_name": row.get("TextBlobName", ""),
         "chunks_blob_name": row.get("ChunksBlobName", ""),
+        "artifact_blob_name": row.get("ArtifactBlobName", ""),
+        "artifact_blob_ref": row.get("ArtifactBlobRef", ""),
+        "artifact_format": row.get("ArtifactFormat", ""),
         "retention_until": row.get("RetentionUntil", ""),
     }
 
@@ -1977,6 +1982,9 @@ def _upload_index_row_to_memory_entry(row: dict) -> dict:
         "has_chunks": str(row.get("HasChunks", "")).lower() in ("true", "1"),
         "chunks_blob_ref": row.get("ChunksBlobRef", ""),
         "extracted_blob_ref": row.get("ExtractedBlobRef", ""),
+        "tabular_artifact_blob_ref": row.get("TabularArtifactBlobRef", ""),
+        "tabular_artifact_format": row.get("TabularArtifactFormat", ""),
+        "tabular_artifact_row_count": int(row.get("TabularArtifactRowCount", 0) or 0),
         "polymorphic_schema": polymorphic_schema,
     }
 
@@ -2111,6 +2119,9 @@ async def _persist_upload_job(job: dict) -> None:
             "RawBlobRef": str(job.get("raw_blob_ref", ""))[:800],
             "TextBlobName": str(job.get("text_blob_name", ""))[:500],
             "ChunksBlobName": str(job.get("chunks_blob_name", ""))[:500],
+            "ArtifactBlobName": str(job.get("artifact_blob_name", ""))[:500],
+            "ArtifactBlobRef": str(job.get("artifact_blob_ref", ""))[:800],
+            "ArtifactFormat": str(job.get("artifact_format", ""))[:32],
             "RetentionUntil": str(job.get("retention_until", ""))[:64],
             "ResultJson": result_json,
         }
@@ -2429,6 +2440,7 @@ def _build_upload_blob_paths(conv_id: str, job_id: str, filename: str) -> dict:
         "raw_blob_name": f"{prefix}/raw/{safe_name}",
         "text_blob_name": f"{prefix}/extracted/text.txt",
         "chunks_blob_name": f"{prefix}/extracted/chunks.json",
+        "artifact_blob_name": f"{prefix}/artifact/data.parquet",
     }
 
 
@@ -2466,6 +2478,28 @@ async def _process_upload_job(job: dict) -> None:
 
     store_entry, result_payload = await _extract_upload_entry(filename, raw_bytes, content_type)
 
+    artifact_blob_ref = ""
+    artifact_format = ""
+    artifact_row_count = 0
+    if UPLOAD_TABULAR_ARTIFACT_ENABLED and is_tabular_filename(filename):
+        try:
+            artifact = build_tabular_artifact(raw_bytes, filename)
+            artifact_blob_name = str(job.get("artifact_blob_name", "") or "")
+            if artifact_blob_name and artifact.get("artifact_bytes"):
+                uploaded_artifact = await blob_upload_bytes(
+                    UPLOAD_BLOB_CONTAINER_ARTIFACTS,
+                    artifact_blob_name,
+                    artifact.get("artifact_bytes") or b"",
+                    content_type="application/octet-stream",
+                )
+                artifact_blob_ref = str(uploaded_artifact.get("blob_ref", "") or "")
+                artifact_format = str(artifact.get("format", "parquet") or "parquet")
+                artifact_row_count = int(artifact.get("row_count", 0) or 0)
+                job["artifact_blob_ref"] = artifact_blob_ref
+                job["artifact_format"] = artifact_format
+        except Exception as exc:
+            logger.warning("[Upload] tabular artifact build failed for %s: %s", filename, exc)
+
     extracted_blob_ref = ""
     text_payload = str(store_entry.get("data_text", "") or "")
     if text_payload:
@@ -2493,6 +2527,8 @@ async def _process_upload_job(job: dict) -> None:
 
     store_entry["extracted_blob_ref"] = extracted_blob_ref
     store_entry["chunks_blob_ref"] = chunks_blob_ref
+    store_entry["tabular_artifact_blob_ref"] = artifact_blob_ref
+    store_entry["tabular_artifact_format"] = artifact_format
     store_entry["has_chunks"] = bool(chunks_blob_ref)
     store_entry["user_sub"] = user_sub
 
@@ -2520,6 +2556,9 @@ async def _process_upload_job(job: dict) -> None:
         "ExtractedBlobRef": extracted_blob_ref,
         "ChunksBlobRef": chunks_blob_ref,
         "RawBlobRef": raw_blob_ref,
+        "TabularArtifactBlobRef": artifact_blob_ref,
+        "TabularArtifactFormat": artifact_format[:32],
+        "TabularArtifactRowCount": int(artifact_row_count or 0),
         "PolymorphicSummary": str((polymorphic_schema or {}).get("summary_text", "") or "")[:4000],
         "PivotColumn": str((polymorphic_schema or {}).get("pivot_column", "") or "")[:240],
         "PivotValuesCount": int((polymorphic_schema or {}).get("pivot_values_count", 0) or 0),
@@ -2533,6 +2572,9 @@ async def _process_upload_job(job: dict) -> None:
     result_payload["total_files"] = len(all_summaries)
     result_payload["all_files"] = all_summaries
     result_payload["has_chunks"] = bool(chunks_blob_ref)
+    result_payload["tabular_artifact_ready"] = bool(artifact_blob_ref)
+    if artifact_format:
+        result_payload["tabular_artifact_format"] = artifact_format
     result_payload["index_row_key"] = upload_index_entity["RowKey"]
 
     job["status"] = "completed"
@@ -2606,6 +2648,9 @@ async def _queue_upload_job(
         "raw_blob_ref": raw_blob.get("blob_ref", build_blob_ref(UPLOAD_BLOB_CONTAINER_RAW, blob_paths["raw_blob_name"])),
         "text_blob_name": blob_paths["text_blob_name"],
         "chunks_blob_name": blob_paths["chunks_blob_name"],
+        "artifact_blob_name": blob_paths["artifact_blob_name"],
+        "artifact_blob_ref": "",
+        "artifact_format": "",
         "retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
     }
     await upload_jobs_store.put(job_id, job)
@@ -2644,6 +2689,9 @@ async def _queue_upload_job_from_blob(
         "raw_blob_ref": raw_blob_ref,
         "text_blob_name": blob_paths["text_blob_name"],
         "chunks_blob_name": blob_paths["chunks_blob_name"],
+        "artifact_blob_name": blob_paths["artifact_blob_name"],
+        "artifact_blob_ref": "",
+        "artifact_format": "",
         "retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
     }
     await upload_jobs_store.put(resolved_job_id, job)
@@ -3891,7 +3939,7 @@ async def _purge_upload_index_row(row: dict, *, delete_job: bool = True) -> dict
     row_pk = str(row.get("PartitionKey", "") or "").strip()
     row_key = str(row.get("RowKey", "") or "").strip()
     blobs_deleted = 0
-    blob_fields = ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef")
+    blob_fields = ("RawBlobRef", "ExtractedBlobRef", "ChunksBlobRef", "TabularArtifactBlobRef")
     for field in blob_fields:
         ref = str(row.get(field, "") or "").strip()
         if not ref:
@@ -3977,15 +4025,17 @@ async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
         retention_until = str(row.get("RetentionUntil", "") or "").strip()
         if not _is_retention_expired(retention_until, now=now):
             continue
-        raw_blob_ref = str(row.get("RawBlobRef", "") or "").strip()
-        if raw_blob_ref:
-            container, blob_name = parse_blob_ref(raw_blob_ref)
+        for field in ("RawBlobRef", "TabularArtifactBlobRef"):
+            blob_ref = str(row.get(field, "") or "").strip()
+            if not blob_ref:
+                continue
+            container, blob_name = parse_blob_ref(blob_ref)
             if container and blob_name:
                 try:
                     await blob_delete(container, blob_name)
                     blobs_deleted += 1
                 except Exception as e:
-                    logger.warning("[App] raw upload blob delete failed for %s: %s", raw_blob_ref, e)
+                    logger.warning("[App] upload job blob delete failed for %s: %s", blob_ref, e)
         try:
             await upload_jobs_store.delete(job_id, partition_key="upload")
             jobs_deleted += 1

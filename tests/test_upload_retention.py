@@ -37,6 +37,7 @@ async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monk
                     "RawBlobRef": "upload-raw/expired.xlsx",
                     "ExtractedBlobRef": "upload-text/expired.json",
                     "ChunksBlobRef": "",
+                    "TabularArtifactBlobRef": "upload-artifacts/expired.parquet",
                 },
                 {
                     "PartitionKey": "conv-1",
@@ -45,6 +46,7 @@ async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monk
                     "RawBlobRef": "upload-raw/active.xlsx",
                     "ExtractedBlobRef": "",
                     "ChunksBlobRef": "",
+                    "TabularArtifactBlobRef": "",
                 },
             ]
         if table_name == "UploadJobs":
@@ -55,6 +57,7 @@ async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monk
                     "Status": "completed",
                     "RetentionUntil": expired,
                     "RawBlobRef": "upload-raw/expired.xlsx",
+                    "TabularArtifactBlobRef": "upload-artifacts/expired.parquet",
                 },
                 {
                     "PartitionKey": "upload",
@@ -62,6 +65,7 @@ async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monk
                     "Status": "failed",
                     "RetentionUntil": expired,
                     "RawBlobRef": "upload-raw/failed.xlsx",
+                    "TabularArtifactBlobRef": "upload-artifacts/failed.parquet",
                 },
                 {
                     "PartitionKey": "upload",
@@ -69,6 +73,7 @@ async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monk
                     "Status": "completed",
                     "RetentionUntil": future,
                     "RawBlobRef": "upload-raw/active.xlsx",
+                    "TabularArtifactBlobRef": "",
                 },
             ]
         return []
@@ -95,7 +100,9 @@ async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monk
     assert ("upload", "job-failed") in deleted_jobs
     assert "upload-raw/expired.xlsx" in deleted_blobs
     assert "upload-text/expired.json" in deleted_blobs
+    assert "upload-artifacts/expired.parquet" in deleted_blobs
     assert "upload-raw/failed.xlsx" in deleted_blobs
+    assert "upload-artifacts/failed.parquet" in deleted_blobs
     assert result["rows_deleted"] == 1
     assert result["jobs_deleted"] == 2
     assert result["blobs_deleted"] >= 3
