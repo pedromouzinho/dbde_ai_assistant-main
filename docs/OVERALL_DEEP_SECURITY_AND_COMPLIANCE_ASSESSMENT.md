@@ -53,6 +53,7 @@ Foi introduzido controlo explícito de retenção para:
 - uploads raw e artefactos intermédios;
 - generated files;
 - sweep automático de uploads expirados;
+- purge seletiva mais cedo do `RawBlobRef` tabular quando já existe artefacto persistente de análise;
 - purge de blobs e rows associadas, reduzindo acumulação e retenção desnecessária.
 
 Isto reduz:

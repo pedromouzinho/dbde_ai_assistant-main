@@ -99,7 +99,8 @@ from config import (
     UPLOAD_MAX_BATCH_TOTAL_BYTES,
     UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS, UPLOAD_BLOB_CONTAINER_ARTIFACTS,
     UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
-    UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
+    UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_TABULAR_RAW_RETENTION_HOURS,
+    UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
     CHAT_TOOLRESULT_BLOB_CONTAINER,
     EXPORT_AUTO_ASYNC_ENABLED, EXPORT_ASYNC_THRESHOLD_ROWS, EXPORT_MAX_CONCURRENT_JOBS,
@@ -1833,6 +1834,22 @@ def _is_retention_expired(value: str, now: Optional[datetime] = None) -> bool:
     return now_dt >= expires_at
 
 
+def _raw_blob_retention_until_iso(
+    *,
+    filename: str = "",
+    artifact_blob_ref: str = "",
+    fallback_hours: int = UPLOAD_ARTIFACT_RETENTION_HOURS,
+) -> str:
+    safe_fallback_hours = max(1, int(fallback_hours or 1))
+    if artifact_blob_ref and is_tabular_filename(str(filename or "")):
+        return _retention_until_iso(hours=UPLOAD_TABULAR_RAW_RETENTION_HOURS)
+    return _retention_until_iso(hours=safe_fallback_hours)
+
+
+def _effective_raw_blob_retention_until(row: dict) -> str:
+    return str(row.get("RawBlobRetentionUntil", "") or row.get("RetentionUntil", "") or "").strip()
+
+
 def _is_job_stale(job: dict, now: Optional[datetime] = None) -> bool:
     status = str(job.get("status", "")).lower()
     if status not in ("queued", "processing"):
@@ -1928,6 +1945,8 @@ def _job_from_storage_row(row: dict, fallback_job_id: str = "") -> dict:
         "artifact_blob_name": row.get("ArtifactBlobName", ""),
         "artifact_blob_ref": row.get("ArtifactBlobRef", ""),
         "artifact_format": row.get("ArtifactFormat", ""),
+        "raw_blob_retention_until": row.get("RawBlobRetentionUntil", ""),
+        "raw_blob_purged_at": row.get("RawBlobPurgedAt", ""),
         "retention_until": row.get("RetentionUntil", ""),
     }
 
@@ -2144,6 +2163,8 @@ async def _persist_upload_job(job: dict) -> None:
             "ArtifactBlobName": str(job.get("artifact_blob_name", ""))[:500],
             "ArtifactBlobRef": str(job.get("artifact_blob_ref", ""))[:800],
             "ArtifactFormat": str(job.get("artifact_format", ""))[:32],
+            "RawBlobRetentionUntil": str(job.get("raw_blob_retention_until", ""))[:64],
+            "RawBlobPurgedAt": str(job.get("raw_blob_purged_at", ""))[:64],
             "RetentionUntil": str(job.get("retention_until", ""))[:64],
             "ResultJson": result_json,
         }
@@ -2522,6 +2543,15 @@ async def _process_upload_job(job: dict) -> None:
         except Exception as exc:
             logger.warning("[Upload] tabular artifact build failed for %s: %s", filename, exc)
 
+    raw_blob_retention_until = str(
+        job.get("raw_blob_retention_until", "") or _raw_blob_retention_until_iso(
+            filename=filename,
+            artifact_blob_ref=artifact_blob_ref,
+            fallback_hours=UPLOAD_ARTIFACT_RETENTION_HOURS,
+        )
+    )[:64]
+    job["raw_blob_retention_until"] = raw_blob_retention_until
+
     extracted_blob_ref = ""
     text_payload = str(store_entry.get("data_text", "") or "")
     if text_payload:
@@ -2585,6 +2615,8 @@ async def _process_upload_job(job: dict) -> None:
         "PivotColumn": str((polymorphic_schema or {}).get("pivot_column", "") or "")[:240],
         "PivotValuesCount": int((polymorphic_schema or {}).get("pivot_values_count", 0) or 0),
         "PolymorphicSchemaJson": json.dumps(polymorphic_schema, ensure_ascii=False)[:32000] if polymorphic_schema else "",
+        "RawBlobRetentionUntil": raw_blob_retention_until,
+        "RawBlobPurgedAt": str(job.get("raw_blob_purged_at", "") or "")[:64],
         "RetentionUntil": str(job.get("retention_until", "") or _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS))[:64],
     }
     await _upsert_upload_index(upload_index_entity)
@@ -2673,6 +2705,8 @@ async def _queue_upload_job(
         "artifact_blob_name": blob_paths["artifact_blob_name"],
         "artifact_blob_ref": "",
         "artifact_format": "",
+        "raw_blob_retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
+        "raw_blob_purged_at": "",
         "retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
     }
     await upload_jobs_store.put(job_id, job)
@@ -2714,6 +2748,8 @@ async def _queue_upload_job_from_blob(
         "artifact_blob_name": blob_paths["artifact_blob_name"],
         "artifact_blob_ref": "",
         "artifact_format": "",
+        "raw_blob_retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
+        "raw_blob_purged_at": "",
         "retention_until": _retention_until_iso(hours=UPLOAD_ARTIFACT_RETENTION_HOURS),
     }
     await upload_jobs_store.put(resolved_job_id, job)
@@ -4002,6 +4038,55 @@ async def _purge_upload_index_row(row: dict, *, delete_job: bool = True) -> dict
     return {"rows_deleted": row_deleted, "blobs_deleted": blobs_deleted, "jobs_deleted": job_deleted}
 
 
+async def _clear_upload_index_raw_blob(row: dict, *, purged_at: str) -> int:
+    row_pk = str(row.get("PartitionKey", "") or "").strip()
+    row_key = str(row.get("RowKey", "") or "").strip()
+    if not row_pk or not row_key:
+        return 0
+    try:
+        await table_merge(
+            "UploadIndex",
+            {
+                "PartitionKey": row_pk,
+                "RowKey": row_key,
+                "RawBlobRef": "",
+                "RawBlobRetentionUntil": "",
+                "RawBlobPurgedAt": purged_at[:64],
+            },
+        )
+        return 1
+    except Exception as e:
+        logger.warning("[App] upload index raw blob clear failed for %s/%s: %s", row_pk, row_key, e)
+        return 0
+
+
+async def _clear_upload_job_raw_blob(job_id: str, *, purged_at: str) -> int:
+    safe_job_id = str(job_id or "").strip()
+    if not safe_job_id:
+        return 0
+    try:
+        await table_merge(
+            "UploadJobs",
+            {
+                "PartitionKey": "upload",
+                "RowKey": safe_job_id,
+                "RawBlobRef": "",
+                "RawBlobRetentionUntil": "",
+                "RawBlobPurgedAt": purged_at[:64],
+            },
+        )
+        cached = await upload_jobs_store.get(safe_job_id)
+        if cached:
+            cached["raw_blob_ref"] = ""
+            cached["raw_blob_retention_until"] = ""
+            cached["raw_blob_purged_at"] = purged_at[:64]
+            await upload_jobs_store.put(safe_job_id, cached)
+        return 1
+    except Exception as e:
+        logger.warning("[App] upload job raw blob clear failed for %s: %s", safe_job_id, e)
+        return 0
+
+
 async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
     now = datetime.now(timezone.utc)
     safe_limit = max(1, min(int(limit or 120), 500))
@@ -4022,6 +4107,22 @@ async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
             active_index_ids.add(row_key)
         retention_until = str(row.get("RetentionUntil", "") or "").strip()
         if not _is_retention_expired(retention_until, now=now):
+            raw_blob_ref = str(row.get("RawBlobRef", "") or "").strip()
+            raw_retention_until = _effective_raw_blob_retention_until(row)
+            has_artifact = bool(str(row.get("TabularArtifactBlobRef", "") or "").strip())
+            if raw_blob_ref and has_artifact and _is_retention_expired(raw_retention_until, now=now):
+                purged_at = now.isoformat()
+                container, blob_name = parse_blob_ref(raw_blob_ref)
+                if container and blob_name:
+                    try:
+                        await blob_delete(container, blob_name)
+                        blobs_deleted += 1
+                    except Exception as e:
+                        logger.warning("[App] upload raw blob early delete failed for %s: %s", raw_blob_ref, e)
+                        continue
+                await _clear_upload_index_raw_blob(row, purged_at=purged_at)
+                if row_key:
+                    await _clear_upload_job_raw_blob(row_key, purged_at=purged_at)
             continue
         result = await _purge_upload_index_row(row)
         rows_deleted += int(result.get("rows_deleted", 0) or 0)
@@ -4051,6 +4152,20 @@ async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
             continue
         retention_until = str(row.get("RetentionUntil", "") or "").strip()
         if not _is_retention_expired(retention_until, now=now):
+            raw_blob_ref = str(row.get("RawBlobRef", "") or "").strip()
+            raw_retention_until = _effective_raw_blob_retention_until(row)
+            has_artifact = bool(str(row.get("ArtifactBlobRef", "") or row.get("TabularArtifactBlobRef", "") or "").strip())
+            if raw_blob_ref and has_artifact and _is_retention_expired(raw_retention_until, now=now):
+                purged_at = now.isoformat()
+                container, blob_name = parse_blob_ref(raw_blob_ref)
+                if container and blob_name:
+                    try:
+                        await blob_delete(container, blob_name)
+                        blobs_deleted += 1
+                    except Exception as e:
+                        logger.warning("[App] upload job raw blob early delete failed for %s: %s", raw_blob_ref, e)
+                        continue
+                await _clear_upload_job_raw_blob(job_id, purged_at=purged_at)
             continue
         for field in ("RawBlobRef", "TabularArtifactBlobRef"):
             blob_ref = str(row.get(field, "") or "").strip()
