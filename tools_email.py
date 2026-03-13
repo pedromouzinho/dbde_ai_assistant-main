@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 from llm_provider import llm_simple
 from storage import blob_download_bytes, parse_blob_ref, table_query
 from tabular_loader import TabularLoaderError, load_tabular_dataset
+from tabular_artifacts import load_tabular_artifact_dataset
 from tools_export import _GENERATED_FILE_TTL_SECONDS, _store_generated_file
 from utils import odata_escape
 
@@ -268,7 +269,8 @@ async def _load_uploaded_email_table(conv_id: str, user_sub: str = "", filename:
         if not fname.lower().endswith((".csv", ".tsv", ".xlsx", ".xls", ".xlsb")):
             continue
         raw_blob_ref = str(row.get("RawBlobRef", "") or "")
-        if not raw_blob_ref:
+        artifact_blob_ref = str(row.get("TabularArtifactBlobRef", "") or "")
+        if not raw_blob_ref and not artifact_blob_ref:
             continue
         if wanted:
             norm = _normalize_header(fname)
@@ -282,17 +284,29 @@ async def _load_uploaded_email_table(conv_id: str, user_sub: str = "", filename:
     candidates.sort(key=lambda item: str(item.get("UploadedAt", "") or ""), reverse=True)
     selected = candidates[0]
     selected_name = str(selected.get("Filename", "") or "emails.xlsx")
-    container, blob_name = parse_blob_ref(str(selected.get("RawBlobRef", "") or ""))
-    if not container or not blob_name:
-        raise ValueError("RawBlobRef inválido no ficheiro selecionado.")
-    raw_bytes = await blob_download_bytes(container, blob_name)
-    if not raw_bytes:
-        raise ValueError("Ficheiro carregado vazio.")
+    artifact_blob_ref = str(selected.get("TabularArtifactBlobRef", "") or "")
+    if artifact_blob_ref:
+        container, blob_name = parse_blob_ref(artifact_blob_ref)
+        if container and blob_name:
+            artifact_bytes = await blob_download_bytes(container, blob_name)
+            if artifact_bytes:
+                dataset = load_tabular_artifact_dataset(artifact_bytes, max_rows=_EMAIL_UPLOAD_MAX_ROWS)
+            else:
+                raise ValueError("Artefacto tabular vazio.")
+        else:
+            raise ValueError("TabularArtifactBlobRef inválido no ficheiro selecionado.")
+    else:
+        container, blob_name = parse_blob_ref(str(selected.get("RawBlobRef", "") or ""))
+        if not container or not blob_name:
+            raise ValueError("RawBlobRef inválido no ficheiro selecionado.")
+        raw_bytes = await blob_download_bytes(container, blob_name)
+        if not raw_bytes:
+            raise ValueError("Ficheiro carregado vazio.")
 
-    try:
-        dataset = load_tabular_dataset(raw_bytes, selected_name, max_rows=_EMAIL_UPLOAD_MAX_ROWS)
-    except TabularLoaderError as exc:
-        raise ValueError(str(exc)) from exc
+        try:
+            dataset = load_tabular_dataset(raw_bytes, selected_name, max_rows=_EMAIL_UPLOAD_MAX_ROWS)
+        except TabularLoaderError as exc:
+            raise ValueError(str(exc)) from exc
 
     columns = list(dataset.get("columns") or [])
     records = list(dataset.get("records") or [])

@@ -600,7 +600,7 @@ async def _resolve_uploaded_tabular_source(
         candidates.append(row)
 
     if not candidates:
-        return {"error": "Não há ficheiros CSV/Excel com raw blob disponível nesta conversa."}
+        return {"error": "Não há ficheiros CSV/Excel com artefacto tabular ou raw blob disponível nesta conversa."}
 
     candidates.sort(key=lambda r: str(r.get("UploadedAt", "")), reverse=True)
     selected = None
@@ -2377,7 +2377,7 @@ _BUILTIN_TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "analyze_uploaded_table",
-            "description": "Analisa ficheiro CSV/Excel carregado (ficheiro completo via RawBlobRef), com agregações determinísticas e output pronto para generate_chart.",
+            "description": "Analisa ficheiro CSV/Excel carregado, preferindo o artefacto tabular persistente e usando raw blob apenas como fallback, com agregações determinísticas e output pronto para generate_chart.",
             "parameters": {
                 "type": "object",
                 "properties": {

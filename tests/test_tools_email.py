@@ -220,6 +220,67 @@ async def test_classify_uploaded_emails_from_csv_generates_outlook_pack(monkeypa
 
 
 @pytest.mark.asyncio
+async def test_classify_uploaded_emails_prefers_tabular_artifact(monkeypatch):
+    capture = _DownloadCapture()
+    monkeypatch.setattr(tools_email, "_store_generated_file", capture)
+
+    async def fake_table_query(*args, **kwargs):
+        return [
+            {
+                "Filename": "emails.xlsx",
+                "RawBlobRef": "container/blob.xlsx",
+                "TabularArtifactBlobRef": "upload-artifacts/emails.parquet",
+                "UploadedAt": "2026-03-08T10:00:00+00:00",
+                "UserSub": "tester",
+            }
+        ]
+
+    async def fake_blob_download_bytes(container, blob_name):
+        assert container == "upload-artifacts"
+        assert blob_name == "emails.parquet"
+        return b"parquet-bytes"
+
+    def fake_load_tabular_artifact_dataset(raw_bytes, max_rows=0):
+        assert raw_bytes == b"parquet-bytes"
+        return {
+            "columns": ["EntryID", "Subject", "Body"],
+            "records": [{"EntryID": "ID-1", "Subject": "Via Verde", "Body": "Pedido urgente"}],
+            "row_count": 1,
+            "truncated": False,
+        }
+
+    async def fake_llm_simple(prompt, tier="standard", max_tokens=0, response_format=None):
+        return json.dumps(
+            {
+                "decisions": [
+                    {
+                        "row_id": "1",
+                        "label": "review",
+                        "confidence": 0.9,
+                        "reason": "Usou o artefacto persistente.",
+                        "summary": "Via Verde",
+                        "requires_manual_review": False,
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr(tools_email, "table_query", fake_table_query)
+    monkeypatch.setattr(tools_email, "blob_download_bytes", fake_blob_download_bytes)
+    monkeypatch.setattr(tools_email, "load_tabular_artifact_dataset", fake_load_tabular_artifact_dataset)
+    monkeypatch.setattr(tools_email, "llm_simple", fake_llm_simple)
+
+    result = await tools_email.tool_classify_uploaded_emails(
+        instructions="Classifica o email.",
+        conv_id="conv-1",
+        user_sub="tester",
+    )
+
+    assert result["status"] == "ok"
+    assert result["counts_by_label"] == {"review": 1}
+
+
+@pytest.mark.asyncio
 async def test_classify_uploaded_emails_supports_legacy_messageinput_xlsx(monkeypatch):
     capture = _DownloadCapture()
     monkeypatch.setattr(tools_email, "_store_generated_file", capture)
