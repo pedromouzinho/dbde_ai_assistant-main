@@ -124,6 +124,11 @@ class UpdateChatTitleRequest(BaseModel):
     title: str = Field(min_length=1, max_length=MAX_SHORT_TEXT_LEN)
 
 
+class PrivacyDeleteRequest(BaseModel):
+    confirmation: Literal["DELETE_MY_DATA"] = "DELETE_MY_DATA"
+    delete_account: bool = False
+
+
 # =============================================================================
 # FEEDBACK & LEARNING
 # =============================================================================

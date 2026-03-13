@@ -109,7 +109,7 @@ from config import (
 from models import (
     AgentChatRequest, AgentChatResponse,
     LoginRequest, CreateUserRequest, ChangePasswordRequest,
-    FeedbackRequest, ExportRequest, SaveChatRequest, UpdateChatTitleRequest,
+    FeedbackRequest, ExportRequest, SaveChatRequest, UpdateChatTitleRequest, PrivacyDeleteRequest,
     SpeechPromptNormalizeRequest, SpeechPromptNormalizeResponse, SpeechPromptTokenResponse,
     ModeSwitchRequest, ModeSwitchResponse,
     ClientErrorReport,
@@ -128,13 +128,14 @@ from models import (
     UserStoryKnowledgeAssetReviewRequest,
 )
 from auth import (
-    get_current_user, jwt_encode, jwt_decode, hash_password, verify_password,
+    get_current_user, get_current_principal, jwt_encode, jwt_decode, hash_password, verify_password,
     set_request_cookie_token, reset_request_cookie_token,
     set_request_auth_payload, reset_request_auth_payload,
     set_request_auth_error, reset_request_auth_error,
     record_login_failure, is_account_locked, clear_login_attempts,
     cleanup_blacklist,
     _LOCKOUT_DURATION_MINUTES,
+    principal_is_admin,
 )
 from storage import (
     init_http_client, ensure_tables_exist,
@@ -209,6 +210,7 @@ from story_knowledge_assets import (
 )
 from story_knowledge_index import sync_story_knowledge_index
 from speech_prompt import normalize_spoken_prompt
+from privacy_service import build_user_privacy_export, delete_user_personal_data
 
 # =============================================================================
 # APP SETUP
@@ -264,7 +266,7 @@ def _auth_payload_from_request(request: Request) -> dict:
 
 
 def _is_admin_user(user: Optional[dict]) -> bool:
-    return str((user or {}).get("role", "") or "").strip().lower() == "admin"
+    return principal_is_admin(user)
 
 
 async def _conversation_belongs_to_user(conversation_id: str, user_sub: str) -> bool:
@@ -4051,6 +4053,74 @@ async def delete_chat(request: Request, user_id: str, conversation_id: str, cred
     if conversation_id in conversations:
         del conversations[conversation_id]
     return {"status":"ok"}
+
+
+@app.get("/api/privacy/export")
+@limiter.limit("5/hour", key_func=_user_or_ip_rate_key)
+async def export_my_data(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    principal = get_current_principal(credentials, request=request)
+    export_payload = await build_user_privacy_export(principal.sub)
+    filename = f"dbde-privacy-export-{safe_blob_component(principal.sub, 'user')}.json"
+    content = json.dumps(export_payload, ensure_ascii=False, indent=2, default=str).encode("utf-8")
+    download_id = await _store_generated_file(
+        content,
+        "application/json",
+        filename,
+        "json",
+        user_sub=principal.sub,
+        scope="privacy_export",
+    )
+    await log_audit(
+        principal.sub,
+        "privacy_export",
+        metadata={
+            "mode": "privacy",
+            "provider_used": "internal",
+            "conversation_id": "",
+            "summary": export_payload.get("summary", {}),
+        },
+    )
+    return {
+        "status": "ok",
+        "download_id": download_id,
+        "url": f"/api/download/{download_id}" if download_id else "",
+        "filename": filename,
+        "summary": export_payload.get("summary", {}),
+    }
+
+
+@app.post("/api/privacy/delete")
+@limiter.limit("2/hour", key_func=_user_or_ip_rate_key)
+async def delete_my_data(
+    request: Request,
+    payload: PrivacyDeleteRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    principal = get_current_principal(credentials, request=request)
+    if payload.confirmation != "DELETE_MY_DATA":
+        raise HTTPException(400, "Confirmação inválida.")
+    result = await delete_user_personal_data(principal.sub, delete_account=bool(payload.delete_account))
+    for conversation_id in result.get("conversation_ids_deleted", []) or []:
+        safe_conv = str(conversation_id or "").strip()
+        if not safe_conv:
+            continue
+        conversations.pop(safe_conv, None)
+        conversation_meta.pop(safe_conv, None)
+        uploaded_files_store.pop(safe_conv, None)
+    if payload.delete_account:
+        await persist_user_invalidation(principal.sub)
+    await log_audit(
+        principal.sub,
+        "privacy_delete",
+        metadata={
+            "mode": "privacy",
+            "provider_used": "internal",
+            "conversation_id": "",
+            "delete_account": bool(payload.delete_account),
+            "summary": result,
+        },
+    )
+    return {"status": "ok", **result}
 
 # =============================================================================
 # LEARNING ENDPOINTS

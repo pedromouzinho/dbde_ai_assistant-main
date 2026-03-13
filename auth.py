@@ -14,8 +14,9 @@ import uuid
 import hmac as _hmac
 import hashlib as _hashlib
 from contextvars import ContextVar, Token
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -240,6 +241,24 @@ _request_auth_payload_ctx: ContextVar[Optional[dict]] = ContextVar("dbde_request
 _request_auth_error_ctx: ContextVar[str] = ContextVar("dbde_request_auth_error", default="")
 
 
+@dataclass(frozen=True)
+class SecurityPrincipal:
+    sub: str
+    role: str
+    roles: tuple[str, ...]
+    display_name: str
+    auth_source: str
+    claims: dict[str, Any]
+
+    def has_role(self, *expected: str) -> bool:
+        allowed = {str(item or "").strip().lower() for item in expected if str(item or "").strip()}
+        if not allowed:
+            return False
+        current = {str(item or "").strip().lower() for item in self.roles if str(item or "").strip()}
+        current.add(str(self.role or "").strip().lower())
+        return bool(current & allowed)
+
+
 def set_request_cookie_token(token: str) -> Token:
     return _request_cookie_token_ctx.set(token or "")
 
@@ -274,6 +293,40 @@ def cache_user_invalidation_cutoff(username: str, cutoff: datetime) -> None:
         cached_cutoff = cached_cutoff.replace(tzinfo=timezone.utc)
     with _user_invalidated_lock:
         _user_invalidated_before[username] = cached_cutoff
+
+
+def principal_from_payload(payload: Optional[dict], *, auth_source: str = "local_jwt") -> SecurityPrincipal:
+    claims = dict(payload or {})
+    sub = str(claims.get("sub", "") or "").strip()
+    role = str(claims.get("role", "") or "").strip().lower() or "user"
+    raw_roles = claims.get("roles", [])
+    if isinstance(raw_roles, str):
+        roles = tuple(part.strip().lower() for part in raw_roles.split(",") if part.strip())
+    elif isinstance(raw_roles, (list, tuple, set)):
+        roles = tuple(str(part or "").strip().lower() for part in raw_roles if str(part or "").strip())
+    else:
+        roles = ()
+    display_name = (
+        str(claims.get("display_name", "") or "").strip()
+        or str(claims.get("name", "") or "").strip()
+        or sub
+    )
+    return SecurityPrincipal(
+        sub=sub,
+        role=role,
+        roles=roles,
+        display_name=display_name,
+        auth_source=str(auth_source or "local_jwt").strip() or "local_jwt",
+        claims=claims,
+    )
+
+
+def principal_is_admin(subject: Any) -> bool:
+    if isinstance(subject, SecurityPrincipal):
+        return subject.has_role("admin")
+    if isinstance(subject, dict):
+        return str(subject.get("role", "") or "").strip().lower() == "admin"
+    return False
 
 
 def get_current_user(
@@ -311,3 +364,11 @@ def get_current_user(
         return payload
     except ValueError as e:
         raise HTTPException(status_code=401, detail=f"Token inválido ou expirado: {e}")
+
+
+def get_current_principal(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    request: Optional[Request] = None,
+) -> SecurityPrincipal:
+    payload = get_current_user(credentials=credentials, request=request)
+    return principal_from_payload(payload)
