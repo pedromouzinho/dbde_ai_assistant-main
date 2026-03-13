@@ -1293,11 +1293,9 @@ async def startup_event():
     _tq_module.token_quota_manager = TokenQuotaManager(TOKEN_QUOTA_CONFIG)
     logger.info("[Startup] Token quota manager initialised: %s", list(TOKEN_QUOTA_CONFIG.keys()))
 
-    await _purge_expired_upload_artifacts(limit=80)
-    await _backfill_tabular_artifact_chunks(limit=UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE)
     _upload_retention_task = create_logged_task(_upload_retention_loop(), name="upload-retention-worker")
     logger.info(
-        "Upload retention worker enabled (interval=%ss, retention=%sh, backfill batch=%s)",
+        "Upload retention worker enabled (interval=%ss, retention=%sh, backfill batch=%s, startup=async)",
         UPLOAD_RETENTION_SWEEP_INTERVAL_SECONDS,
         UPLOAD_ARTIFACT_RETENTION_HOURS,
         UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE,
