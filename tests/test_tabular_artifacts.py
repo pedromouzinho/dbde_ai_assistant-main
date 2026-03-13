@@ -125,6 +125,37 @@ async def test_load_uploaded_files_for_code_falls_back_to_artifact(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_load_uploaded_files_for_code_prefers_artifact_over_raw(monkeypatch):
+    async def _fake_table_query(*_args, **_kwargs):
+        return [
+            {
+                "Filename": "sample.xlsx",
+                "TabularArtifactBlobRef": "upload-artifacts/sample.parquet",
+                "RawBlobRef": "upload-raw/sample.xlsx",
+                "UploadedAt": "2026-03-13T10:00:00+00:00",
+            }
+        ]
+
+    downloads = []
+    artifact = build_tabular_artifact(_sample_xlsx_bytes(), "sample.xlsx")
+
+    async def _fake_blob_download_bytes(container, blob_name):
+        downloads.append(f"{container}/{blob_name}")
+        if container == "upload-artifacts":
+            return artifact["artifact_bytes"]
+        raise AssertionError("raw blob should not be used when artifact is available")
+
+    monkeypatch.setattr(tools, "table_query", _fake_table_query)
+    monkeypatch.setattr(tools, "blob_download_bytes", _fake_blob_download_bytes)
+
+    mounted = await tools._load_uploaded_files_for_code("conv-1", user_sub="pedro", filename="sample.xlsx")
+
+    assert list(mounted.keys()) == ["sample.csv"]
+    assert b"Date,Category,Revenue" in mounted["sample.csv"]
+    assert downloads == ["upload-artifacts/sample.parquet"]
+
+
+@pytest.mark.asyncio
 async def test_analyze_uploaded_table_uses_full_artifact_rows_beyond_inference_sample(monkeypatch):
     artifact = build_tabular_artifact(_large_csv_bytes(), "sample.csv")
 

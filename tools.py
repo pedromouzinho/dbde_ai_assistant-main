@@ -2037,7 +2037,20 @@ async def _load_uploaded_files_for_code(
         mounted_name = safe_name
         mounted_bytes = b""
 
-        if raw_blob_ref:
+        if artifact_blob_ref:
+            container, blob_name = parse_blob_ref(artifact_blob_ref)
+            if container and blob_name:
+                try:
+                    artifact_bytes = await blob_download_bytes(container, blob_name)
+                    mounted_bytes = export_tabular_artifact_as_csv_bytes(artifact_bytes)
+                    base_name = safe_name.rsplit(".", 1)[0] if "." in safe_name else safe_name
+                    mounted_name = f"{base_name}.csv"
+                except Exception as e:
+                    logging.warning("[Tools] run_code failed to hydrate tabular artifact %s: %s", safe_name, e)
+                    mounted_bytes = b""
+                    mounted_name = safe_name
+
+        if not mounted_bytes and raw_blob_ref:
             container, blob_name = parse_blob_ref(raw_blob_ref)
             if not container or not blob_name:
                 continue
@@ -2045,18 +2058,6 @@ async def _load_uploaded_files_for_code(
                 mounted_bytes = await blob_download_bytes(container, blob_name)
             except Exception as e:
                 logging.warning("[Tools] run_code failed to download upload %s: %s", safe_name, e)
-                continue
-        elif artifact_blob_ref:
-            container, blob_name = parse_blob_ref(artifact_blob_ref)
-            if not container or not blob_name:
-                continue
-            try:
-                artifact_bytes = await blob_download_bytes(container, blob_name)
-                mounted_bytes = export_tabular_artifact_as_csv_bytes(artifact_bytes)
-                base_name = safe_name.rsplit(".", 1)[0] if "." in safe_name else safe_name
-                mounted_name = f"{base_name}.csv"
-            except Exception as e:
-                logging.warning("[Tools] run_code failed to hydrate tabular artifact %s: %s", safe_name, e)
                 continue
 
         if not mounted_bytes:
