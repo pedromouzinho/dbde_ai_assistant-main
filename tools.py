@@ -57,10 +57,12 @@ from tools_learning import tool_get_writer_profile, tool_save_writer_profile
 from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
 from tabular_loader import TabularLoaderError, load_tabular_dataset, load_tabular_preview
 from tabular_artifacts import (
+    compute_tabular_artifact_numeric_metrics,
     export_tabular_artifact_as_csv_bytes,
     iter_tabular_artifact_batches,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
+    summarize_tabular_artifact_values,
 )
 from data_dictionary import (
     format_dictionary_for_prompt as format_data_dictionary_for_prompt,
@@ -1111,25 +1113,43 @@ async def tool_analyze_uploaded_table(
             ]
         elif matched_value_col and (categorical_intent or value_numeric_ratio < 0.35):
             # Modo categórico/textual: contagem exata de valores na coluna.
-            non_empty_vals = []
-            empty_count = 0
-            row_batches = _artifact_batches([matched_value_col]) if source_kind == "artifact" else [records]
             rows_processed = 0
-            for batch in row_batches:
-                rows_processed += len(batch)
-                for row in batch:
-                    value = str((row or {}).get(matched_value_col, "") or "").strip()
-                    if value:
-                        non_empty_vals.append(value)
-                    else:
-                        empty_count += 1
-            valid_data_points = len(non_empty_vals)
-            if not non_empty_vals:
+            if source_kind == "artifact":
+                value_summary = summarize_tabular_artifact_values(
+                    source.get("artifact_bytes") or b"",
+                    column=matched_value_col,
+                    top_n=max(10, min(chart_top, 2000)),
+                    all_limit=2000 if full_list_intent else 0,
+                )
+                non_empty_count = int(value_summary.get("non_empty_count", 0) or 0)
+                empty_count = int(value_summary.get("empty_count", 0) or 0)
+                distinct_count = int(value_summary.get("distinct_count", 0) or 0)
+                sorted_values = list(value_summary.get("top_values") or [])
+                all_values_raw = list(value_summary.get("all_values") or [])
+                rows_processed = rows_total
+            else:
+                non_empty_vals = []
+                empty_count = 0
+                row_batches = [records]
+                for batch in row_batches:
+                    rows_processed += len(batch)
+                    for row in batch:
+                        value = str((row or {}).get(matched_value_col, "") or "").strip()
+                        if value:
+                            non_empty_vals.append(value)
+                        else:
+                            empty_count += 1
+                non_empty_count = len(non_empty_vals)
+                if not non_empty_vals:
+                    return {"error": "Sem dados válidos na coluna indicada.", "filename": selected_filename}
+                counter = Counter(non_empty_vals)
+                distinct_count = len(counter)
+                sorted_values = counter.most_common()
+                all_values_raw = sorted_values
+            valid_data_points = non_empty_count
+            if non_empty_count <= 0:
                 return {"error": "Sem dados válidos na coluna indicada.", "filename": selected_filename}
 
-            counter = Counter(non_empty_vals)
-            distinct_count = len(counter)
-            sorted_values = counter.most_common()
             group_payload = sorted_values
             if not full_points:
                 limit = top_n_limit if top_n_limit > 0 else max(10, min(chart_top, 200))
@@ -1148,7 +1168,7 @@ async def tool_analyze_uploaded_table(
                     "group": value,
                     "value": int(count),
                     "count": int(count),
-                    "ratio": round(count / max(1, len(non_empty_vals)), 6),
+                    "ratio": round(count / max(1, non_empty_count), 6),
                 }
                 for value, count in group_payload
             ]
@@ -1157,16 +1177,16 @@ async def tool_analyze_uploaded_table(
             all_values_truncated = False
             if full_list_intent:
                 all_limit = 2000
-                sliced = sorted_values[:all_limit]
+                sliced = all_values_raw[:all_limit]
                 all_values = [
                     {
                         "value": value,
                         "count": int(count),
-                        "ratio": round(count / max(1, len(non_empty_vals)), 6),
+                        "ratio": round(count / max(1, non_empty_count), 6),
                     }
                     for value, count in sliced
                 ]
-                all_values_truncated = len(sorted_values) > all_limit
+                all_values_truncated = distinct_count > all_limit
                 if all_values_truncated:
                     warnings_list.append(
                         f"Lista completa truncada a {all_limit} valores distintos; pede export para total."
@@ -1192,7 +1212,7 @@ async def tool_analyze_uploaded_table(
                 "value_column": matched_value_col,
                 "categorical": True,
                 "distinct_count": distinct_count,
-                "non_empty_count": len(non_empty_vals),
+                "non_empty_count": non_empty_count,
                 "empty_count": empty_count,
                 "is_constant": distinct_count == 1,
                 "constant_value": sorted_values[0][0] if distinct_count == 1 else None,
@@ -1220,28 +1240,42 @@ async def tool_analyze_uploaded_table(
                 },
             }
         elif matched_value_col:
-            nums = []
-            row_batches = _artifact_batches([matched_value_col]) if source_kind == "artifact" else [records]
-            rows_processed = 0
-            for batch in row_batches:
-                rows_processed += len(batch)
-                for row in batch:
-                    val = _parse_numeric_value(row.get(matched_value_col, ""))
-                    if val is not None:
-                        nums.append(val)
-            valid_data_points = len(nums)
-            if not nums:
-                return {"error": "Sem dados numéricos válidos na coluna indicada.", "filename": selected_filename}
-            metrics_map = _compute_metrics(nums, requested_metrics, count_override=len(nums))
+            if source_kind == "artifact":
+                artifact_metrics = list(requested_metrics or [])
+                if "count" not in artifact_metrics:
+                    artifact_metrics.append("count")
+                metrics_map = compute_tabular_artifact_numeric_metrics(
+                    source.get("artifact_bytes") or b"",
+                    column=matched_value_col,
+                    requested_metrics=artifact_metrics,
+                )
+                rows_processed = rows_total
+                valid_data_points = int(metrics_map.get("count", 0) or 0)
+                if not metrics_map or valid_data_points <= 0:
+                    return {"error": "Sem dados numéricos válidos na coluna indicada.", "filename": selected_filename}
+            else:
+                nums = []
+                row_batches = [records]
+                rows_processed = 0
+                for batch in row_batches:
+                    rows_processed += len(batch)
+                    for row in batch:
+                        val = _parse_numeric_value(row.get(matched_value_col, ""))
+                        if val is not None:
+                            nums.append(val)
+                valid_data_points = len(nums)
+                if not nums:
+                    return {"error": "Sem dados numéricos válidos na coluna indicada.", "filename": selected_filename}
+                metrics_map = _compute_metrics(nums, requested_metrics, count_override=len(nums))
             if not metrics_map:
                 return {"error": "Sem métricas válidas para o conjunto de dados.", "filename": selected_filename}
             if metrics:
-                groups = [{"group": "overall", "metrics": metrics_map, "count": len(nums)}]
+                groups = [{"group": "overall", "metrics": metrics_map, "count": valid_data_points}]
             else:
                 overall = metrics_map.get(agg_mode)
                 if overall is None:
                     return {"error": f"Métrica '{agg_mode}' indisponível para os dados.", "filename": selected_filename}
-                groups = [{"group": "overall", "value": round(float(overall), 6), "count": len(nums)}]
+                groups = [{"group": "overall", "value": round(float(overall), 6), "count": valid_data_points}]
         else:
             return {"error": "Indica value_column para análise sem agrupamento.", "columns": columns, "filename": selected_filename}
 

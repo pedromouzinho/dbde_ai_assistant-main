@@ -8,9 +8,11 @@ import pytest
 import tools
 from tabular_artifacts import (
     build_tabular_artifact,
+    compute_tabular_artifact_numeric_metrics,
     export_tabular_artifact_as_csv_bytes,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
+    summarize_tabular_artifact_values,
 )
 
 
@@ -66,6 +68,41 @@ def test_export_tabular_artifact_as_csv_bytes_returns_csv():
 
     assert "Date,Category,Revenue" in text
     assert "2026-01-01,A,10" in text
+
+
+def test_compute_tabular_artifact_numeric_metrics_uses_full_dataset():
+    artifact = build_tabular_artifact(_large_csv_bytes(row_count=10), "sample.csv")
+
+    metrics = compute_tabular_artifact_numeric_metrics(
+        artifact["artifact_bytes"],
+        column="Revenue",
+        requested_metrics=["count", "sum", "mean", "min", "max", "median"],
+    )
+
+    assert metrics["count"] == 10
+    assert metrics["sum"] == 55.0
+    assert metrics["mean"] == 5.5
+    assert metrics["min"] == 1.0
+    assert metrics["max"] == 10.0
+    assert metrics["median"] == 5.5
+
+
+def test_summarize_tabular_artifact_values_returns_distinct_counts():
+    artifact = build_tabular_artifact(_large_csv_bytes(row_count=12), "sample.csv")
+
+    summary = summarize_tabular_artifact_values(
+        artifact["artifact_bytes"],
+        column="Category",
+        top_n=10,
+        all_limit=10,
+    )
+
+    assert summary["non_empty_count"] == 12
+    assert summary["empty_count"] == 0
+    assert summary["distinct_count"] == 2
+    assert summary["top_values"][0][0] in {"A", "B"}
+    assert summary["top_values"][0][1] == 6
+    assert len(summary["all_values"]) == 2
 
 
 @pytest.mark.asyncio
@@ -184,3 +221,32 @@ async def test_analyze_uploaded_table_uses_full_artifact_rows_beyond_inference_s
     assert result["analysis_quality"]["rows_total"] == 6000
     assert result["analysis_quality"]["coverage"] == 1.0
     assert not result["analysis_quality"]["warnings"]
+
+
+@pytest.mark.asyncio
+async def test_analyze_uploaded_table_uses_artifact_for_categorical_summary(monkeypatch):
+    artifact = build_tabular_artifact(_large_csv_bytes(row_count=6000), "sample.csv")
+
+    async def _fake_resolve_uploaded_tabular_source(_conv_id, _user_sub="", _filename=""):
+        return {
+            "filename": "sample.csv",
+            "source_kind": "artifact",
+            "artifact_bytes": artifact["artifact_bytes"],
+            "artifact_format": "parquet",
+        }
+
+    monkeypatch.setattr(tools, "_resolve_uploaded_tabular_source", _fake_resolve_uploaded_tabular_source)
+
+    result = await tools.tool_analyze_uploaded_table(
+        query="quais são os valores distintos da category",
+        conv_id="conv-1",
+        user_sub="pedro",
+        filename="sample.csv",
+        value_column="Category",
+    )
+
+    assert result["categorical"] is True
+    assert result["distinct_count"] == 2
+    assert result["non_empty_count"] == 6000
+    assert result["analysis_quality"]["rows_processed"] == 6000
+    assert {group["group"] for group in result["groups"]} == {"A", "B"}

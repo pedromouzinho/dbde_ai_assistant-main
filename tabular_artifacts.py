@@ -202,6 +202,131 @@ def iter_tabular_artifact_batches(
             conn.close()
 
 
+def compute_tabular_artifact_numeric_metrics(
+    artifact_bytes: bytes,
+    *,
+    column: str,
+    requested_metrics: list[str],
+) -> dict:
+    import duckdb
+
+    safe_column = str(column or "").strip()
+    if not artifact_bytes or not safe_column:
+        raise TabularLoaderError("Artefacto tabular ou coluna inválida para métricas numéricas.")
+
+    metric_map = {
+        "count": "COUNT(try_cast({col} AS DOUBLE))",
+        "sum": "SUM(try_cast({col} AS DOUBLE))",
+        "mean": "AVG(try_cast({col} AS DOUBLE))",
+        "min": "MIN(try_cast({col} AS DOUBLE))",
+        "max": "MAX(try_cast({col} AS DOUBLE))",
+        "std": "STDDEV_SAMP(try_cast({col} AS DOUBLE))",
+        "median": "QUANTILE_CONT(try_cast({col} AS DOUBLE), 0.5)",
+        "p25": "QUANTILE_CONT(try_cast({col} AS DOUBLE), 0.25)",
+        "p75": "QUANTILE_CONT(try_cast({col} AS DOUBLE), 0.75)",
+    }
+    selected_metrics = []
+    for metric in requested_metrics or []:
+        safe_metric = str(metric or "").strip()
+        if safe_metric in metric_map and safe_metric not in selected_metrics:
+            selected_metrics.append(safe_metric)
+    if not selected_metrics:
+        selected_metrics = ["count"]
+
+    column_expr = _duckdb_ident(safe_column)
+    select_parts = [
+        f"{metric_map[metric].format(col=column_expr)} AS {_duckdb_ident(metric)}"
+        for metric in selected_metrics
+    ]
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            row = conn.execute(
+                f"SELECT {', '.join(select_parts)} FROM read_parquet(?)",
+                [temp_path],
+            ).fetchone()
+        finally:
+            conn.close()
+
+    result = {}
+    for idx, metric in enumerate(selected_metrics):
+        value = row[idx] if row and idx < len(row) else None
+        if value is None:
+            continue
+        if metric == "count":
+            result[metric] = int(value)
+        else:
+            result[metric] = round(float(value), 6)
+    return result
+
+
+def summarize_tabular_artifact_values(
+    artifact_bytes: bytes,
+    *,
+    column: str,
+    top_n: int = 200,
+    all_limit: int = 0,
+) -> dict:
+    import duckdb
+
+    safe_column = str(column or "").strip()
+    if not artifact_bytes or not safe_column:
+        raise TabularLoaderError("Artefacto tabular ou coluna inválida para resumo categórico.")
+
+    top_limit = max(1, min(int(top_n or 0), 10000))
+    full_limit = max(0, min(int(all_limit or 0), 10000))
+    column_expr = _duckdb_ident(safe_column)
+    value_expr = (
+        f"TRIM(COALESCE(CAST({column_expr} AS VARCHAR), ''))"
+    )
+
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            non_empty_count, empty_count, distinct_count = conn.execute(
+                (
+                    "SELECT "
+                    f"COUNT(*) FILTER (WHERE {value_expr} <> ''), "
+                    f"COUNT(*) FILTER (WHERE {value_expr} = ''), "
+                    f"COUNT(DISTINCT CASE WHEN {value_expr} <> '' THEN {value_expr} END) "
+                    "FROM read_parquet(?)"
+                ),
+                [temp_path],
+            ).fetchone()
+
+            top_values = conn.execute(
+                (
+                    f"SELECT {value_expr} AS value, COUNT(*) AS count "
+                    "FROM read_parquet(?) "
+                    f"WHERE {value_expr} <> '' "
+                    "GROUP BY 1 ORDER BY 2 DESC, 1 ASC LIMIT ?"
+                ),
+                [temp_path, top_limit],
+            ).fetchall()
+
+            all_values = []
+            if full_limit > 0:
+                all_values = conn.execute(
+                    (
+                        f"SELECT {value_expr} AS value, COUNT(*) AS count "
+                        "FROM read_parquet(?) "
+                        f"WHERE {value_expr} <> '' "
+                        "GROUP BY 1 ORDER BY 2 DESC, 1 ASC LIMIT ?"
+                    ),
+                    [temp_path, full_limit],
+                ).fetchall()
+        finally:
+            conn.close()
+
+    return {
+        "non_empty_count": int(non_empty_count or 0),
+        "empty_count": int(empty_count or 0),
+        "distinct_count": int(distinct_count or 0),
+        "top_values": [(str(value or ""), int(count or 0)) for value, count in top_values],
+        "all_values": [(str(value or ""), int(count or 0)) for value, count in all_values],
+    }
+
+
 def _insert_batch(conn, columns: list[str], batch: list[list[str]]) -> None:
     placeholders = ", ".join(["?"] * len(columns))
     conn.executemany(f"INSERT INTO uploaded VALUES ({placeholders})", batch)
