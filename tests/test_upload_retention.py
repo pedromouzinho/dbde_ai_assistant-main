@@ -16,6 +16,20 @@ def test_retention_expiry_helper():
     assert app._is_retention_expired("") is False
 
 
+def test_raw_blob_retention_for_tabular_artifact_uses_shorter_window(monkeypatch):
+    monkeypatch.setattr(app, "UPLOAD_TABULAR_RAW_RETENTION_HOURS", 6)
+
+    retention_until = app._raw_blob_retention_until_iso(
+        filename="sample.xlsx",
+        artifact_blob_ref="upload-artifacts/sample.parquet",
+        fallback_hours=72,
+    )
+
+    delta = datetime.fromisoformat(retention_until) - datetime.now(timezone.utc)
+    assert delta.total_seconds() > 5 * 3600
+    assert delta.total_seconds() < 7 * 3600
+
+
 @pytest.mark.asyncio
 async def test_purge_expired_upload_artifacts_removes_expired_rows_and_jobs(monkeypatch):
     expired = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
