@@ -29,8 +29,8 @@ Esta avaliação é técnica e operacional. Não substitui aconselhamento juríd
 
 ### Depois das fases implementadas nesta vaga
 
-- `76/100` para uso individual ou interno muito controlado
-- `63/100` para uso com dados confidenciais
+- `80/100` para uso individual ou interno muito controlado
+- `67/100` para uso com dados confidenciais
 
 ### Score alvo esperado após intervenção da DSI
 
@@ -136,6 +136,26 @@ Nesta fase, esta governação é deliberadamente **consultiva** e não bloqueant
 - não cria retrabalho antes da intervenção da DSI;
 - mantém a flexibilidade experimental atual.
 
+### 7. Voz com leitura dedicada e normalização controlada
+
+O fluxo de voz passou a usar uma separação mais correta entre:
+
+- leitura da fala;
+- interpretação do pedido;
+- decisão de auto-envio ou queda para texto.
+
+Nesta fase:
+
+- a leitura pode usar Azure Speech;
+- a normalização pode usar `azure_openai:gpt-4.1-mini-dz`;
+- o fallback para Anthropic continua disponível quando necessário;
+- não existe persistência deliberada de áudio bruto.
+
+Isto melhora experiência e previsibilidade, mas não altera a leitura principal do risco:
+
+- continua a existir processamento de dados em serviços de IA;
+- o fallback Anthropic continua a ser uma liability conhecida e conscientemente aceite nesta fase experimental.
+
 ## Riscos ainda presentes
 
 ### 1. Identidade e controlo de acesso
@@ -219,6 +239,152 @@ As seguintes linhas continuam corretas e não criam retrabalho:
 4. abstração de principal/roles;
 5. auditoria técnica mínima;
 6. exportação/eliminação de dados do utilizador.
+
+## Queue priorizada e transição
+
+Esta secção consolida o que ainda está em queue, distinguindo:
+
+- o que vale a pena fazer já sem criar retrabalho;
+- o que deve ser preparado antes da DSI;
+- o que faz sentido executar com a DSI;
+- e o que já não tem retorno suficiente nesta fase.
+
+### A. Próximo bloco com maior retorno antes da DSI
+
+#### 1. Fechar melhor o pipeline tabular para ficheiros grandes
+
+Estado atual:
+
+- uploads tabulares já usam artefacto persistente;
+- a análise principal já corre muito mais sobre esse artefacto com `duckdb`;
+- o `RawBlobRef` já tem retenção curta e backfill de chunks.
+
+Próximo passo recomendado:
+
+- manter esta frente apenas até ao ponto em que o raw deixa de ser residual para os fluxos mais relevantes;
+- evitar continuar a otimizar detalhes com retorno marginal baixo.
+
+Objetivo:
+
+- garantir que a app lida bem com ficheiros grandes;
+- reduzir ainda mais dependência do raw;
+- deixar a transição futura para uma arquitetura mais enterprise sem retrabalho.
+
+#### 2. Passar de governação consultiva de providers para governação configurável
+
+Estado atual:
+
+- existe visibilidade sobre provider/modelo/fallback;
+- existem sinais de sensibilidade e provider externo no audit trail;
+- Anthropic continua ativo por decisão consciente desta fase experimental.
+
+Próximo passo recomendado:
+
+- introduzir política configurável por modo/fluxo;
+- permitir desligar fallback externo por área sensível sem reescrever a app;
+- manter Anthropic ligado onde ainda fizer sentido nesta fase experimental.
+
+Isto é particularmente útil porque:
+
+- não choca com a futura arquitetura corporativa;
+- melhora governança já hoje;
+- permite adaptar a app sem mudanças profundas quando a DSI pedir restrições.
+
+#### 3. Formalizar melhor retenção e purge
+
+Estado atual:
+
+- já existe purge seletiva e retenção curta em blocos críticos.
+
+Próximo passo recomendado:
+
+- consolidar janelas por categoria de dado;
+- tornar mais explícita a separação entre raw, artefacto de análise, resultado derivado e memória aprendida;
+- alinhar isto com uma futura política formal de retenção.
+
+### B. Fazer antes da DSI porque prepara a migração
+
+#### 1. Abstração final de principal, roles e capabilities
+
+O caminho iniciado com `SecurityPrincipal` deve continuar até ao ponto em que:
+
+- o código dependa o mínimo possível da auth própria atual;
+- as autorizações por funcionalidade estejam centralizadas;
+- a migração para claims corporativas seja sobretudo uma troca de fonte de identidade, e não uma reescrita transversal da aplicação.
+
+#### 2. DSR técnico e ciclo de vida dos dados
+
+Convém continuar a reforçar:
+
+- exportação de dados do utilizador;
+- eliminação por utilizador;
+- eliminação por conversa e por upload;
+- consistência entre memória local, tabelas e blobs.
+
+Isto ajuda RGPD independentemente da futura solução de identidade.
+
+#### 3. Blueprint e inventário técnico para a DSI
+
+Antes da intervenção da DSI, continua a valer a pena manter um blueprint claro com:
+
+- dependências da aplicação;
+- serviços Azure usados;
+- settings críticos;
+- modelo de dados persistidos;
+- fluxo de providers de IA;
+- pontos onde a identidade corporativa vai entrar.
+
+### C. O que faz sentido executar com a DSI
+
+Estas continuam a ser as mudanças estruturais com maior impacto no score:
+
+#### 1. Identidade e controlo de acesso
+
+- Entra ID
+- MFA
+- Conditional Access
+- grupos/roles corporativos
+
+#### 2. Fecho de rede
+
+- Private Endpoints
+- VNet Integration
+- redução ou eliminação de exposição pública desnecessária
+
+#### 3. Serviços por identidade/RBAC
+
+- Storage sem Shared Key como padrão de longo prazo
+- Search com controlo mais forte por identidade e rede
+
+#### 4. Maturidade operacional de release
+
+- slot de staging
+- rollout melhor
+- observabilidade e rollback mais maduros
+
+### D. O que já não merece tanto investimento agora
+
+Nesta fase, já não faz sentido investir muito mais em:
+
+- hardening sofisticado da auth própria atual;
+- remendos pontuais sobre rede pública como solução final;
+- mais otimizações pequenas no pipeline tabular com retorno marginal baixo;
+- reforço excessivo de padrões que serão substituídos por Entra ID e rede privada.
+
+## Leitura executiva do estado atual
+
+Brutalmente honesto:
+
+- a aplicação já não é um protótipo frágil;
+- já existe trabalho material e consistente de segurança, privacidade, retenção e minimização;
+- a aplicação está melhor preparada para dados reais do que estava no início da auditoria;
+- o principal teto atual já não está tanto no código, mas sim em identidade corporativa, fecho de rede e governação formal.
+
+Em resumo:
+
+- **o trabalho feito até aqui continua a fazer sentido**;
+- **não é retrabalho**;
+- e **prepara corretamente a passagem futura para uma arquitetura aprovada pela DSI**.
 
 ## O que deve ser feito com a DSI
 
