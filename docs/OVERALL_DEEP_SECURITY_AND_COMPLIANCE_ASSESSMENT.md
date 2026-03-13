@@ -57,6 +57,7 @@ Foi introduzido controlo explícito de retenção para:
 - redução do `RawBlobRef` tabular para retenção curta por defeito (`6h`) quando o artefacto persistente já existe;
 - encurtamento adicional do `RawBlobRef` tabular para uma janela ainda mais curta (`1h`) quando o upload já ficou completo com artefacto persistente **e** chunks semânticos gerados a partir desse artefacto;
 - backfill automático e leve de uploads tabulares históricos que já tinham artefacto persistente, mas ainda não tinham `HasChunks`, evitando depender do `RawBlobRef` para preservar grounding e contexto;
+- separação mais clara entre `raw blob` e artefacto tabular persistente, permitindo que o original deixe de ser a base principal de análise assim que o artefacto fica pronto;
 - purge de blobs e rows associadas, reduzindo acumulação e retenção desnecessária.
 
 Isto reduz:
@@ -102,7 +103,23 @@ Isto é importante para:
 - apoiar futuros processos de DSR;
 - preparar melhor a aplicação para produção séria.
 
-### 5. Governação consultiva de providers
+### 5. Pipeline tabular mais robusta e menos dependente do raw
+
+O pipeline tabular passou a apoiar-se muito mais no artefacto persistente (`parquet`) do que no ficheiro original:
+
+- análise integral do dataset em artefacto, sem depender de amostras para cálculos principais;
+- uso de `duckdb` para métricas numéricas, sumários categóricos, agrupamentos temporais e comparação de períodos;
+- geração de chunks semânticos diretamente a partir do artefacto tabular;
+- preferência do artefacto em `run_code` e nos fluxos de email sempre que ele já existe.
+
+Isto melhora ao mesmo tempo:
+
+- performance em ficheiros grandes;
+- previsibilidade da análise;
+- minimização de dados, porque o `RawBlobRef` deixa de ser necessário durante tanto tempo;
+- robustez do produto para cenários com tabelas reais de maior dimensão.
+
+### 6. Governação consultiva de providers
 
 Foi introduzida uma camada explícita de governação consultiva dos providers:
 
