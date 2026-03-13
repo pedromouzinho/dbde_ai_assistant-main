@@ -137,6 +137,124 @@ def load_tabular_artifact_preview(
     return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
 
 
+def profile_tabular_artifact_columns(
+    artifact_bytes: bytes,
+    *,
+    columns: list[str],
+    max_columns: int = 80,
+) -> list[dict]:
+    import duckdb
+
+    if not artifact_bytes:
+        raise TabularLoaderError("Artefacto tabular vazio.")
+
+    limited_columns = [str(col or "").strip() for col in (columns or []) if str(col or "").strip()][: max(1, max_columns)]
+    if not limited_columns:
+        return []
+
+    profiles = []
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            for column in limited_columns:
+                col_expr = _duckdb_ident(column)
+                text_expr = f"TRIM(COALESCE(CAST({col_expr} AS VARCHAR), ''))"
+                num_expr = f"TRY_CAST({col_expr} AS DOUBLE)"
+                dt_expr = f"TRY_CAST({col_expr} AS TIMESTAMP)"
+
+                non_empty_count, empty_count, numeric_count, datetime_count = conn.execute(
+                    (
+                        "SELECT "
+                        f"COUNT(*) FILTER (WHERE {text_expr} <> ''), "
+                        f"COUNT(*) FILTER (WHERE {text_expr} = ''), "
+                        f"COUNT({num_expr}), "
+                        f"COUNT({dt_expr}) "
+                        "FROM read_parquet(?)"
+                    ),
+                    [temp_path],
+                ).fetchone()
+
+                non_empty_count = int(non_empty_count or 0)
+                empty_count = int(empty_count or 0)
+                numeric_count = int(numeric_count or 0)
+                datetime_count = int(datetime_count or 0)
+
+                sample_rows = conn.execute(
+                    (
+                        f"SELECT {text_expr} AS value "
+                        "FROM read_parquet(?) "
+                        f"WHERE {text_expr} <> '' "
+                        "LIMIT 5"
+                    ),
+                    [temp_path],
+                ).fetchall()
+                sample_values = [str(row[0] or "") for row in sample_rows if row and str(row[0] or "")]
+
+                ratio = numeric_count / max(1, non_empty_count)
+                type_hint = "numeric" if ratio >= 0.8 and numeric_count > 0 else "text"
+                if type_hint == "text" and datetime_count >= max(5, int(0.6 * max(1, non_empty_count))):
+                    type_hint = "datetime"
+
+                profile = {
+                    "name": column,
+                    "non_empty": non_empty_count,
+                    "empty": empty_count,
+                    "type": type_hint,
+                    "sample": sample_values,
+                }
+
+                if type_hint == "numeric" and numeric_count > 0:
+                    min_value, max_value, mean_value, std_value = conn.execute(
+                        (
+                            "SELECT "
+                            f"MIN({num_expr}), "
+                            f"MAX({num_expr}), "
+                            f"AVG({num_expr}), "
+                            f"STDDEV_SAMP({num_expr}) "
+                            "FROM read_parquet(?)"
+                        ),
+                        [temp_path],
+                    ).fetchone()
+                    profile.update(
+                        {
+                            "min": round(float(min_value), 6) if min_value is not None else None,
+                            "max": round(float(max_value), 6) if max_value is not None else None,
+                            "mean": round(float(mean_value), 6) if mean_value is not None else None,
+                            "std": round(float(std_value), 6) if std_value is not None else 0.0,
+                        }
+                    )
+                else:
+                    distinct_count = conn.execute(
+                        (
+                            "SELECT COUNT(DISTINCT value) FROM ("
+                            f"SELECT {text_expr} AS value "
+                            "FROM read_parquet(?) "
+                            f"WHERE {text_expr} <> ''"
+                            ") t"
+                        ),
+                        [temp_path],
+                    ).fetchone()[0]
+                    top_rows = conn.execute(
+                        (
+                            f"SELECT {text_expr} AS value, COUNT(*) AS count "
+                            "FROM read_parquet(?) "
+                            f"WHERE {text_expr} <> '' "
+                            "GROUP BY 1 ORDER BY 2 DESC, 1 ASC LIMIT 5"
+                        ),
+                        [temp_path],
+                    ).fetchall()
+                    profile["distinct_count"] = int(distinct_count or 0)
+                    profile["top_values"] = [
+                        {"value": str(value or ""), "count": int(count or 0)}
+                        for value, count in top_rows
+                    ]
+
+                profiles.append(profile)
+        finally:
+            conn.close()
+    return profiles
+
+
 def export_tabular_artifact_as_csv_bytes(artifact_bytes: bytes) -> bytes:
     import duckdb
 

@@ -65,6 +65,7 @@ from tabular_artifacts import (
     load_tabular_artifact_time_series,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
+    profile_tabular_artifact_columns,
     summarize_tabular_artifact_values,
 )
 from data_dictionary import (
@@ -917,9 +918,15 @@ async def tool_analyze_uploaded_table(
         matched_value_col = _infer_text_column(q, columns, date_column=matched_date_col, records=records)
 
     if group_mode == "none" and (schema_profile_intent or not matched_value_col):
-        column_profiles = _build_column_profiles(records, columns)
+        if source_kind == "artifact":
+            column_profiles = profile_tabular_artifact_columns(
+                source.get("artifact_bytes") or b"",
+                columns=columns,
+            )
+        else:
+            column_profiles = _build_column_profiles(records, columns)
         profile_warnings = list(warnings_list)
-        sampled_profiles = source_kind == "artifact" and rows_total > len(records)
+        sampled_profiles = source_kind != "artifact" and rows_total > len(records)
         if sampled_profiles:
             profile_warnings.append(
                 f"Perfis de colunas baseados em amostra de {len(records)} linhas; usa análise dirigida para cálculos integrais."

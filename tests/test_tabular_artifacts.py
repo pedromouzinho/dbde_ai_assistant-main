@@ -15,6 +15,7 @@ from tabular_artifacts import (
     load_tabular_artifact_time_series,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
+    profile_tabular_artifact_columns,
     summarize_tabular_artifact_values,
 )
 
@@ -187,6 +188,25 @@ def test_load_tabular_artifact_time_series_supports_sampling_and_full_points():
     values = [point[1] for point in full["points"]]
     assert min(values) == 1.0
     assert max(values) == 6000.0
+
+
+def test_profile_tabular_artifact_columns_profiles_full_dataset():
+    artifact = build_tabular_artifact(_period_csv_bytes(), "sample.csv")
+
+    profiles = profile_tabular_artifact_columns(
+        artifact["artifact_bytes"],
+        columns=["Date", "Category", "Revenue"],
+    )
+    by_name = {profile["name"]: profile for profile in profiles}
+
+    assert by_name["Revenue"]["type"] == "numeric"
+    assert by_name["Revenue"]["non_empty"] == 6
+    assert by_name["Revenue"]["min"] == 10.0
+    assert by_name["Revenue"]["max"] == 60.0
+    assert by_name["Category"]["type"] == "text"
+    assert by_name["Category"]["distinct_count"] == 3
+    assert by_name["Date"]["type"] == "datetime"
+    assert by_name["Date"]["non_empty"] == 6
 
 
 @pytest.mark.asyncio
@@ -434,3 +454,33 @@ async def test_analyze_uploaded_table_uses_artifact_for_time_series_sampling(mon
     assert result["analysis_quality"]["coverage"] == 1.0
     assert result["analysis_quality"]["sampled"] is True
     assert any("Série temporal amostrada" in warning for warning in result["analysis_quality"]["warnings"])
+
+
+@pytest.mark.asyncio
+async def test_analyze_uploaded_table_uses_artifact_for_schema_profiles(monkeypatch):
+    artifact = build_tabular_artifact(_period_csv_bytes(), "sample.csv")
+
+    async def _fake_resolve_uploaded_tabular_source(_conv_id, _user_sub="", _filename=""):
+        return {
+            "filename": "sample.csv",
+            "source_kind": "artifact",
+            "artifact_bytes": artifact["artifact_bytes"],
+            "artifact_format": "parquet",
+        }
+
+    monkeypatch.setattr(tools, "_resolve_uploaded_tabular_source", _fake_resolve_uploaded_tabular_source)
+
+    result = await tools.tool_analyze_uploaded_table(
+        query="qual a estrutura e schema desta tabela",
+        conv_id="conv-1",
+        user_sub="pedro",
+        filename="sample.csv",
+    )
+
+    assert result["row_count"] == 6
+    assert result["analysis_quality"]["coverage"] == 1.0
+    assert result["analysis_quality"]["sampled"] is False
+    profiles = {profile["name"]: profile for profile in result["column_profiles"]}
+    assert profiles["Revenue"]["type"] == "numeric"
+    assert profiles["Category"]["type"] == "text"
+    assert profiles["Date"]["type"] == "datetime"

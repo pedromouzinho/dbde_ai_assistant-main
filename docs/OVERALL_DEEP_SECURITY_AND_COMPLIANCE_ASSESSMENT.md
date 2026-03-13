@@ -109,6 +109,7 @@ O pipeline tabular passou a apoiar-se muito mais no artefacto persistente (`parq
 
 - análise integral do dataset em artefacto, sem depender de amostras para cálculos principais;
 - uso de `duckdb` para métricas numéricas, sumários categóricos, agrupamentos temporais e comparação de períodos;
+- perfil/schema de colunas também sobre o artefacto, reduzindo dependência de amostra até nos pedidos exploratórios;
 - geração de chunks semânticos diretamente a partir do artefacto tabular;
 - preferência do artefacto em `run_code` e nos fluxos de email sempre que ele já existe.
 
