@@ -58,6 +58,7 @@ from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
 from tabular_loader import TabularLoaderError, load_tabular_dataset, load_tabular_preview
 from tabular_artifacts import (
     export_tabular_artifact_as_csv_bytes,
+    iter_tabular_artifact_batches,
     load_tabular_artifact_dataset,
     load_tabular_artifact_preview,
 )
@@ -836,15 +837,14 @@ async def tool_analyze_uploaded_table(
     dataset_source = "uploaded_table_artifact" if source_kind == "artifact" else "uploaded_table_raw_blob"
 
     max_rows = 500000
+    sample_max_rows = 5000 if source_kind == "artifact" else max_rows
     try:
         if source_kind == "artifact":
-            dataset = load_tabular_artifact_dataset(source.get("artifact_bytes") or b"", max_rows=max_rows)
+            dataset = load_tabular_artifact_dataset(source.get("artifact_bytes") or b"", max_rows=sample_max_rows)
         else:
             dataset = load_tabular_dataset(source.get("raw_bytes") or b"", selected_filename, max_rows=max_rows)
     except TabularLoaderError as exc:
         return {"error": str(exc)}
-    finally:
-        del source
     records = list(dataset.get("records") or [])
     columns = list(dataset.get("columns") or [])
     rows_total = int(dataset.get("row_count", len(records)) or len(records))
@@ -876,12 +876,33 @@ async def tool_analyze_uploaded_table(
         )
     )
     warnings_list = []
-    if rows_total > len(records):
+    if source_kind != "artifact" and rows_total > len(records):
         warnings_list.append(
             f"Dataset truncado a {len(records)} linhas para análise determinística (total real: {rows_total})."
         )
     valid_data_points = 0
     was_sampled = False
+    rows_processed = len(records)
+
+    def _artifact_batches(required_columns: list[str], *, batch_rows: int = 10000):
+        artifact_bytes = source.get("artifact_bytes") or b""
+        if source_kind != "artifact" or not artifact_bytes:
+            return iter(())
+        selected_columns = []
+        seen_columns = set()
+        for column in required_columns:
+            safe_column = str(column or "").strip()
+            if not safe_column or safe_column not in columns or safe_column in seen_columns:
+                continue
+            seen_columns.add(safe_column)
+            selected_columns.append(safe_column)
+        if not selected_columns:
+            selected_columns = list(columns)
+        return iter_tabular_artifact_batches(
+            artifact_bytes,
+            columns=selected_columns,
+            batch_rows=batch_rows,
+        )
 
     if not matched_date_col and group_mode in ("year", "month", "quarter", "week", "day"):
         matched_date_col = _infer_date_column(q, columns, records)
@@ -892,6 +913,12 @@ async def tool_analyze_uploaded_table(
 
     if group_mode == "none" and (schema_profile_intent or not matched_value_col):
         column_profiles = _build_column_profiles(records, columns)
+        profile_warnings = list(warnings_list)
+        sampled_profiles = source_kind == "artifact" and rows_total > len(records)
+        if sampled_profiles:
+            profile_warnings.append(
+                f"Perfis de colunas baseados em amostra de {len(records)} linhas; usa análise dirigida para cálculos integrais."
+            )
         return {
             "source": dataset_source,
             "conversation_id": safe_conv,
@@ -901,15 +928,15 @@ async def tool_analyze_uploaded_table(
             "column_profiles": column_profiles[:40],
             "total_columns_profiled": len(column_profiles),
             "summary": (
-                f"Perfil completo de '{selected_filename}' ({len(records)} linhas, {len(columns)} colunas). "
-                "Usa estes perfis para responder sem assumir amostras."
+                f"Perfil de '{selected_filename}' ({len(records)} linhas carregadas, {rows_total} totais, {len(columns)} colunas). "
+                "Usa estes perfis para orientar a análise da tabela."
             ),
             "analysis_quality": {
-                "coverage": 1.0,
-                "sampled": False,
+                "coverage": round(len(records) / max(1, rows_total), 4),
+                "sampled": sampled_profiles,
                 "rows_processed": len(records),
                 "rows_total": rows_total,
-                "warnings": warnings_list,
+                "warnings": profile_warnings,
             },
         }
 
@@ -946,22 +973,26 @@ async def tool_analyze_uploaded_table(
         period_2_vals = []
         period_1_count = 0
         period_2_count = 0
-        for row in records:
-            dt = _parse_datetime_value(row.get(period_col, ""))
-            if dt is None:
-                continue
-            if _match_period(dt, period_1):
-                period_1_count += 1
-                if requested_metrics != ["count"]:
-                    num = _parse_numeric_value(row.get(matched_value_col, ""))
-                    if num is not None:
-                        period_1_vals.append(num)
-            elif _match_period(dt, period_2):
-                period_2_count += 1
-                if requested_metrics != ["count"]:
-                    num = _parse_numeric_value(row.get(matched_value_col, ""))
-                    if num is not None:
-                        period_2_vals.append(num)
+        row_batches = _artifact_batches([period_col, matched_value_col]) if source_kind == "artifact" else [records]
+        rows_processed = 0
+        for batch in row_batches:
+            rows_processed += len(batch)
+            for row in batch:
+                dt = _parse_datetime_value(row.get(period_col, ""))
+                if dt is None:
+                    continue
+                if _match_period(dt, period_1):
+                    period_1_count += 1
+                    if requested_metrics != ["count"]:
+                        num = _parse_numeric_value(row.get(matched_value_col, ""))
+                        if num is not None:
+                            period_1_vals.append(num)
+                elif _match_period(dt, period_2):
+                    period_2_count += 1
+                    if requested_metrics != ["count"]:
+                        num = _parse_numeric_value(row.get(matched_value_col, ""))
+                        if num is not None:
+                            period_2_vals.append(num)
 
         valid_data_points = len(period_1_vals) + len(period_2_vals) if requested_metrics != ["count"] else (period_1_count + period_2_count)
         metrics_p1 = _compute_metrics(period_1_vals, requested_metrics, count_override=period_1_count)
@@ -990,9 +1021,9 @@ async def tool_analyze_uploaded_table(
             "period2": {"name": period_2, "metrics": metrics_p2, "count": period_2_count},
             "delta": delta,
             "analysis_quality": {
-                "coverage": round(valid_data_points / max(1, len(records)), 4),
+                "coverage": round(valid_data_points / max(1, rows_total if source_kind == "artifact" else len(records)), 4),
                 "sampled": False,
-                "rows_processed": len(records),
+                "rows_processed": rows_processed,
                 "rows_total": rows_total,
                 "warnings": warnings_list,
             },
@@ -1000,30 +1031,34 @@ async def tool_analyze_uploaded_table(
 
     if group_mode in ("year", "month", "quarter", "week", "day"):
         buckets = {}
-        for row in records:
-            dt = _parse_datetime_value(row.get(matched_date_col, ""))
-            if dt is None:
-                continue
-            if group_mode == "year":
-                key = f"{dt.year:04d}"
-            elif group_mode == "month":
-                key = f"{dt.year:04d}-{dt.month:02d}"
-            elif group_mode == "quarter":
-                key = f"{dt.year:04d}-Q{((dt.month - 1) // 3) + 1}"
-            elif group_mode == "week":
-                iso_year, iso_week, _ = dt.isocalendar()
-                key = f"{iso_year:04d}-W{iso_week:02d}"
-            else:
-                key = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
-            bucket = buckets.setdefault(key, {"key": key, "values": [], "count": 0})
-            bucket["count"] += 1
-            if requested_metrics == ["count"]:
-                continue
-            num = _parse_numeric_value(row.get(matched_value_col, ""))
-            if num is None:
-                continue
-            bucket["values"].append(num)
-            valid_data_points += 1
+        row_batches = _artifact_batches([matched_date_col, matched_value_col]) if source_kind == "artifact" else [records]
+        rows_processed = 0
+        for batch in row_batches:
+            rows_processed += len(batch)
+            for row in batch:
+                dt = _parse_datetime_value(row.get(matched_date_col, ""))
+                if dt is None:
+                    continue
+                if group_mode == "year":
+                    key = f"{dt.year:04d}"
+                elif group_mode == "month":
+                    key = f"{dt.year:04d}-{dt.month:02d}"
+                elif group_mode == "quarter":
+                    key = f"{dt.year:04d}-Q{((dt.month - 1) // 3) + 1}"
+                elif group_mode == "week":
+                    iso_year, iso_week, _ = dt.isocalendar()
+                    key = f"{iso_year:04d}-W{iso_week:02d}"
+                else:
+                    key = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
+                bucket = buckets.setdefault(key, {"key": key, "values": [], "count": 0})
+                bucket["count"] += 1
+                if requested_metrics == ["count"]:
+                    continue
+                num = _parse_numeric_value(row.get(matched_value_col, ""))
+                if num is None:
+                    continue
+                bucket["values"].append(num)
+                valid_data_points += 1
 
         for key in sorted(buckets.keys()):
             bucket = buckets[key]
@@ -1046,12 +1081,16 @@ async def tool_analyze_uploaded_table(
         if matched_date_col and matched_value_col and series_intent:
             # Modo "none" com pedido de gráfico temporal.
             series = []
-            for row in records:
-                dt = _parse_datetime_value(row.get(matched_date_col, ""))
-                num = _parse_numeric_value(row.get(matched_value_col, ""))
-                if dt is None or num is None:
-                    continue
-                series.append((dt, num))
+            row_batches = _artifact_batches([matched_date_col, matched_value_col]) if source_kind == "artifact" else [records]
+            rows_processed = 0
+            for batch in row_batches:
+                rows_processed += len(batch)
+                for row in batch:
+                    dt = _parse_datetime_value(row.get(matched_date_col, ""))
+                    num = _parse_numeric_value(row.get(matched_value_col, ""))
+                    if dt is None or num is None:
+                        continue
+                    series.append((dt, num))
             series.sort(key=lambda x: x[0])
             if not series:
                 return {"error": "Sem dados numéricos/datas válidos para gerar série temporal.", "filename": selected_filename}
@@ -1072,9 +1111,18 @@ async def tool_analyze_uploaded_table(
             ]
         elif matched_value_col and (categorical_intent or value_numeric_ratio < 0.35):
             # Modo categórico/textual: contagem exata de valores na coluna.
-            vals = [str((row or {}).get(matched_value_col, "") or "").strip() for row in records]
-            non_empty_vals = [v for v in vals if v]
-            empty_count = len(vals) - len(non_empty_vals)
+            non_empty_vals = []
+            empty_count = 0
+            row_batches = _artifact_batches([matched_value_col]) if source_kind == "artifact" else [records]
+            rows_processed = 0
+            for batch in row_batches:
+                rows_processed += len(batch)
+                for row in batch:
+                    value = str((row or {}).get(matched_value_col, "") or "").strip()
+                    if value:
+                        non_empty_vals.append(value)
+                    else:
+                        empty_count += 1
             valid_data_points = len(non_empty_vals)
             if not non_empty_vals:
                 return {"error": "Sem dados válidos na coluna indicada.", "filename": selected_filename}
@@ -1135,7 +1183,7 @@ async def tool_analyze_uploaded_table(
                 "source": dataset_source,
                 "conversation_id": safe_conv,
                 "filename": selected_filename,
-                "row_count": len(records),
+                "row_count": rows_total,
                 "columns": columns,
                 "group_by": "none",
                 "agg": "count",
@@ -1152,14 +1200,13 @@ async def tool_analyze_uploaded_table(
                 "all_values": all_values,
                 "all_values_truncated": all_values_truncated,
                 "summary": (
-                    f"Análise categórica completa de '{selected_filename}' ({len(records)} linhas) "
-                    f"de {rows_total} totais "
+                    f"Análise categórica completa de '{selected_filename}' ({rows_total} linhas) "
                     f"na coluna '{matched_value_col}': {distinct_count} valor(es) distinto(s)."
                 ),
                 "analysis_quality": {
-                    "coverage": round(valid_data_points / max(1, len(records)), 4),
+                    "coverage": round(valid_data_points / max(1, rows_total), 4),
                     "sampled": was_sampled,
-                    "rows_processed": len(records),
+                    "rows_processed": rows_processed,
                     "rows_total": rows_total,
                     "warnings": warnings_list,
                 },
@@ -1174,10 +1221,14 @@ async def tool_analyze_uploaded_table(
             }
         elif matched_value_col:
             nums = []
-            for row in records:
-                val = _parse_numeric_value(row.get(matched_value_col, ""))
-                if val is not None:
-                    nums.append(val)
+            row_batches = _artifact_batches([matched_value_col]) if source_kind == "artifact" else [records]
+            rows_processed = 0
+            for batch in row_batches:
+                rows_processed += len(batch)
+                for row in batch:
+                    val = _parse_numeric_value(row.get(matched_value_col, ""))
+                    if val is not None:
+                        nums.append(val)
             valid_data_points = len(nums)
             if not nums:
                 return {"error": "Sem dados numéricos válidos na coluna indicada.", "filename": selected_filename}
@@ -1264,14 +1315,14 @@ async def tool_analyze_uploaded_table(
         "value_column": matched_value_col,
         "groups": groups,
         "summary": (
-            f"Análise completa de '{selected_filename}' ({len(records)} linhas carregadas, {rows_total} totais). "
+            f"Análise completa de '{selected_filename}' ({rows_processed} linhas processadas, {rows_total} totais). "
             f"Agrupamento={group_mode}, agregação={agg_mode}, "
             f"date_column={matched_date_col or '-'}, value_column={matched_value_col or '-'}."
         ),
         "analysis_quality": {
-            "coverage": round(valid_data_points / max(1, len(records)), 4),
+            "coverage": round(valid_data_points / max(1, rows_total if source_kind == "artifact" else len(records)), 4),
             "sampled": was_sampled,
-            "rows_processed": len(records),
+            "rows_processed": rows_processed,
             "rows_total": rows_total,
             "warnings": warnings_list,
         },

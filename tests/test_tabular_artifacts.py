@@ -26,6 +26,15 @@ def _sample_xlsx_bytes() -> bytes:
     return buffer.getvalue()
 
 
+def _large_csv_bytes(row_count: int = 6000) -> bytes:
+    lines = ["Date,Category,Revenue"]
+    for idx in range(1, row_count + 1):
+        day = ((idx - 1) % 28) + 1
+        category = "A" if idx % 2 else "B"
+        lines.append(f"2026-01-{day:02d},{category},{idx}")
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
 def test_build_tabular_artifact_creates_parquet_dataset():
     artifact = build_tabular_artifact(_sample_xlsx_bytes(), "sample.xlsx", batch_rows=2)
 
@@ -113,3 +122,34 @@ async def test_load_uploaded_files_for_code_falls_back_to_artifact(monkeypatch):
 
     assert list(mounted.keys()) == ["sample.csv"]
     assert b"Date,Category,Revenue" in mounted["sample.csv"]
+
+
+@pytest.mark.asyncio
+async def test_analyze_uploaded_table_uses_full_artifact_rows_beyond_inference_sample(monkeypatch):
+    artifact = build_tabular_artifact(_large_csv_bytes(), "sample.csv")
+
+    async def _fake_resolve_uploaded_tabular_source(_conv_id, _user_sub="", _filename=""):
+        return {
+            "filename": "sample.csv",
+            "source_kind": "artifact",
+            "artifact_bytes": artifact["artifact_bytes"],
+            "artifact_format": "parquet",
+        }
+
+    monkeypatch.setattr(tools, "_resolve_uploaded_tabular_source", _fake_resolve_uploaded_tabular_source)
+
+    result = await tools.tool_analyze_uploaded_table(
+        query="qual a soma da revenue",
+        conv_id="conv-1",
+        user_sub="pedro",
+        filename="sample.csv",
+        value_column="Revenue",
+        agg="sum",
+    )
+
+    assert result["row_count"] == 6000
+    assert result["groups"] == [{"group": "overall", "value": 18003000.0, "count": 6000}]
+    assert result["analysis_quality"]["rows_processed"] == 6000
+    assert result["analysis_quality"]["rows_total"] == 6000
+    assert result["analysis_quality"]["coverage"] == 1.0
+    assert not result["analysis_quality"]["warnings"]

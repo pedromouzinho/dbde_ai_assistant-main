@@ -164,6 +164,44 @@ def export_tabular_artifact_as_csv_bytes(artifact_bytes: bytes) -> bytes:
                 pass
 
 
+def iter_tabular_artifact_batches(
+    artifact_bytes: bytes,
+    *,
+    columns: list[str] | None = None,
+    batch_rows: int = 5000,
+) -> Iterator[list[dict[str, str]]]:
+    import duckdb
+
+    if not artifact_bytes:
+        raise TabularLoaderError("Artefacto tabular vazio.")
+
+    safe_batch_rows = max(100, min(int(batch_rows or 0), 50_000))
+    selected_columns = [str(col or "").strip() for col in (columns or []) if str(col or "").strip()]
+
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            if selected_columns:
+                select_clause = ", ".join(_duckdb_ident(column) for column in selected_columns)
+            else:
+                select_clause = "*"
+            cursor = conn.execute(f"SELECT {select_clause} FROM read_parquet(?)", [temp_path])
+            result_columns = [str(col[0]) for col in (cursor.description or [])]
+            while True:
+                rows = cursor.fetchmany(safe_batch_rows)
+                if not rows:
+                    break
+                yield [
+                    {
+                        column: _duckdb_value_to_string(row[idx])
+                        for idx, column in enumerate(result_columns)
+                    }
+                    for row in rows
+                ]
+        finally:
+            conn.close()
+
+
 def _insert_batch(conn, columns: list[str], batch: list[list[str]]) -> None:
     placeholders = ", ".join(["?"] * len(columns))
     conn.executemany(f"INSERT INTO uploaded VALUES ({placeholders})", batch)
