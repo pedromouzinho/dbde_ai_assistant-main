@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import io
 import types
+from datetime import datetime, timezone
 
 import openpyxl
 import pytest
@@ -310,6 +312,100 @@ class TestUploadLimitsAndExtraction:
         assert captured["max_bytes"] == 999
         assert captured["queued"]["filename"] == "sample.xlsx"
         assert captured["queued"]["size_bytes"] == len(b"chunk-achunk-b")
+
+    @pytest.mark.asyncio
+    async def test_build_tabular_semantic_chunks_from_artifact_uses_full_artifact(self, monkeypatch):
+        artifact = app.build_tabular_artifact(_sample_csv_bytes(), "sample.csv")
+
+        async def _fake_embedding(text):
+            return [float(len(text))]
+
+        monkeypatch.setattr(app, "get_embedding", _fake_embedding)
+
+        chunks = await app._build_tabular_semantic_chunks_from_artifact(
+            artifact["artifact_bytes"],
+            columns=["Date", "Category", "Revenue", "Margin"],
+            rows_per_chunk=2,
+            max_chunk_chars=60,
+            max_chunks=10,
+        )
+
+        assert chunks
+        assert len(chunks) >= 2
+        assert "Date\tCategory\tRevenue\tMargin" in chunks[0]["text"]
+        assert "2026-01-03\tA\t30\t4" in chunks[-1]["text"]
+
+    @pytest.mark.asyncio
+    async def test_process_upload_job_generates_tabular_chunks_from_artifact_when_preview_only(self, monkeypatch):
+        job = {
+            "job_id": "job-1",
+            "conversation_id": "conv-1",
+            "user_sub": "tester",
+            "filename": "sample.csv",
+            "content_type": "text/csv",
+            "raw_blob_ref": "upload-raw/conv-1/job-1/raw/sample.csv",
+            "artifact_blob_name": "conv-1/job-1/artifact/data.parquet",
+            "text_blob_name": "conv-1/job-1/extracted/text.txt",
+            "chunks_blob_name": "conv-1/job-1/extracted/chunks.json",
+            "size_bytes": len(_sample_csv_bytes()),
+            "retention_until": app._retention_until_iso(hours=24),
+        }
+        uploaded_json = {}
+
+        async def _fake_blob_download_bytes(_container, _blob_name):
+            return _sample_csv_bytes()
+
+        async def _fake_blob_upload_bytes(container, blob_name, payload, **kwargs):
+            _ = kwargs
+            return {"blob_ref": f"{container}/{blob_name}", "size_bytes": len(payload)}
+
+        async def _fake_blob_upload_json(container, blob_name, payload):
+            uploaded_json["container"] = container
+            uploaded_json["blob_name"] = blob_name
+            uploaded_json["payload"] = payload
+            return {"blob_ref": f"{container}/{blob_name}"}
+
+        async def _fake_extract_upload_entry(_filename, _raw_bytes, _content_type):
+            return (
+                {
+                    "filename": "sample.csv",
+                    "data_text": "Date\tCategory\tRevenue\tMargin\n2026-01-01\tA\t10\t2",
+                    "row_count": 3,
+                    "col_names": ["Date", "Category", "Revenue", "Margin"],
+                    "col_analysis": [],
+                    "truncated": True,
+                    "uploaded_at": datetime.now(timezone.utc).isoformat(),
+                    "tabular_ingest_mode": "preview_only",
+                },
+                {"tabular_ingest_mode": "preview_only"},
+            )
+
+        async def _fake_build_tabular_chunks(artifact_bytes, **kwargs):
+            _ = (artifact_bytes, kwargs)
+            return [{"index": 0, "start": 0, "end": 3, "text": "chunk", "embedding": [1.0]}]
+
+        async def _fake_append_uploaded_entry_safe(_conv_id, store_entry):
+            uploaded_json["store_entry"] = store_entry
+            return [{"filename": store_entry["filename"], "rows": store_entry["row_count"]}]
+
+        async def _fake_upsert_upload_index(entity):
+            uploaded_json["index_entity"] = entity
+
+        monkeypatch.setattr(app, "blob_download_bytes", _fake_blob_download_bytes)
+        monkeypatch.setattr(app, "blob_upload_bytes", _fake_blob_upload_bytes)
+        monkeypatch.setattr(app, "blob_upload_json", _fake_blob_upload_json)
+        monkeypatch.setattr(app, "_extract_upload_entry", _fake_extract_upload_entry)
+        monkeypatch.setattr(app, "_build_tabular_semantic_chunks_from_artifact", _fake_build_tabular_chunks)
+        monkeypatch.setattr(app, "_append_uploaded_entry_safe", _fake_append_uploaded_entry_safe)
+        monkeypatch.setattr(app, "_upsert_upload_index", _fake_upsert_upload_index)
+        monkeypatch.setattr(app, "_count_files_for_conversation", lambda *_args, **_kwargs: asyncio.sleep(0, result=0))
+
+        await app._process_upload_job(job)
+
+        assert uploaded_json["payload"]["chunks"][0]["text"] == "chunk"
+        assert uploaded_json["store_entry"]["has_artifact_semantic_chunks"] is True
+        assert uploaded_json["index_entity"]["HasChunks"] is True
+        assert job["status"] == "completed"
 
     def test_request_body_limit_bytes_uses_stream_limit_for_tabular_uploads(self, monkeypatch):
         monkeypatch.setattr(app, "_max_upload_bytes_for_file", lambda _filename: 60 * 1024 * 1024)

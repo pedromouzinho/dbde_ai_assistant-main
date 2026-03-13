@@ -186,7 +186,7 @@ from tabular_loader import (
     load_tabular_dataset,
     load_tabular_preview,
 )
-from tabular_artifacts import build_tabular_artifact
+from tabular_artifacts import build_tabular_artifact, iter_tabular_artifact_batches
 from job_store import PersistentJobStore
 from utils import odata_escape, safe_blob_component, create_logged_task
 from tool_metrics import tool_metrics
@@ -2123,6 +2123,101 @@ async def _build_semantic_chunks(
     return built_chunks
 
 
+async def _build_tabular_semantic_chunks_from_artifact(
+    artifact_bytes: bytes,
+    *,
+    columns: Optional[list[str]] = None,
+    rows_per_chunk: int = 120,
+    max_chunk_chars: int = 4000,
+    max_chunks: int = UPLOAD_MAX_CHUNKS_PER_FILE,
+) -> list:
+    if not artifact_bytes:
+        return []
+
+    safe_rows_per_chunk = max(1, min(int(rows_per_chunk or 0), 500))
+    safe_max_chunk_chars = max(50, int(max_chunk_chars or 0))
+    safe_max_chunks = max(1, int(max_chunks or 1))
+    selected_columns = [str(col or "").strip() for col in (columns or []) if str(col or "").strip()]
+    header_line = "\t".join(selected_columns) if selected_columns else ""
+
+    raw_chunks: list[tuple[int, int, int, str]] = []
+    chunk_lines: list[str] = [header_line] if header_line else []
+    chunk_chars = len(header_line)
+    chunk_row_count = 0
+    chunk_index = 0
+    chunk_start_row = 0
+    current_row_number = 0
+
+    for batch in iter_tabular_artifact_batches(
+        artifact_bytes,
+        columns=selected_columns or None,
+        batch_rows=min(max(safe_rows_per_chunk * 2, 200), 5000),
+    ):
+        for row in batch:
+            values = [str((row or {}).get(column, "") or "") for column in (selected_columns or list(row.keys()))]
+            line = "\t".join(values)
+            projected_chars = chunk_chars + (1 if chunk_lines else 0) + len(line)
+            if chunk_row_count > 0 and (
+                chunk_row_count >= safe_rows_per_chunk or projected_chars > safe_max_chunk_chars
+            ):
+                chunk_text = "\n".join(chunk_lines).strip()
+                if chunk_text:
+                    raw_chunks.append((chunk_index, chunk_start_row, current_row_number, chunk_text))
+                if len(raw_chunks) >= safe_max_chunks:
+                    break
+                chunk_index += 1
+                chunk_start_row = current_row_number
+                chunk_lines = [header_line] if header_line else []
+                chunk_chars = len(header_line)
+                chunk_row_count = 0
+
+            if chunk_row_count == 0 and header_line and not chunk_lines:
+                chunk_lines = [header_line]
+                chunk_chars = len(header_line)
+
+            chunk_lines.append(line)
+            chunk_chars += (1 if chunk_chars else 0) + len(line)
+            chunk_row_count += 1
+            current_row_number += 1
+        if len(raw_chunks) >= safe_max_chunks:
+            break
+
+    if chunk_lines and chunk_row_count > 0 and len(raw_chunks) < safe_max_chunks:
+        chunk_text = "\n".join(chunk_lines).strip()
+        if chunk_text:
+            raw_chunks.append((chunk_index, chunk_start_row, current_row_number, chunk_text))
+
+    if not raw_chunks:
+        return []
+
+    async def _embed_chunk(raw_chunk):
+        idx, start_row, end_row, chunk_text = raw_chunk
+        emb = await get_embedding(chunk_text)
+        if not emb:
+            return None
+        return {
+            "index": idx,
+            "start": start_row,
+            "end": end_row,
+            "text": chunk_text,
+            "embedding": emb,
+        }
+
+    built_chunks = []
+    worker_concurrency = max(1, min(UPLOAD_EMBEDDING_CONCURRENCY, 8))
+    batch_size = max(worker_concurrency * 3, 6)
+    for i in range(0, len(raw_chunks), batch_size):
+        batch = raw_chunks[i : i + batch_size]
+        results = await asyncio.gather(*[_embed_chunk(item) for item in batch], return_exceptions=True)
+        for item in results:
+            if isinstance(item, Exception):
+                logger.warning("[App] tabular artifact chunk embedding failed: %s", item)
+                continue
+            if item:
+                built_chunks.append(item)
+    return built_chunks
+
+
 async def _persist_upload_job(job: dict) -> None:
     try:
         pk = "upload"
@@ -2524,6 +2619,7 @@ async def _process_upload_job(job: dict) -> None:
     artifact_blob_ref = ""
     artifact_format = ""
     artifact_row_count = 0
+    artifact = {}
     if UPLOAD_TABULAR_ARTIFACT_ENABLED and is_tabular_filename(filename):
         try:
             artifact = build_tabular_artifact(raw_bytes, filename)
@@ -2567,6 +2663,25 @@ async def _process_upload_job(job: dict) -> None:
 
     chunks_blob_ref = ""
     chunks = store_entry.pop("chunks", None)
+    col_names = store_entry.get("col_names", [])
+    col_analysis = store_entry.get("col_analysis", [])
+    polymorphic_schema = store_entry.get("polymorphic_schema") if isinstance(store_entry.get("polymorphic_schema"), dict) else None
+    if (
+        not chunks
+        and artifact_blob_ref
+        and is_tabular_filename(filename)
+        and artifact.get("artifact_bytes")
+    ):
+        try:
+            chunks = await _build_tabular_semantic_chunks_from_artifact(
+                artifact.get("artifact_bytes") or b"",
+                columns=col_names if isinstance(col_names, list) else None,
+            )
+            if chunks:
+                store_entry["has_artifact_semantic_chunks"] = True
+        except Exception as exc:
+            logger.warning("[Upload] tabular artifact semantic chunk build failed for %s: %s", filename, exc)
+            chunks = None
     if isinstance(chunks, list) and chunks:
         chunks_blob_name = str(job.get("chunks_blob_name", "") or "")
         if chunks_blob_name:
@@ -2588,9 +2703,6 @@ async def _process_upload_job(job: dict) -> None:
     if conv_id in conversation_meta:
         conversation_meta[conv_id]["file_injected"] = False
 
-    col_names = store_entry.get("col_names", [])
-    col_analysis = store_entry.get("col_analysis", [])
-    polymorphic_schema = store_entry.get("polymorphic_schema") if isinstance(store_entry.get("polymorphic_schema"), dict) else None
     upload_index_entity = {
         "PartitionKey": conv_id,
         "RowKey": str(job.get("job_id", "")),
