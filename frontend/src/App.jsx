@@ -202,9 +202,21 @@ function App() {
                         let nextUploadedFiles = Array.isArray(conv.uploadedFiles) ? conv.uploadedFiles : [];
                         let jobStateChanged = false;
 
+                        const UPLOAD_JOB_ZOMBIE_MS = 5 * 60 * 1000; // 5 min timeout for zombie jobs
                         for (const job of pending) {
                             const item = itemsById.get(String(job.job_id || "").trim());
                             if (!item) {
+                                // If job is not found in batch AND older than timeout, drop it
+                                const queuedAt = job.queued_at ? new Date(job.queued_at).getTime() : 0;
+                                if (queuedAt > 0 && (Date.now() - queuedAt) > UPLOAD_JOB_ZOMBIE_MS) {
+                                    newMessages.push({
+                                        role: "assistant",
+                                        content: `Upload de **${job.filename || "ficheiro"}** expirou sem resposta do servidor.`,
+                                        tools_used: ["upload_file"],
+                                    });
+                                    jobStateChanged = true;
+                                    continue;
+                                }
                                 remaining.push(job);
                                 continue;
                             }

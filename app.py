@@ -2381,7 +2381,7 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
 
     if is_tabular_filename(filename_lower):
         try:
-            preview = load_tabular_preview(content, filename_lower)
+            preview = await asyncio.to_thread(load_tabular_preview, content, filename_lower)
         except TabularLoaderError as exc:
             raise HTTPException(400, str(exc)) from exc
         col_names = list(preview.get("columns") or [])
@@ -2403,10 +2403,11 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
         )
         if row_count > 0 and should_deep_ingest:
             try:
-                full_dataset = load_tabular_dataset(
+                full_dataset = await asyncio.to_thread(
+                    load_tabular_dataset,
                     content,
                     filename_lower,
-                    max_rows=UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
+                    UPLOAD_TABULAR_DEEP_INGEST_RECORD_LIMIT,
                 )
                 full_records = list(full_dataset.get("records") or [])
                 if full_records and col_names:
@@ -2475,18 +2476,19 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
                 }
 
         if not used_doc_intel:
-            try:
-                from pypdf import PdfReader
-            except ImportError:
-                from PyPDF2 import PdfReader
-            reader = PdfReader(io.BytesIO(content))
-            pages = [
-                f"[Pág {i+1}]\n{p.extract_text() or ''}"
-                for i, p in enumerate(reader.pages)
-                if (p.extract_text() or "").strip()
-            ]
-            data_text = "\n\n".join(pages)
-            row_count = len(reader.pages)
+            def _parse_pdf_sync(pdf_bytes: bytes) -> tuple[str, int]:
+                try:
+                    from pypdf import PdfReader
+                except ImportError:
+                    from PyPDF2 import PdfReader
+                reader = PdfReader(io.BytesIO(pdf_bytes))
+                pages = [
+                    f"[Pág {i+1}]\n{p.extract_text() or ''}"
+                    for i, p in enumerate(reader.pages)
+                    if (p.extract_text() or "").strip()
+                ]
+                return "\n\n".join(pages), len(reader.pages)
+            data_text, row_count = await asyncio.to_thread(_parse_pdf_sync, content)
             col_names = [f"páginas ({row_count})"]
             if not data_text.strip():
                 raise HTTPException(400, "PDF sem texto")
@@ -2513,27 +2515,28 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
         if Presentation is None:
             logger.warning("[App] Upload .pptx recusado: python-pptx não disponível")
             raise HTTPException(503, "Suporte .pptx indisponível no servidor (python-pptx não instalado)")
-        prs = Presentation(io.BytesIO(content))
-        slide_blocks = []
-        for si, slide in enumerate(prs.slides, 1):
-            shape_texts = []
-            for shape in slide.shapes:
-                if not getattr(shape, "has_text_frame", False):
-                    continue
-                text_frame = getattr(shape, "text_frame", None)
-                if not text_frame:
-                    continue
-                paragraphs = []
-                for paragraph in text_frame.paragraphs:
-                    txt = (paragraph.text or "").strip()
-                    if txt:
-                        paragraphs.append(txt)
-                if paragraphs:
-                    shape_texts.append("\n".join(paragraphs))
-            if shape_texts:
-                slide_blocks.append(f"[Slide {si}]\n" + "\n".join(shape_texts))
-        data_text = "\n\n".join(slide_blocks)
-        row_count = len(prs.slides)
+        def _parse_pptx_sync(pptx_bytes: bytes) -> tuple[str, int]:
+            prs = Presentation(io.BytesIO(pptx_bytes))
+            slide_blocks = []
+            for si, slide in enumerate(prs.slides, 1):
+                shape_texts = []
+                for shape in slide.shapes:
+                    if not getattr(shape, "has_text_frame", False):
+                        continue
+                    text_frame = getattr(shape, "text_frame", None)
+                    if not text_frame:
+                        continue
+                    paragraphs = []
+                    for paragraph in text_frame.paragraphs:
+                        txt = (paragraph.text or "").strip()
+                        if txt:
+                            paragraphs.append(txt)
+                    if paragraphs:
+                        shape_texts.append("\n".join(paragraphs))
+                if shape_texts:
+                    slide_blocks.append(f"[Slide {si}]\n" + "\n".join(shape_texts))
+            return "\n\n".join(slide_blocks), len(prs.slides)
+        data_text, row_count = await asyncio.to_thread(_parse_pptx_sync, content)
         col_names = [f"slides ({row_count})", "texto"]
         if not data_text.strip():
             raise HTTPException(400, "PPTX sem texto legível")
@@ -2548,8 +2551,10 @@ async def _extract_upload_entry(filename: str, content: bytes, content_type: str
 
     if not is_tabular_filename(filename_lower):
         full_text = data_text
-    if not image_base64 and len(full_text) > 50000 and tabular_ingest_mode != "preview_only":
-        semantic_chunks = await _build_semantic_chunks(full_text)
+    # NOTE: semantic chunks are now deferred to background / first-query to avoid
+    # blocking the upload response with expensive embedding API calls.
+    # if not image_base64 and len(full_text) > 50000 and tabular_ingest_mode != "preview_only":
+    #     semantic_chunks = await _build_semantic_chunks(full_text)
 
     if len(data_text) > 100000:
         data_text = data_text[:100000]
@@ -2606,7 +2611,7 @@ def _build_upload_blob_paths(conv_id: str, job_id: str, filename: str) -> dict:
     }
 
 
-async def _process_upload_job(job: dict) -> None:
+async def _process_upload_job(job: dict, *, inline_content: bytes | None = None) -> None:
     conv_id = str(job.get("conversation_id", "") or "")
     user_sub = str(job.get("user_sub", "") or "")
     filename = str(job.get("filename", "") or "unknown")
@@ -2634,7 +2639,7 @@ async def _process_upload_job(job: dict) -> None:
             f"Limite de {MAX_FILES_PER_CONVERSATION} ficheiros por conversa atingido antes do processamento."
         )
 
-    raw_bytes = await blob_download_bytes(container, blob_name)
+    raw_bytes = inline_content if inline_content is not None else await blob_download_bytes(container, blob_name)
     if raw_bytes is None:
         raise RuntimeError("Blob original não encontrado para este upload job")
 
@@ -2646,7 +2651,7 @@ async def _process_upload_job(job: dict) -> None:
     artifact = {}
     if UPLOAD_TABULAR_ARTIFACT_ENABLED and is_tabular_filename(filename):
         try:
-            artifact = build_tabular_artifact(raw_bytes, filename)
+            artifact = await asyncio.to_thread(build_tabular_artifact, raw_bytes, filename)
             artifact_blob_name = str(job.get("artifact_blob_name", "") or "")
             if artifact_blob_name and artifact.get("artifact_bytes"):
                 uploaded_artifact = await blob_upload_bytes(
@@ -2690,22 +2695,18 @@ async def _process_upload_job(job: dict) -> None:
     col_names = store_entry.get("col_names", [])
     col_analysis = store_entry.get("col_analysis", [])
     polymorphic_schema = store_entry.get("polymorphic_schema") if isinstance(store_entry.get("polymorphic_schema"), dict) else None
+    # NOTE: Semantic chunk embedding is deferred to background / first-query.
+    # The artifact is already stored and can be chunked lazily via the backfill
+    # endpoint or on first semantic search.  This avoids blocking upload with
+    # hundreds of embedding API calls that can take 30-120 seconds.
     if (
         not chunks
         and artifact_blob_ref
         and is_tabular_filename(filename)
         and artifact.get("artifact_bytes")
     ):
-        try:
-            chunks = await _build_tabular_semantic_chunks_from_artifact(
-                artifact.get("artifact_bytes") or b"",
-                columns=col_names if isinstance(col_names, list) else None,
-            )
-            if chunks:
-                store_entry["has_artifact_semantic_chunks"] = True
-        except Exception as exc:
-            logger.warning("[Upload] tabular artifact semantic chunk build failed for %s: %s", filename, exc)
-            chunks = None
+        store_entry["needs_artifact_semantic_chunks"] = True
+        logger.info("[Upload] deferring semantic chunk build for %s (artifact ready)", filename)
     if isinstance(chunks, list) and chunks:
         chunks_blob_name = str(job.get("chunks_blob_name", "") or "")
         if chunks_blob_name:
@@ -2783,7 +2784,7 @@ async def _process_upload_job(job: dict) -> None:
     job["error"] = ""
 
 
-async def _run_upload_job(job_id: str) -> None:
+async def _run_upload_job(job_id: str, *, inline_content: bytes | None = None) -> None:
     _cleanup_upload_jobs()
     job = await upload_jobs_store.get_or_fetch(job_id)
     if not job:
@@ -2804,7 +2805,7 @@ async def _run_upload_job(job_id: str) -> None:
 
     async with _upload_jobs_semaphore:
         try:
-            await _process_upload_job(job)
+            await _process_upload_job(job, inline_content=inline_content)
         except Exception as e:
             job["status"] = "failed"
             job["error"] = str(e)
@@ -3013,7 +3014,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), conversati
         # waiting for the background worker loop. This ensures small files
         # get an instant response without depending on the async worker. ---
         try:
-            await _run_upload_job(job_id)
+            await _run_upload_job(job_id, inline_content=content)
             processed_job = await upload_jobs_store.get_or_fetch(job_id)
             if not processed_job:
                 processed_job = await _load_upload_job_from_storage(job_id)
