@@ -57,6 +57,8 @@ from tools_learning import tool_get_writer_profile, tool_save_writer_profile
 from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
 from tabular_loader import TabularLoaderError, load_tabular_dataset, load_tabular_preview
 from tabular_artifacts import (
+    aggregate_tabular_artifact_by_period,
+    compare_tabular_artifact_periods,
     compute_tabular_artifact_numeric_metrics,
     export_tabular_artifact_as_csv_bytes,
     iter_tabular_artifact_batches,
@@ -971,34 +973,61 @@ async def tool_analyze_uploaded_table(
         if not period_1 or not period_2:
             return {"error": "compare_periods requer period1 e period2.", "filename": selected_filename}
 
-        period_1_vals = []
-        period_2_vals = []
-        period_1_count = 0
-        period_2_count = 0
-        row_batches = _artifact_batches([period_col, matched_value_col]) if source_kind == "artifact" else [records]
-        rows_processed = 0
-        for batch in row_batches:
-            rows_processed += len(batch)
-            for row in batch:
-                dt = _parse_datetime_value(row.get(period_col, ""))
-                if dt is None:
-                    continue
-                if _match_period(dt, period_1):
-                    period_1_count += 1
-                    if requested_metrics != ["count"]:
-                        num = _parse_numeric_value(row.get(matched_value_col, ""))
-                        if num is not None:
-                            period_1_vals.append(num)
-                elif _match_period(dt, period_2):
-                    period_2_count += 1
-                    if requested_metrics != ["count"]:
-                        num = _parse_numeric_value(row.get(matched_value_col, ""))
-                        if num is not None:
-                            period_2_vals.append(num)
+        if source_kind == "artifact":
+            compare_metrics = list(requested_metrics or [])
+            if "count" not in compare_metrics:
+                compare_metrics.append("count")
+            compare_result = compare_tabular_artifact_periods(
+                source.get("artifact_bytes") or b"",
+                date_column=period_col,
+                value_column=matched_value_col,
+                period1=period_1,
+                period2=period_2,
+                requested_metrics=compare_metrics,
+            )
+            period_1_count = int((compare_result.get("period1") or {}).get("count", 0) or 0)
+            period_2_count = int((compare_result.get("period2") or {}).get("count", 0) or 0)
+            metrics_p1 = dict((compare_result.get("period1") or {}).get("metrics") or {})
+            metrics_p2 = dict((compare_result.get("period2") or {}).get("metrics") or {})
+            rows_processed = rows_total
+            if requested_metrics != ["count"]:
+                metrics_p1.pop("count", None)
+                metrics_p2.pop("count", None)
+            valid_data_points = (
+                int((compare_result.get("period1") or {}).get("numeric_count", 0) or 0)
+                + int((compare_result.get("period2") or {}).get("numeric_count", 0) or 0)
+                if requested_metrics != ["count"]
+                else (period_1_count + period_2_count)
+            )
+        else:
+            period_1_vals = []
+            period_2_vals = []
+            period_1_count = 0
+            period_2_count = 0
+            row_batches = [records]
+            rows_processed = 0
+            for batch in row_batches:
+                rows_processed += len(batch)
+                for row in batch:
+                    dt = _parse_datetime_value(row.get(period_col, ""))
+                    if dt is None:
+                        continue
+                    if _match_period(dt, period_1):
+                        period_1_count += 1
+                        if requested_metrics != ["count"]:
+                            num = _parse_numeric_value(row.get(matched_value_col, ""))
+                            if num is not None:
+                                period_1_vals.append(num)
+                    elif _match_period(dt, period_2):
+                        period_2_count += 1
+                        if requested_metrics != ["count"]:
+                            num = _parse_numeric_value(row.get(matched_value_col, ""))
+                            if num is not None:
+                                period_2_vals.append(num)
 
-        valid_data_points = len(period_1_vals) + len(period_2_vals) if requested_metrics != ["count"] else (period_1_count + period_2_count)
-        metrics_p1 = _compute_metrics(period_1_vals, requested_metrics, count_override=period_1_count)
-        metrics_p2 = _compute_metrics(period_2_vals, requested_metrics, count_override=period_2_count)
+            valid_data_points = len(period_1_vals) + len(period_2_vals) if requested_metrics != ["count"] else (period_1_count + period_2_count)
+            metrics_p1 = _compute_metrics(period_1_vals, requested_metrics, count_override=period_1_count)
+            metrics_p2 = _compute_metrics(period_2_vals, requested_metrics, count_override=period_2_count)
         if not metrics_p1 and not metrics_p2:
             return {"error": "Sem dados suficientes para comparar os períodos pedidos.", "filename": selected_filename}
 
@@ -1032,52 +1061,84 @@ async def tool_analyze_uploaded_table(
         }
 
     if group_mode in ("year", "month", "quarter", "week", "day"):
-        buckets = {}
-        row_batches = _artifact_batches([matched_date_col, matched_value_col]) if source_kind == "artifact" else [records]
-        rows_processed = 0
-        for batch in row_batches:
-            rows_processed += len(batch)
-            for row in batch:
-                dt = _parse_datetime_value(row.get(matched_date_col, ""))
-                if dt is None:
-                    continue
-                if group_mode == "year":
-                    key = f"{dt.year:04d}"
-                elif group_mode == "month":
-                    key = f"{dt.year:04d}-{dt.month:02d}"
-                elif group_mode == "quarter":
-                    key = f"{dt.year:04d}-Q{((dt.month - 1) // 3) + 1}"
-                elif group_mode == "week":
-                    iso_year, iso_week, _ = dt.isocalendar()
-                    key = f"{iso_year:04d}-W{iso_week:02d}"
-                else:
-                    key = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
-                bucket = buckets.setdefault(key, {"key": key, "values": [], "count": 0})
-                bucket["count"] += 1
-                if requested_metrics == ["count"]:
-                    continue
-                num = _parse_numeric_value(row.get(matched_value_col, ""))
-                if num is None:
-                    continue
-                bucket["values"].append(num)
-                valid_data_points += 1
-
-        for key in sorted(buckets.keys()):
-            bucket = buckets[key]
-            metrics_map = _compute_metrics(
-                bucket["values"],
-                requested_metrics,
-                count_override=bucket["count"],
+        if source_kind == "artifact":
+            group_metrics = list(requested_metrics or [])
+            if "count" not in group_metrics:
+                group_metrics.append("count")
+            period_result = aggregate_tabular_artifact_by_period(
+                source.get("artifact_bytes") or b"",
+                date_column=matched_date_col,
+                value_column=matched_value_col,
+                group_mode=group_mode,
+                requested_metrics=group_metrics,
             )
-            if not metrics_map:
-                continue
-            if metrics:
-                groups.append({"group": key, "metrics": metrics_map, "count": int(bucket["count"])})
-            else:
-                value = metrics_map.get(agg_mode)
-                if value is None:
+            rows_processed = int(period_result.get("rows_processed", 0) or 0)
+            valid_data_points = (
+                int(period_result.get("numeric_points", 0) or 0)
+                if requested_metrics != ["count"]
+                else rows_processed
+            )
+            for bucket in period_result.get("groups", []) or []:
+                metrics_map = dict(bucket.get("metrics") or {})
+                bucket_count = int(bucket.get("count", 0) or 0)
+                if requested_metrics != ["count"]:
+                    metrics_map.pop("count", None)
+                if not metrics_map:
                     continue
-                groups.append({"group": key, "value": round(float(value), 6), "count": int(bucket["count"])})
+                if metrics:
+                    groups.append({"group": bucket.get("group", ""), "metrics": metrics_map, "count": bucket_count})
+                else:
+                    value = metrics_map.get(agg_mode)
+                    if value is None:
+                        continue
+                    groups.append({"group": bucket.get("group", ""), "value": round(float(value), 6), "count": bucket_count})
+        else:
+            buckets = {}
+            row_batches = [records]
+            rows_processed = 0
+            for batch in row_batches:
+                rows_processed += len(batch)
+                for row in batch:
+                    dt = _parse_datetime_value(row.get(matched_date_col, ""))
+                    if dt is None:
+                        continue
+                    if group_mode == "year":
+                        key = f"{dt.year:04d}"
+                    elif group_mode == "month":
+                        key = f"{dt.year:04d}-{dt.month:02d}"
+                    elif group_mode == "quarter":
+                        key = f"{dt.year:04d}-Q{((dt.month - 1) // 3) + 1}"
+                    elif group_mode == "week":
+                        iso_year, iso_week, _ = dt.isocalendar()
+                        key = f"{iso_year:04d}-W{iso_week:02d}"
+                    else:
+                        key = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
+                    bucket = buckets.setdefault(key, {"key": key, "values": [], "count": 0})
+                    bucket["count"] += 1
+                    if requested_metrics == ["count"]:
+                        continue
+                    num = _parse_numeric_value(row.get(matched_value_col, ""))
+                    if num is None:
+                        continue
+                    bucket["values"].append(num)
+                    valid_data_points += 1
+
+            for key in sorted(buckets.keys()):
+                bucket = buckets[key]
+                metrics_map = _compute_metrics(
+                    bucket["values"],
+                    requested_metrics,
+                    count_override=bucket["count"],
+                )
+                if not metrics_map:
+                    continue
+                if metrics:
+                    groups.append({"group": key, "metrics": metrics_map, "count": int(bucket["count"])})
+                else:
+                    value = metrics_map.get(agg_mode)
+                    if value is None:
+                        continue
+                    groups.append({"group": key, "value": round(float(value), 6), "count": int(bucket["count"])})
     else:
         series_intent = bool(re.search(r"\b(grafico|gráfico|chart|linha|line|evolucao|evolução|time series|serie temporal)\b", q_norm))
         if matched_date_col and matched_value_col and series_intent:

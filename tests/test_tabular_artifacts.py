@@ -7,7 +7,9 @@ import pytest
 
 import tools
 from tabular_artifacts import (
+    aggregate_tabular_artifact_by_period,
     build_tabular_artifact,
+    compare_tabular_artifact_periods,
     compute_tabular_artifact_numeric_metrics,
     export_tabular_artifact_as_csv_bytes,
     load_tabular_artifact_dataset,
@@ -34,6 +36,19 @@ def _large_csv_bytes(row_count: int = 6000) -> bytes:
         day = ((idx - 1) % 28) + 1
         category = "A" if idx % 2 else "B"
         lines.append(f"2026-01-{day:02d},{category},{idx}")
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def _period_csv_bytes() -> bytes:
+    lines = [
+        "Date,Category,Revenue",
+        "2026-01-01,A,10",
+        "2026-01-15,A,20",
+        "2026-02-01,B,30",
+        "2026-02-10,B,40",
+        "2026-03-05,C,50",
+        "2027-01-03,A,60",
+    ]
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
@@ -103,6 +118,45 @@ def test_summarize_tabular_artifact_values_returns_distinct_counts():
     assert summary["top_values"][0][0] in {"A", "B"}
     assert summary["top_values"][0][1] == 6
     assert len(summary["all_values"]) == 2
+
+
+def test_aggregate_tabular_artifact_by_period_groups_all_rows():
+    artifact = build_tabular_artifact(_period_csv_bytes(), "sample.csv")
+
+    grouped = aggregate_tabular_artifact_by_period(
+        artifact["artifact_bytes"],
+        date_column="Date",
+        value_column="Revenue",
+        group_mode="month",
+        requested_metrics=["sum", "mean"],
+    )
+
+    assert grouped["rows_processed"] == 6
+    assert grouped["numeric_points"] == 6
+    assert grouped["groups"] == [
+        {"group": "2026-01", "count": 2, "metrics": {"sum": 30.0, "mean": 15.0}},
+        {"group": "2026-02", "count": 2, "metrics": {"sum": 70.0, "mean": 35.0}},
+        {"group": "2026-03", "count": 1, "metrics": {"sum": 50.0, "mean": 50.0}},
+        {"group": "2027-01", "count": 1, "metrics": {"sum": 60.0, "mean": 60.0}},
+    ]
+
+
+def test_compare_tabular_artifact_periods_compares_full_periods():
+    artifact = build_tabular_artifact(_period_csv_bytes(), "sample.csv")
+
+    compared = compare_tabular_artifact_periods(
+        artifact["artifact_bytes"],
+        date_column="Date",
+        value_column="Revenue",
+        period1="2026-01",
+        period2="2026-02",
+        requested_metrics=["sum", "mean"],
+    )
+
+    assert compared == {
+        "period1": {"count": 2, "numeric_count": 2, "metrics": {"sum": 30.0, "mean": 15.0}},
+        "period2": {"count": 2, "numeric_count": 2, "metrics": {"sum": 70.0, "mean": 35.0}},
+    }
 
 
 @pytest.mark.asyncio
@@ -250,3 +304,72 @@ async def test_analyze_uploaded_table_uses_artifact_for_categorical_summary(monk
     assert result["non_empty_count"] == 6000
     assert result["analysis_quality"]["rows_processed"] == 6000
     assert {group["group"] for group in result["groups"]} == {"A", "B"}
+
+
+@pytest.mark.asyncio
+async def test_analyze_uploaded_table_uses_artifact_for_month_grouping(monkeypatch):
+    artifact = build_tabular_artifact(_period_csv_bytes(), "sample.csv")
+
+    async def _fake_resolve_uploaded_tabular_source(_conv_id, _user_sub="", _filename=""):
+        return {
+            "filename": "sample.csv",
+            "source_kind": "artifact",
+            "artifact_bytes": artifact["artifact_bytes"],
+            "artifact_format": "parquet",
+        }
+
+    monkeypatch.setattr(tools, "_resolve_uploaded_tabular_source", _fake_resolve_uploaded_tabular_source)
+
+    result = await tools.tool_analyze_uploaded_table(
+        query="mostra a soma da revenue por mês",
+        conv_id="conv-1",
+        user_sub="pedro",
+        filename="sample.csv",
+        value_column="Revenue",
+        date_column="Date",
+        group_by="month",
+        agg="sum",
+    )
+
+    assert result["group_by"] == "month"
+    assert result["groups"] == [
+        {"group": "2026-01", "value": 30.0, "count": 2},
+        {"group": "2026-02", "value": 70.0, "count": 2},
+        {"group": "2026-03", "value": 50.0, "count": 1},
+        {"group": "2027-01", "value": 60.0, "count": 1},
+    ]
+    assert result["analysis_quality"]["rows_processed"] == 6
+    assert result["analysis_quality"]["coverage"] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_analyze_uploaded_table_uses_artifact_for_period_comparison(monkeypatch):
+    artifact = build_tabular_artifact(_period_csv_bytes(), "sample.csv")
+
+    async def _fake_resolve_uploaded_tabular_source(_conv_id, _user_sub="", _filename=""):
+        return {
+            "filename": "sample.csv",
+            "source_kind": "artifact",
+            "artifact_bytes": artifact["artifact_bytes"],
+            "artifact_format": "parquet",
+        }
+
+    monkeypatch.setattr(tools, "_resolve_uploaded_tabular_source", _fake_resolve_uploaded_tabular_source)
+
+    result = await tools.tool_analyze_uploaded_table(
+        query="compara janeiro e fevereiro de 2026 pela soma da revenue",
+        conv_id="conv-1",
+        user_sub="pedro",
+        filename="sample.csv",
+        value_column="Revenue",
+        date_column="Date",
+        agg="sum",
+        compare_periods={"period1": "2026-01", "period2": "2026-02"},
+    )
+
+    assert result["comparison"] is True
+    assert result["period1"] == {"name": "2026-01", "metrics": {"sum": 30.0}, "count": 2}
+    assert result["period2"] == {"name": "2026-02", "metrics": {"sum": 70.0}, "count": 2}
+    assert result["delta"] == {"sum": 40.0}
+    assert result["analysis_quality"]["rows_processed"] == 6
+    assert result["analysis_quality"]["coverage"] == 0.6667

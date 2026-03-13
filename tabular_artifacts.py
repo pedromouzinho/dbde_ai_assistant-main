@@ -327,6 +327,190 @@ def summarize_tabular_artifact_values(
     }
 
 
+def aggregate_tabular_artifact_by_period(
+    artifact_bytes: bytes,
+    *,
+    date_column: str,
+    value_column: str,
+    group_mode: str,
+    requested_metrics: list[str],
+) -> dict:
+    import duckdb
+
+    safe_date_column = str(date_column or "").strip()
+    safe_value_column = str(value_column or "").strip()
+    safe_group_mode = str(group_mode or "").strip().lower()
+    if not artifact_bytes or not safe_date_column or not safe_value_column:
+        raise TabularLoaderError("Parâmetros inválidos para agregação temporal do artefacto tabular.")
+
+    dt_expr = f"TRY_CAST({_duckdb_ident(safe_date_column)} AS TIMESTAMP)"
+    num_expr = f"TRY_CAST({_duckdb_ident(safe_value_column)} AS DOUBLE)"
+    group_expr_map = {
+        "year": f"strftime({dt_expr}, '%Y')",
+        "month": f"strftime({dt_expr}, '%Y-%m')",
+        "quarter": f"printf('%04d-Q%d', year({dt_expr}), quarter({dt_expr}))",
+        "week": f"strftime({dt_expr}, '%G-W%V')",
+        "day": f"strftime({dt_expr}, '%Y-%m-%d')",
+    }
+    group_expr = group_expr_map.get(safe_group_mode)
+    if not group_expr:
+        raise TabularLoaderError("group_mode inválido para agregação temporal.")
+
+    metric_map = {
+        "count": "COUNT(*)",
+        "sum": f"SUM({num_expr})",
+        "mean": f"AVG({num_expr})",
+        "min": f"MIN({num_expr})",
+        "max": f"MAX({num_expr})",
+        "std": f"STDDEV_SAMP({num_expr})",
+        "median": f"QUANTILE_CONT({num_expr}, 0.5)",
+        "p25": f"QUANTILE_CONT({num_expr}, 0.25)",
+        "p75": f"QUANTILE_CONT({num_expr}, 0.75)",
+    }
+    selected_metrics = []
+    for metric in requested_metrics or []:
+        safe_metric = str(metric or "").strip()
+        if safe_metric in metric_map and safe_metric not in selected_metrics:
+            selected_metrics.append(safe_metric)
+    if not selected_metrics:
+        selected_metrics = ["mean"]
+
+    select_metrics = [f"{metric_map[metric]} AS {_duckdb_ident(metric)}" for metric in selected_metrics]
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            rows = conn.execute(
+                (
+                    f"SELECT {group_expr} AS group_key, "
+                    "COUNT(*) AS bucket_count, "
+                    f"COUNT({num_expr}) AS numeric_count, "
+                    + ", ".join(select_metrics)
+                    + " FROM read_parquet(?) "
+                    f"WHERE {dt_expr} IS NOT NULL "
+                    "GROUP BY 1 ORDER BY 1"
+                ),
+                [temp_path],
+            ).fetchall()
+        finally:
+            conn.close()
+
+    groups = []
+    numeric_points = 0
+    row_points = 0
+    for row in rows:
+        if not row:
+            continue
+        key = str(row[0] or "")
+        bucket_count = int(row[1] or 0)
+        numeric_count = int(row[2] or 0)
+        metrics_map_out = {}
+        for idx, metric in enumerate(selected_metrics, start=3):
+            value = row[idx] if idx < len(row) else None
+            if value is None:
+                continue
+            metrics_map_out[metric] = int(value) if metric == "count" else round(float(value), 6)
+        groups.append({"group": key, "count": bucket_count, "metrics": metrics_map_out})
+        row_points += bucket_count
+        numeric_points += numeric_count
+    return {
+        "groups": groups,
+        "rows_processed": row_points,
+        "numeric_points": numeric_points,
+    }
+
+
+def compare_tabular_artifact_periods(
+    artifact_bytes: bytes,
+    *,
+    date_column: str,
+    value_column: str,
+    period1: str,
+    period2: str,
+    requested_metrics: list[str],
+) -> dict:
+    import duckdb
+
+    safe_date_column = str(date_column or "").strip()
+    safe_value_column = str(value_column or "").strip()
+    if not artifact_bytes or not safe_date_column or not safe_value_column:
+        raise TabularLoaderError("Parâmetros inválidos para comparação de períodos.")
+
+    dt_expr = f"TRY_CAST({_duckdb_ident(safe_date_column)} AS TIMESTAMP)"
+    num_expr = f"TRY_CAST({_duckdb_ident(safe_value_column)} AS DOUBLE)"
+    metric_map = {
+        "count": "COUNT(*)",
+        "sum": f"SUM({num_expr})",
+        "mean": f"AVG({num_expr})",
+        "min": f"MIN({num_expr})",
+        "max": f"MAX({num_expr})",
+        "std": f"STDDEV_SAMP({num_expr})",
+        "median": f"QUANTILE_CONT({num_expr}, 0.5)",
+        "p25": f"QUANTILE_CONT({num_expr}, 0.25)",
+        "p75": f"QUANTILE_CONT({num_expr}, 0.75)",
+    }
+    selected_metrics = []
+    for metric in requested_metrics or []:
+        safe_metric = str(metric or "").strip()
+        if safe_metric in metric_map and safe_metric not in selected_metrics:
+            selected_metrics.append(safe_metric)
+    if not selected_metrics:
+        selected_metrics = ["mean"]
+
+    def _period_clause(expr: str) -> tuple[str, str]:
+        safe_expr = str(expr or "").strip()
+        if not safe_expr:
+            raise TabularLoaderError("Expressão de período vazia.")
+        if len(safe_expr) > 32:
+            raise TabularLoaderError("Expressão de período demasiado longa.")
+        if safe_expr.isdigit() and len(safe_expr) == 4:
+            return (f"strftime({dt_expr}, '%Y') = ?", safe_expr)
+        if len(safe_expr) == 7 and safe_expr[4] == "-":
+            return (f"strftime({dt_expr}, '%Y-%m') = ?", safe_expr)
+        if len(safe_expr) == 7 and safe_expr[4:6].upper() == "-Q":
+            return (f"printf('%04d-Q%d', year({dt_expr}), quarter({dt_expr})) = ?", safe_expr.upper())
+        if len(safe_expr) == 8 and safe_expr[4:6].upper() == "-W":
+            return (f"strftime({dt_expr}, '%G-W%V') = ?", safe_expr.upper())
+        if len(safe_expr) == 10 and safe_expr[4] == "-" and safe_expr[7] == "-":
+            return (f"strftime({dt_expr}, '%Y-%m-%d') = ?", safe_expr)
+        return (f"strftime({dt_expr}, '%Y-%m-%d') LIKE ?", f"{safe_expr}%")
+
+    def _compute_row(row, selected_metrics_local):
+        if not row:
+            return {"count": 0, "numeric_count": 0, "metrics": {}}
+        bucket_count = int(row[0] or 0)
+        numeric_count = int(row[1] or 0)
+        metrics = {}
+        for idx, metric in enumerate(selected_metrics_local, start=2):
+            value = row[idx] if idx < len(row) else None
+            if value is None:
+                continue
+            metrics[metric] = int(value) if metric == "count" else round(float(value), 6)
+        return {"count": bucket_count, "numeric_count": numeric_count, "metrics": metrics}
+
+    select_metrics = [f"{metric_map[metric]} AS {_duckdb_ident(metric)}" for metric in selected_metrics]
+    period1_clause, period1_value = _period_clause(period1)
+    period2_clause, period2_value = _period_clause(period2)
+
+    with _temporary_tabular_file(artifact_bytes, ".parquet") as temp_path:
+        conn = duckdb.connect(database=":memory:")
+        try:
+            base_select = (
+                "SELECT COUNT(*) AS bucket_count, "
+                f"COUNT({num_expr}) AS numeric_count, "
+                + ", ".join(select_metrics)
+                + " FROM read_parquet(?) "
+                f"WHERE {dt_expr} IS NOT NULL AND "
+            )
+            row1 = conn.execute(base_select + period1_clause, [temp_path, period1_value]).fetchone()
+            row2 = conn.execute(base_select + period2_clause, [temp_path, period2_value]).fetchone()
+        finally:
+            conn.close()
+
+    result1 = _compute_row(row1, selected_metrics)
+    result2 = _compute_row(row2, selected_metrics)
+    return {"period1": result1, "period2": result2}
+
+
 def _insert_batch(conn, columns: list[str], batch: list[list[str]]) -> None:
     placeholders = ", ".join(["?"] * len(columns))
     conn.executemany(f"INSERT INTO uploaded VALUES ({placeholders})", batch)
