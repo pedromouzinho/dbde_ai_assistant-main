@@ -391,6 +391,8 @@ UPLOAD_MAX_BATCH_TOTAL_MB = int(_get_env("UPLOAD_MAX_BATCH_TOTAL_MB", "300"))
 UPLOAD_MAX_BATCH_TOTAL_BYTES = UPLOAD_MAX_BATCH_TOTAL_MB * 1024 * 1024
 UPLOAD_INDEX_TOP = int(_get_env("UPLOAD_INDEX_TOP", "200"))
 UPLOAD_INLINE_WORKER_ENABLED = _get_env("UPLOAD_INLINE_WORKER_ENABLED", "true").lower() == "true"
+UPLOAD_INLINE_WORKER_RUNTIME_ENABLED = _get_env("UPLOAD_INLINE_WORKER_RUNTIME_ENABLED", "true").lower() == "true"
+UPLOAD_DEDICATED_WORKER_ENABLED = _get_env("UPLOAD_DEDICATED_WORKER_ENABLED", "true").lower() == "true"
 UPLOAD_WORKER_POLL_SECONDS = float(_get_env("UPLOAD_WORKER_POLL_SECONDS", "15"))
 UPLOAD_WORKER_BATCH_SIZE = int(_get_env("UPLOAD_WORKER_BATCH_SIZE", "4"))
 UPLOAD_TABULAR_ARTIFACT_ENABLED = _get_env("UPLOAD_TABULAR_ARTIFACT_ENABLED", "true").lower() == "true"
@@ -417,8 +419,16 @@ EXPORT_FILE_ROW_CAP_MAX = int(_get_env("EXPORT_FILE_ROW_CAP_MAX", "100000"))
 EXPORT_MAX_CONCURRENT_JOBS = int(_get_env("EXPORT_MAX_CONCURRENT_JOBS", "2"))
 EXPORT_JOB_STALE_SECONDS = int(_get_env("EXPORT_JOB_STALE_SECONDS", "1800"))
 EXPORT_INLINE_WORKER_ENABLED = _get_env("EXPORT_INLINE_WORKER_ENABLED", "false").lower() == "true"
+EXPORT_DEDICATED_WORKER_ENABLED = _get_env("EXPORT_DEDICATED_WORKER_ENABLED", "true").lower() == "true"
 EXPORT_WORKER_POLL_SECONDS = float(_get_env("EXPORT_WORKER_POLL_SECONDS", "2.0"))
 EXPORT_WORKER_BATCH_SIZE = int(_get_env("EXPORT_WORKER_BATCH_SIZE", "3"))
+
+# =============================================================================
+# WORKER PROCESS CONFIG
+# =============================================================================
+WORKER_RUN_DIR = _get_env("WORKER_RUN_DIR", "/home/site/wwwroot/run")
+UPLOAD_WORKER_PID_FILE = _get_env("UPLOAD_WORKER_PID_FILE", f"{WORKER_RUN_DIR}/upload-worker.pid")
+EXPORT_WORKER_PID_FILE = _get_env("EXPORT_WORKER_PID_FILE", f"{WORKER_RUN_DIR}/export-worker.pid")
 
 # =============================================================================
 # DEVOPS FIELD CONSTANTS (NUNCA confiar no LLM — campos hardcoded)

@@ -2,8 +2,6 @@
 # tools_upload.py — Uploaded document semantic search
 # =============================================================================
 
-import asyncio
-import math
 import json
 import logging
 

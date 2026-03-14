@@ -18,19 +18,13 @@ from config import (
     DEVOPS_PAT,
     DEVOPS_ORG,
     DEVOPS_PROJECT,
-    DEVOPS_INDEX,
     DEVOPS_FIELDS,
     DEVOPS_AREAS,
     DEVOPS_WORKITEM_TYPES,
     DEBUG_LOG_SIZE,
-    AGENT_TOOL_RESULT_MAX_SIZE,
-    AGENT_TOOL_RESULT_KEEP_ITEMS,
-    EXPORT_ASYNC_THRESHOLD_ROWS,
 )
 from llm_provider import llm_simple
-from export_engine import to_csv
 from http_helpers import devops_request_with_retry
-from tools_knowledge import get_embedding
 from tools_export import _attach_auto_csv_export
 from tools_learning import _save_writer_profile, _load_writer_profile
 
@@ -693,7 +687,7 @@ async def _resolve_parent_id_by_title_hint(
         "fallback_broad_used": fallback_broad_used,
     }
 
-async def tool_query_workitems(wiql_where, fields=None, top=200, user_sub: str = ""):
+async def tool_query_workitems(wiql_where: str, fields: Optional[list[str]] = None, top: int = 200, user_sub: str = "") -> dict:
     _log(f"query_workitems: top={top}, wiql={str(wiql_where)[:80]}...")
     try:
         safe_where = _sanitize_wiql_where(wiql_where)
@@ -760,7 +754,7 @@ async def tool_query_workitems(wiql_where, fields=None, top=200, user_sub: str =
         result["_failed_batch_count"] = len(failed_ids)
     return result
 
-async def tool_analyze_patterns(created_by=None, topic=None, work_item_type="User Story", area_path=None, sample_size=15):
+async def tool_analyze_patterns(created_by: Optional[str] = None, topic: Optional[str] = None, work_item_type: str = "User Story", area_path: Optional[str] = None, sample_size: int = 15) -> dict:
     try:
         safe_type = _validate_workitem_type(work_item_type, "User Story")
     except ValueError as e:
@@ -802,7 +796,7 @@ async def tool_analyze_patterns(created_by=None, topic=None, work_item_type="Use
     if not samples: samples = [{"id":it.get("id"),"title":it.get("title","")} for it in result.get("items",[])]
     return {"total_found": result.get("total_count",0), "samples_returned": len(samples), "analysis_data": samples}
 
-async def tool_analyze_patterns_with_llm(created_by=None, topic=None, work_item_type="User Story", area_path=None, sample_size=15, analysis_type="template", user_sub: str = ""):
+async def tool_analyze_patterns_with_llm(created_by: Optional[str] = None, topic: Optional[str] = None, work_item_type: str = "User Story", area_path: Optional[str] = None, sample_size: int = 15, analysis_type: str = "template", user_sub: str = "") -> dict:
     raw = await tool_analyze_patterns(created_by, topic, work_item_type, area_path, sample_size)
     if "error" in raw or raw.get("samples_returned",0)==0: return raw
     txt = ""
@@ -877,7 +871,7 @@ async def tool_analyze_patterns_with_llm(created_by=None, topic=None, work_item_
         "writer_profile_saved": profile_saved,
     }
 
-async def tool_generate_user_stories(topic, context="", num_stories=3, reference_area=None, reference_author=None, reference_topic=None, user_sub: str = ""):
+async def tool_generate_user_stories(topic: str, context: str = "", num_stories: int = 3, reference_area: Optional[str] = None, reference_author: Optional[str] = None, reference_topic: Optional[str] = None, user_sub: str = "") -> dict:
     style_profile = None
     if reference_author:
         style_profile = await _load_writer_profile(reference_author, owner_sub=user_sub)
@@ -1156,14 +1150,14 @@ async def tool_generate_user_stories(topic, context="", num_stories=3, reference
     return result
 
 async def tool_query_hierarchy(
-    parent_id=None,
-    parent_type="Epic",
-    child_type="User Story",
-    area_path=None,
-    title_contains=None,
-    parent_title_hint=None,
+    parent_id: Optional[int] = None,
+    parent_type: str = "Epic",
+    child_type: str = "User Story",
+    area_path: Optional[str] = None,
+    title_contains: Optional[str] = None,
+    parent_title_hint: Optional[str] = None,
     user_sub: str = "",
-):
+) -> dict:
     try:
         safe_parent_type = _validate_workitem_type(parent_type, "Epic")
         safe_child_type = _validate_workitem_type(child_type, "User Story")
@@ -1348,7 +1342,7 @@ async def tool_query_hierarchy(
         result["_failed_batch_count"] = len(failed)
     return result
 
-async def tool_compute_kpi(wiql_where, group_by=None, kpi_type="count"):
+async def tool_compute_kpi(wiql_where: str, group_by: Optional[str] = None, kpi_type: str = "count") -> dict:
     result = await tool_query_workitems(wiql_where=wiql_where, top=1000)
     if "error" in result: return result
     items = result.get("items",[]); total = result.get("total_count",len(items))

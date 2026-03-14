@@ -4,7 +4,6 @@
 
 import asyncio
 import logging
-import os
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
@@ -24,11 +23,7 @@ _http_client: httpx.AsyncClient | None = None
 
 
 def _get_miro_token() -> str:
-    return (
-        (MIRO_ACCESS_TOKEN or "").strip()
-        or (os.getenv("MIRO_ACCESS_TOKEN", "") or "").strip()
-        or (os.getenv("APPSETTING_MIRO_ACCESS_TOKEN", "") or "").strip()
-    )
+    return (MIRO_ACCESS_TOKEN or "").strip()
 
 
 def _cache_key(query: str, board_id: str) -> str:

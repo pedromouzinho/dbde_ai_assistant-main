@@ -5,7 +5,6 @@
 import asyncio
 import json
 import logging
-import os
 import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote, urlparse, parse_qs, unquote
@@ -26,11 +25,7 @@ _http_client: httpx.AsyncClient | None = None
 
 
 def _get_figma_token() -> str:
-    return (
-        (FIGMA_ACCESS_TOKEN or "").strip()
-        or (os.getenv("FIGMA_ACCESS_TOKEN", "") or "").strip()
-        or (os.getenv("APPSETTING_FIGMA_ACCESS_TOKEN", "") or "").strip()
-    )
+    return (FIGMA_ACCESS_TOKEN or "").strip()
 
 
 def _cache_key(query: str, file_key: str, node_id: str) -> str:
