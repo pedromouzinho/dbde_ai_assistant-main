@@ -88,4 +88,6 @@ else
 fi
 
 echo "Starting DBDE AI Agent v8.0.0..."
-exec "$PYTHON_BIN" -m uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1
+UVICORN_WORKERS="${UVICORN_WORKERS:-3}"
+echo "Starting uvicorn with $UVICORN_WORKERS workers..."
+exec "$PYTHON_BIN" -m uvicorn app:app --host 0.0.0.0 --port 8000 --workers "$UVICORN_WORKERS"

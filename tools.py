@@ -164,7 +164,7 @@ _embedding_semaphore: asyncio.Semaphore | None = None
 def _get_embedding_semaphore() -> asyncio.Semaphore:
     global _embedding_semaphore
     if _embedding_semaphore is None:
-        _embedding_semaphore = asyncio.Semaphore(5)
+        _embedding_semaphore = asyncio.Semaphore(10)
     return _embedding_semaphore
 
 
