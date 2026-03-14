@@ -5248,6 +5248,62 @@ async def runtime_check(credentials: HTTPAuthorizationCredentials = Depends(secu
     }
 
 
+@app.get("/api/debug/upload-jobs")
+async def debug_upload_jobs(request: Request):
+    """Temporary diagnostic endpoint — shows recent upload job states."""
+    now = datetime.now(timezone.utc)
+    jobs_local = []
+    for job_id, job in upload_jobs_store.items():
+        jobs_local.append({
+            "job_id": str(job_id)[:12],
+            "status": str(job.get("status", "")),
+            "filename": str(job.get("filename", ""))[:40],
+            "size_mb": round(int(job.get("size_bytes", 0) or 0) / 1024 / 1024, 1),
+            "worker_id": str(job.get("worker_id", ""))[:16],
+            "created_at": str(job.get("created_at", ""))[:25],
+            "updated_at": str(job.get("updated_at", ""))[:25],
+            "error": str(job.get("error", ""))[:100],
+        })
+    # Also check Table Storage
+    storage_jobs = []
+    try:
+        rows = await table_query(
+            "UploadJobs",
+            "PartitionKey eq 'upload'",
+            top=20,
+        )
+        for row in rows:
+            status = str(row.get("Status", ""))
+            if status.lower() in ("completed", "failed"):
+                age = ""
+                try:
+                    updated = datetime.fromisoformat(str(row.get("UpdatedAt", "")))
+                    age = f"{int((now - updated).total_seconds())}s ago"
+                except Exception:
+                    pass
+                if age and int((now - updated).total_seconds()) > 300:
+                    continue  # skip old completed/failed
+            storage_jobs.append({
+                "job_id": str(row.get("RowKey", ""))[:12],
+                "status": status,
+                "filename": str(row.get("Filename", ""))[:40],
+                "size_mb": round(int(row.get("SizeBytes", 0) or 0) / 1024 / 1024, 1),
+                "worker_id": str(row.get("WorkerId", ""))[:16],
+                "created_at": str(row.get("CreatedAt", ""))[:25],
+                "updated_at": str(row.get("UpdatedAt", ""))[:25],
+            })
+    except Exception as e:
+        storage_jobs = [{"error": str(e)[:200]}]
+    return {
+        "now_utc": now.isoformat(),
+        "worker_instance": WORKER_INSTANCE_ID[:16],
+        "inline_worker_enabled": INLINE_WORKER_ENABLED_EFFECTIVE,
+        "worker_task_alive": _inline_worker_task is not None and not _inline_worker_task.done() if _inline_worker_task else False,
+        "local_jobs": jobs_local,
+        "storage_jobs": storage_jobs,
+    }
+
+
 @app.get("/health")
 @limiter.limit("120/minute", key_func=_login_rate_key)
 async def health(
