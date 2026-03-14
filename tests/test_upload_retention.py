@@ -202,7 +202,7 @@ async def test_purge_expired_upload_artifacts_can_drop_only_raw_blob_when_artifa
         deleted_jobs.append((partition_key, job_id))
         return None
 
-    async def fake_job_get(job_id):
+    def fake_job_get(job_id):
         return cached_jobs.get(job_id)
 
     async def fake_job_put(job_id, payload):
@@ -369,7 +369,7 @@ async def test_backfill_tabular_artifact_chunks_completes_historical_row(monkeyp
     monkeypatch.setattr(app, "blob_upload_json", _fake_blob_upload_json)
     monkeypatch.setattr(app, "table_merge", _fake_table_merge)
     monkeypatch.setattr(app, "get_embedding", _fake_get_embedding)
-    monkeypatch.setattr(app.upload_jobs_store, "get", lambda *_args, **_kwargs: asyncio.sleep(0, result=None))
+    monkeypatch.setattr(app.upload_jobs_store, "get", lambda *_args, **_kwargs: None)
 
     result = await app._backfill_tabular_artifact_chunks(limit=5)
 

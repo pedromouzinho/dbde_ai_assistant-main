@@ -165,12 +165,32 @@ def _devops_headers():
 def _devops_url(path):
     return f"https://dev.azure.com/{DEVOPS_ORG}/{DEVOPS_PROJECT}/_apis/{path}"
 
+_embedding_semaphore: asyncio.Semaphore | None = None
+
+
+def _get_embedding_semaphore() -> asyncio.Semaphore:
+    global _embedding_semaphore
+    if _embedding_semaphore is None:
+        _embedding_semaphore = asyncio.Semaphore(5)
+    return _embedding_semaphore
+
+
 async def get_embedding(text):
-    try:
-        return await get_embedding_provider().embed(text[:8000].strip() or " ")
-    except Exception as e:
-        logging.error("[Tools] get_embedding failed: %s", e)
-        return None
+    sem = _get_embedding_semaphore()
+    for attempt in range(4):
+        async with sem:
+            try:
+                return await get_embedding_provider().embed(text[:8000].strip() or " ")
+            except Exception as e:
+                err_str = str(e)
+                if "429" in err_str and attempt < 3:
+                    wait = (2 ** attempt) * 0.5  # 0.5s, 1s, 2s
+                    logging.warning("[Tools] get_embedding 429 retry %d, wait %.1fs", attempt + 1, wait)
+                    await asyncio.sleep(wait)
+                    continue
+                logging.error("[Tools] get_embedding failed: %s", e)
+                return None
+    return None
 
 def _normalize_lookup_key(value: str) -> str:
     txt = unicodedata.normalize("NFKD", str(value or ""))

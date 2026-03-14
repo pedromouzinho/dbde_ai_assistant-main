@@ -2234,8 +2234,10 @@ async def _build_tabular_semantic_chunks_from_artifact(
         }
 
     built_chunks = []
-    worker_concurrency = max(1, min(UPLOAD_EMBEDDING_CONCURRENCY, 8))
-    batch_size = max(worker_concurrency * 3, 6)
+    # Process in small batches to avoid overwhelming the embedding API.
+    # The semaphore in get_embedding() handles concurrency limiting;
+    # we just batch to avoid creating thousands of tasks at once.
+    batch_size = max(1, min(UPLOAD_EMBEDDING_CONCURRENCY, 5))
     for i in range(0, len(raw_chunks), batch_size):
         batch = raw_chunks[i : i + batch_size]
         results = await asyncio.gather(*[_embed_chunk(item) for item in batch], return_exceptions=True)
@@ -4379,7 +4381,7 @@ async def _clear_upload_job_raw_blob(job_id: str, *, purged_at: str) -> int:
                 "RawBlobPurgedAt": purged_at[:64],
             },
         )
-        cached = await upload_jobs_store.get(safe_job_id)
+        cached = upload_jobs_store.get(safe_job_id)
         if cached:
             cached["raw_blob_ref"] = ""
             cached["raw_blob_retention_until"] = ""
@@ -4602,7 +4604,7 @@ async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BA
                     "UpdatedAt": datetime.now(timezone.utc).isoformat(),
                 },
             )
-            cached_job = await upload_jobs_store.get(job_id)
+            cached_job = upload_jobs_store.get(job_id)
             if cached_job:
                 cached_job = dict(cached_job)
                 cached_job["chunks_blob_name"] = chunks_blob_name
