@@ -10,6 +10,8 @@ import io
 import json
 import logging
 import html as html_lib
+
+logger = logging.getLogger(__name__)
 import os
 import re
 import zipfile

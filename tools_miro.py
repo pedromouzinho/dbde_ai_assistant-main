@@ -14,6 +14,8 @@ from config import MIRO_ACCESS_TOKEN
 from http_helpers import _sanitize_error_response
 from tool_registry import register_tool
 
+logger = logging.getLogger(__name__)
+
 _MIRO_API_BASE = "https://api.miro.com/v2"
 _MIRO_CACHE_TTL_SECONDS = 300
 _MAX_CACHE_ENTRIES = 200

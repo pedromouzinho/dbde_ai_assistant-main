@@ -61,7 +61,7 @@ class TokenQuota:
         for row in rows or []:
             try:
                 total += int(row.get("Count", 0) or 0)
-            except Exception:
+            except (ValueError, TypeError):
                 continue
         return max(0, total)
 
@@ -78,7 +78,7 @@ class TokenQuota:
             return 0
         try:
             return max(0, int(rows[0].get("Count", 0) or 0))
-        except Exception:
+        except (ValueError, TypeError):
             return 0
 
     async def _upsert_instance_count(
@@ -101,7 +101,7 @@ class TokenQuota:
         }
         try:
             await table_merge(TOKEN_QUOTA_TABLE, entity)
-        except Exception:
+        except (RuntimeError, OSError):
             inserted = await table_insert(TOKEN_QUOTA_TABLE, entity)
             if not inserted:
                 raise RuntimeError("TokenQuota insert returned False")
@@ -129,7 +129,7 @@ class TokenQuota:
         """Record token usage in this instance's shard."""
         try:
             amount = int(tokens or 0)
-        except Exception:
+        except (ValueError, TypeError):
             amount = 0
         if amount <= 0:
             return
@@ -169,13 +169,13 @@ class TokenQuota:
             try:
                 year, yday, hour = str(key).split("-")
                 hour_candidates.append((int(year), int(yday), int(hour), key))
-            except Exception:
+            except ValueError:
                 continue
         for key in self._daily_shards:
             try:
                 year, yday = str(key).split("-")
                 day_candidates.append((int(year), int(yday), key))
-            except Exception:
+            except ValueError:
                 continue
 
         hour_candidates.sort()
@@ -216,12 +216,12 @@ class TokenQuota:
         for hour_key in hour_keys:
             try:
                 await table_delete(TOKEN_QUOTA_TABLE, self._hour_partition(hour_key), _INSTANCE_ID)
-            except Exception:
+            except (RuntimeError, OSError):
                 continue
         for day_key in day_keys:
             try:
                 await table_delete(TOKEN_QUOTA_TABLE, self._day_partition(day_key), _INSTANCE_ID)
-            except Exception:
+            except (RuntimeError, OSError):
                 continue
 
 

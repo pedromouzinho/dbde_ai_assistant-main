@@ -8,6 +8,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict
 
+logger = logging.getLogger(__name__)
+
 from config import (
     EXAMPLES_INDEX,
     SEARCH_SERVICE,

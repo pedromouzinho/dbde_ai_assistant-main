@@ -711,7 +711,7 @@ async def _extract_export_data_from_tool_message(tool_msg: dict) -> Optional[dic
             parsed = json.loads(raw_content)
             if isinstance(parsed, dict) and parsed and not parsed.get("_persisted_summary"):
                 return parsed
-        except Exception:
+        except (json.JSONDecodeError, TypeError):
             pass
     return None
 
@@ -1340,21 +1340,21 @@ async def shutdown_event():
         _inline_worker_task.cancel()
         try:
             await _inline_worker_task
-        except Exception:
+        except (asyncio.CancelledError, Exception):
             pass
         _inline_worker_task = None
     if _inline_export_worker_task:
         _inline_export_worker_task.cancel()
         try:
             await _inline_export_worker_task
-        except Exception:
+        except (asyncio.CancelledError, Exception):
             pass
         _inline_export_worker_task = None
     if _upload_retention_task:
         _upload_retention_task.cancel()
         try:
             await _upload_retention_task
-        except Exception:
+        except (asyncio.CancelledError, Exception):
             pass
         _upload_retention_task = None
     if http_client:
@@ -5251,8 +5251,14 @@ async def runtime_check(credentials: HTTPAuthorizationCredentials = Depends(secu
 
 
 @app.get("/api/debug/upload-jobs")
-async def debug_upload_jobs(request: Request):
+async def debug_upload_jobs(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
     """Temporary diagnostic endpoint — shows recent upload job states."""
+    user = get_current_user(credentials)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
     now = datetime.now(timezone.utc)
     jobs_local = []
     for job_id, job in upload_jobs_store.items():
@@ -5281,7 +5287,7 @@ async def debug_upload_jobs(request: Request):
                 try:
                     updated = datetime.fromisoformat(str(row.get("UpdatedAt", "")))
                     age = f"{int((now - updated).total_seconds())}s ago"
-                except Exception:
+                except (ValueError, TypeError):
                     pass
                 if age and int((now - updated).total_seconds()) > 300:
                     continue  # skip old completed/failed

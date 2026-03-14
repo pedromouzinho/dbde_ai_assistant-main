@@ -23,6 +23,8 @@ from generated_files import (
     store_generated_file as _shared_store_generated_file,
 )
 
+logger = logging.getLogger(__name__)
+
 _GENERATED_FILE_TTL_SECONDS = generated_file_ttl_seconds()
 _AUTO_EXPORT_MIN_ROWS = 25
 SUPPORTED_FILE_FORMATS = ("csv", "xlsx", "pdf", "docx", "html")

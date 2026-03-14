@@ -37,10 +37,12 @@ from llm_provider import get_embedding_provider
 from http_helpers import _sanitize_error_response, search_request_with_retry
 from pii_shield import PIIMaskingContext, _regex_pre_mask
 
+logger = logging.getLogger(__name__)
+
 _http_client: Optional[httpx.AsyncClient] = None
 
 if RERANK_ENABLED:
-    logging.info("[RAG] Reranking enabled: model=%s, top_n=%s", RERANK_MODEL, RERANK_TOP_N)
+    logger.info("[RAG] Reranking enabled: model=%s, top_n=%s", RERANK_MODEL, RERANK_TOP_N)
 
 
 def _get_http_client() -> httpx.AsyncClient:
