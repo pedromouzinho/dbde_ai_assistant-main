@@ -10,8 +10,6 @@ import io
 import json
 import logging
 import html as html_lib
-
-logger = logging.getLogger(__name__)
 import os
 import re
 import zipfile
@@ -20,6 +18,8 @@ from typing import Dict, List, Any, Optional
 from urllib.parse import urlparse
 
 from config import EXPORT_BRAND_COLOR, EXPORT_BRAND_NAME, EXPORT_AGENT_NAME, APP_VERSION
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # DATA EXTRACTION

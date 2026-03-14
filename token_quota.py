@@ -101,7 +101,7 @@ class TokenQuota:
         }
         try:
             await table_merge(TOKEN_QUOTA_TABLE, entity)
-        except (RuntimeError, OSError):
+        except Exception:
             inserted = await table_insert(TOKEN_QUOTA_TABLE, entity)
             if not inserted:
                 raise RuntimeError("TokenQuota insert returned False")
@@ -216,12 +216,12 @@ class TokenQuota:
         for hour_key in hour_keys:
             try:
                 await table_delete(TOKEN_QUOTA_TABLE, self._hour_partition(hour_key), _INSTANCE_ID)
-            except (RuntimeError, OSError):
+            except Exception:
                 continue
         for day_key in day_keys:
             try:
                 await table_delete(TOKEN_QUOTA_TABLE, self._day_partition(day_key), _INSTANCE_ID)
-            except (RuntimeError, OSError):
+            except Exception:
                 continue
 
 

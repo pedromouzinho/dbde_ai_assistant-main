@@ -1651,10 +1651,10 @@ MAX_FILES_PER_CONVERSATION = UPLOAD_MAX_FILES_PER_CONVERSATION
 MAX_UPLOAD_FILE_BYTES = UPLOAD_MAX_FILE_BYTES
 UPLOAD_JOB_TTL_SECONDS = 24 * 3600
 MAX_CONCURRENT_UPLOAD_JOBS = UPLOAD_MAX_CONCURRENT_JOBS
-WORKER_INSTANCE_ID = f"web-{uuid.uuid4().hex[:8]}"
+WORKER_INSTANCE_ID = os.getenv("UPLOAD_WORKER_INSTANCE_ID") or f"web-{uuid.uuid4().hex[:8]}"
 INLINE_WORKER_RUNTIME_GUARD = UPLOAD_INLINE_WORKER_RUNTIME_ENABLED
 INLINE_WORKER_ENABLED_EFFECTIVE = bool(UPLOAD_INLINE_WORKER_ENABLED and INLINE_WORKER_RUNTIME_GUARD)
-EXPORT_WORKER_INSTANCE_ID = f"export-web-{uuid.uuid4().hex[:8]}"
+EXPORT_WORKER_INSTANCE_ID = os.getenv("EXPORT_WORKER_INSTANCE_ID") or f"export-web-{uuid.uuid4().hex[:8]}"
 EXPORT_INLINE_WORKER_ENABLED_EFFECTIVE = bool(EXPORT_INLINE_WORKER_ENABLED and INLINE_WORKER_RUNTIME_GUARD)
 EXPORT_JOB_TTL_SECONDS = 24 * 3600
 
@@ -5257,7 +5257,7 @@ async def debug_upload_jobs(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     """Temporary diagnostic endpoint — shows recent upload job states."""
-    user = get_current_user(credentials)
+    user = get_current_user(credentials, request=request)
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     now = datetime.now(timezone.utc)
