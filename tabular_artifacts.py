@@ -757,73 +757,76 @@ def _iter_delimited_rows(raw_bytes: bytes, delimiter_hint: str | None) -> tuple[
 
 
 def _iter_xlsx_rows(raw_bytes: bytes) -> tuple[list[str], Iterator[list[str]]]:
-    import openpyxl
+    from python_calamine import CalamineWorkbook
 
-    workbook = openpyxl.load_workbook(io.BytesIO(raw_bytes), read_only=True, data_only=True)
-    worksheet = workbook.active
-    row_iter = worksheet.iter_rows(values_only=True)
-    header = next(row_iter, None)
-    if not header:
-        workbook.close()
+    workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
         raise TabularLoaderError("Excel vazio.")
-    columns = _normalize_header_row(header)
+    columns = _normalize_header_row(all_rows[0])
 
     def _rows() -> Iterator[list[str]]:
-        try:
-            for row in row_iter:
-                yield _row_values_from_sequence(row)
-        finally:
-            workbook.close()
+        for row in all_rows[1:]:
+            yield _row_values_from_sequence(row)
 
     return columns, _rows()
 
 
 def _iter_xlsb_rows(raw_bytes: bytes) -> tuple[list[str], Iterator[list[str]]]:
-    from pyxlsb import open_workbook
+    from python_calamine import CalamineWorkbook
 
-    temp_ctx = _temporary_tabular_file(raw_bytes, ".xlsb")
-    temp_path = temp_ctx.__enter__()
-    workbook = open_workbook(temp_path)
-    worksheet = workbook.get_sheet(1)
-    row_iter = worksheet.rows()
-    header = next(row_iter, None)
-    if not header:
-        workbook.close()
-        temp_ctx.__exit__(None, None, None)
+    workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
         raise TabularLoaderError("XLSB vazio.")
-    columns = _normalize_header_row(cell.v for cell in header)
+    columns = _normalize_header_row(all_rows[0])
 
     def _rows() -> Iterator[list[str]]:
-        try:
-            for row in row_iter:
-                yield _row_values_from_sequence(cell.v for cell in row)
-        finally:
-            workbook.close()
-            temp_ctx.__exit__(None, None, None)
+        for row in all_rows[1:]:
+            yield _row_values_from_sequence(row)
 
     return columns, _rows()
 
 
 def _iter_xls_rows(raw_bytes: bytes) -> tuple[list[str], Iterator[list[str]]]:
-    try:
-        import pandas as pd
-    except Exception as exc:  # pragma: no cover
-        raise TabularLoaderError("Leitura de .xls requer pandas/xlrd no servidor.") from exc
+    from python_calamine import CalamineWorkbook
 
-    temp_ctx = _temporary_tabular_file(raw_bytes, ".xls")
-    temp_path = temp_ctx.__enter__()
     try:
-        frame = pd.read_excel(temp_path, dtype=object)
-    except Exception as exc:
+        workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    except Exception:
+        # Fallback to pandas/xlrd for edge-case .xls files
+        try:
+            import pandas as pd
+        except Exception as exc:
+            raise TabularLoaderError("Leitura de .xls requer pandas/xlrd no servidor.") from exc
+        temp_ctx = _temporary_tabular_file(raw_bytes, ".xls")
+        temp_path = temp_ctx.__enter__()
+        try:
+            frame = pd.read_excel(temp_path, dtype=object)
+        except Exception as exc:
+            temp_ctx.__exit__(None, None, None)
+            raise TabularLoaderError("Falha a ler ficheiro .xls.") from exc
         temp_ctx.__exit__(None, None, None)
-        raise TabularLoaderError("Falha a ler ficheiro .xls.") from exc
-    temp_ctx.__exit__(None, None, None)
-    if frame.empty and not list(frame.columns):
+        if frame.empty and not list(frame.columns):
+            raise TabularLoaderError("Excel vazio.")
+        columns = _normalize_header_row(frame.columns.tolist())
+
+        def _rows_pd() -> Iterator[list[str]]:
+            for row in frame.itertuples(index=False, name=None):
+                yield _row_values_from_sequence(row)
+
+        return columns, _rows_pd()
+
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
         raise TabularLoaderError("Excel vazio.")
-    columns = _normalize_header_row(frame.columns.tolist())
+    columns = _normalize_header_row(all_rows[0])
 
     def _rows() -> Iterator[list[str]]:
-        for row in frame.itertuples(index=False, name=None):
+        for row in all_rows[1:]:
             yield _row_values_from_sequence(row)
 
     return columns, _rows()

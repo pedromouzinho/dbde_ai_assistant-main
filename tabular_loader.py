@@ -297,95 +297,84 @@ def _load_delimited_dataset(raw_bytes: bytes, delimiter_hint: str | None, max_ro
 
 
 def _load_xlsx_preview(raw_bytes: bytes, preview_rows: int, preview_char_limit: int) -> dict:
-    import openpyxl
+    from python_calamine import CalamineWorkbook
 
-    workbook = openpyxl.load_workbook(io.BytesIO(raw_bytes), read_only=True, data_only=True)
-    try:
-        worksheet = workbook.active
-        row_iter = worksheet.iter_rows(values_only=True)
-        header = next(row_iter, None)
-        if not header:
-            raise TabularLoaderError("Excel vazio.")
-        columns = _normalize_header_row(header)
-        estimated_row_count = max(0, int(getattr(worksheet, "max_row", 1) or 1) - 1)
-        sample_rows: list[list[str]] = []
-        preview_lines = ["\t".join(columns)]
-        for row in row_iter:
-            normalized = _normalize_row(_row_values_from_sequence(row), len(columns))
-            if len(sample_rows) < preview_rows:
-                sample_rows.append(normalized)
-            line = "\t".join(normalized)
-            if _fits_preview(preview_lines, line, preview_char_limit):
-                preview_lines.append(line)
-            if len(sample_rows) >= preview_rows and len(preview_lines) >= (preview_rows + 1):
-                break
-        row_count = estimated_row_count if estimated_row_count > 0 else len(sample_rows)
-        truncated = row_count > len(sample_rows)
-        return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
-    finally:
-        workbook.close()
+    workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
+        raise TabularLoaderError("Excel vazio.")
+    columns = _normalize_header_row(all_rows[0])
+    row_count = len(all_rows) - 1
+    sample_rows: list[list[str]] = []
+    preview_lines = ["\t".join(columns)]
+    truncated = False
+    for row in all_rows[1:]:
+        normalized = _normalize_row(_row_values_from_sequence(row), len(columns))
+        if len(sample_rows) < preview_rows:
+            sample_rows.append(normalized)
+        line = "\t".join(normalized)
+        if _fits_preview(preview_lines, line, preview_char_limit):
+            preview_lines.append(line)
+        else:
+            truncated = True
+        if len(sample_rows) >= preview_rows and len(preview_lines) >= (preview_rows + 1):
+            break
+    truncated = truncated or row_count > len(sample_rows)
+    return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
 
 
 def _load_xlsx_dataset(raw_bytes: bytes, max_rows: int) -> dict:
-    import openpyxl
+    from python_calamine import CalamineWorkbook
 
-    workbook = openpyxl.load_workbook(io.BytesIO(raw_bytes), read_only=True, data_only=True)
-    try:
-        worksheet = workbook.active
-        row_iter = worksheet.iter_rows(values_only=True)
-        header = next(row_iter, None)
-        if not header:
-            raise TabularLoaderError("Excel vazio.")
-        columns = _normalize_header_row(header)
-        return _collect_dataset(columns, (_row_values_from_sequence(row) for row in row_iter), max_rows=max_rows, delimiter="\t")
-    finally:
-        workbook.close()
+    workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
+        raise TabularLoaderError("Excel vazio.")
+    columns = _normalize_header_row(all_rows[0])
+    return _collect_dataset(
+        columns,
+        (_row_values_from_sequence(row) for row in all_rows[1:]),
+        max_rows=max_rows,
+        delimiter="\t",
+    )
 
 
 def _load_xlsb_preview(raw_bytes: bytes, preview_rows: int, preview_char_limit: int) -> dict:
-    from pyxlsb import open_workbook
+    from python_calamine import CalamineWorkbook
 
-    with _temporary_tabular_file(raw_bytes, ".xlsb") as temp_path:
-        workbook = open_workbook(temp_path)
-        try:
-            worksheet = workbook.get_sheet(1)
-            row_iter = worksheet.rows()
-            header = next(row_iter, None)
-            if not header:
-                raise TabularLoaderError("XLSB vazio.")
-            columns = _normalize_header_row(cell.v for cell in header)
-            sample_rows, row_count, preview_lines, truncated = _collect_row_preview(
-                columns,
-                (_row_values_from_sequence(cell.v for cell in row) for row in row_iter),
-                "\t",
-                preview_rows,
-                preview_char_limit,
-            )
-            return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
-        finally:
-            workbook.close()
+    workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
+        raise TabularLoaderError("XLSB vazio.")
+    columns = _normalize_header_row(all_rows[0])
+    sample_rows, row_count, preview_lines, truncated = _collect_row_preview(
+        columns,
+        (_row_values_from_sequence(row) for row in all_rows[1:]),
+        "\t",
+        preview_rows,
+        preview_char_limit,
+    )
+    return _preview_payload(columns, sample_rows, row_count, "\t", preview_lines, truncated)
 
 
 def _load_xlsb_dataset(raw_bytes: bytes, max_rows: int) -> dict:
-    from pyxlsb import open_workbook
+    from python_calamine import CalamineWorkbook
 
-    with _temporary_tabular_file(raw_bytes, ".xlsb") as temp_path:
-        workbook = open_workbook(temp_path)
-        try:
-            worksheet = workbook.get_sheet(1)
-            row_iter = worksheet.rows()
-            header = next(row_iter, None)
-            if not header:
-                raise TabularLoaderError("XLSB vazio.")
-            columns = _normalize_header_row(cell.v for cell in header)
-            return _collect_dataset(
-                columns,
-                (_row_values_from_sequence(cell.v for cell in row) for row in row_iter),
-                max_rows=max_rows,
-                delimiter="\t",
-            )
-        finally:
-            workbook.close()
+    workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
+        raise TabularLoaderError("XLSB vazio.")
+    columns = _normalize_header_row(all_rows[0])
+    return _collect_dataset(
+        columns,
+        (_row_values_from_sequence(row) for row in all_rows[1:]),
+        max_rows=max_rows,
+        delimiter="\t",
+    )
 
 
 def _load_xls_preview(raw_bytes: bytes, preview_rows: int, preview_char_limit: int) -> dict:
@@ -401,37 +390,42 @@ def _load_xls_preview(raw_bytes: bytes, preview_rows: int, preview_char_limit: i
 
 
 def _load_xls_dataset(raw_bytes: bytes, max_rows: int) -> dict:
-    try:
-        import pandas as pd
-    except Exception as exc:  # pragma: no cover - dependency error depends on runtime
-        raise TabularLoaderError("Leitura de .xls requer pandas/xlrd no servidor.") from exc
+    from python_calamine import CalamineWorkbook
 
-    with _temporary_tabular_file(raw_bytes, ".xls") as temp_path:
+    try:
+        workbook = CalamineWorkbook.from_filelike(io.BytesIO(raw_bytes))
+    except Exception:
+        # Fallback to pandas/xlrd for edge-case .xls files calamine can't read
         try:
-            frame = pd.read_excel(temp_path, dtype=object)
+            import pandas as pd
         except Exception as exc:
-            raise TabularLoaderError("Falha a ler ficheiro .xls.") from exc
-    if frame.empty and not list(frame.columns):
+            raise TabularLoaderError("Leitura de .xls requer pandas/xlrd no servidor.") from exc
+        with _temporary_tabular_file(raw_bytes, ".xls") as temp_path:
+            try:
+                frame = pd.read_excel(temp_path, dtype=object)
+            except Exception as exc:
+                raise TabularLoaderError("Falha a ler ficheiro .xls.") from exc
+        if frame.empty and not list(frame.columns):
+            raise TabularLoaderError("Excel vazio.")
+        columns = _normalize_header_row(frame.columns.tolist())
+        return _collect_dataset(
+            columns,
+            (_row_values_from_sequence(row) for row in frame.itertuples(index=False, name=None)),
+            max_rows=max_rows,
+            delimiter="\t",
+        )
+
+    sheet = workbook.get_sheet_by_index(0)
+    all_rows = sheet.to_python()
+    if not all_rows:
         raise TabularLoaderError("Excel vazio.")
-    columns = _normalize_header_row(frame.columns.tolist())
-    records = []
-    row_count = 0
-    truncated = False
-    for row in frame.itertuples(index=False, name=None):
-        row_count += 1
-        normalized = _normalize_row(row, len(columns))
-        if len(records) < max_rows:
-            records.append({col: normalized[idx] for idx, col in enumerate(columns)})
-        else:
-            truncated = True
-    return {
-        "columns": columns,
-        "records": records,
-        "row_count": row_count,
-        "rows_loaded": len(records),
-        "truncated": truncated,
-        "delimiter": "\t",
-    }
+    columns = _normalize_header_row(all_rows[0])
+    return _collect_dataset(
+        columns,
+        (_row_values_from_sequence(row) for row in all_rows[1:]),
+        max_rows=max_rows,
+        delimiter="\t",
+    )
 
 
 def _collect_row_preview(
@@ -617,6 +611,11 @@ def _stringify_cell(value) -> str:
         return value.isoformat()
     if isinstance(value, time):
         return value.isoformat()
+    if isinstance(value, float):
+        # Calamine returns integers as 10.0 — display as "10" not "10.0"
+        if value == value and value == int(value):  # not NaN and is integer
+            return str(int(value))
+        return str(value)
     return str(value)
 
 

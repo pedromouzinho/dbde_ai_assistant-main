@@ -54,27 +54,24 @@ class TestTabularLoader:
         assert dataset["records"][0]["Revenue"] == "10"
 
     def test_xlsb_preview_uses_reader_without_materializing_everything(self, monkeypatch):
-        pytest.importorskip("pyxlsb")
-
-        class _Cell:
-            def __init__(self, value):
-                self.v = value
-
         class _Sheet:
-            def rows(self):
-                yield [_Cell("Date"), _Cell("Revenue")]
-                yield [_Cell("2026-01-01"), _Cell(10)]
-                yield [_Cell("2026-01-02"), _Cell(20)]
+            def to_python(self):
+                return [
+                    ["Date", "Revenue"],
+                    ["2026-01-01", 10],
+                    ["2026-01-02", 20],
+                ]
 
         class _Workbook:
-            def get_sheet(self, idx):
-                assert idx == 1
+            @classmethod
+            def from_filelike(cls, fobj):
+                return cls()
+
+            def get_sheet_by_index(self, idx):
+                assert idx == 0
                 return _Sheet()
 
-            def close(self):
-                return None
-
-        monkeypatch.setattr("pyxlsb.open_workbook", lambda _path: _Workbook())
+        monkeypatch.setattr("python_calamine.CalamineWorkbook", _Workbook)
         preview = tabular_loader.load_tabular_preview(b"PK\x03\x04fake", "sample.xlsb")
 
         assert preview["columns"] == ["Date", "Revenue"]
@@ -92,10 +89,10 @@ class TestUploadLimitsAndExtraction:
         assert csv_limit > app.MAX_UPLOAD_FILE_BYTES
         assert xlsx_limit > app.MAX_UPLOAD_FILE_BYTES
         assert xlsb_limit >= xlsx_limit
-        assert xls_limit == 60 * 1024 * 1024
-        assert csv_limit == 60 * 1024 * 1024
-        assert xlsx_limit == 60 * 1024 * 1024
-        assert xlsb_limit == 60 * 1024 * 1024
+        assert xls_limit == 100 * 1024 * 1024
+        assert csv_limit == 200 * 1024 * 1024
+        assert xlsx_limit == 200 * 1024 * 1024
+        assert xlsb_limit == 200 * 1024 * 1024
 
     @pytest.mark.asyncio
     async def test_extract_upload_entry_accepts_xlsb(self, monkeypatch):
