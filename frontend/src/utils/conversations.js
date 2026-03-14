@@ -40,9 +40,8 @@ export function formatRelativeTimestamp(value) {
 }
 
 export function getConversationMetaLabel(conv) {
-  const count = Array.isArray(conv && conv.messages)
-    ? conv.messages.length
-    : Number((conv && conv.message_count) || 0);
+  const msgLen = Array.isArray(conv && conv.messages) ? conv.messages.length : 0;
+  const count = msgLen > 0 ? msgLen : Number((conv && conv.message_count) || 0);
   const countLabel = count > 0 ? `${count} msgs` : 'Sem mensagens';
   const relative = formatRelativeTimestamp(conv && conv.updatedAt);
   return relative ? `${countLabel} · ${relative}` : countLabel;
