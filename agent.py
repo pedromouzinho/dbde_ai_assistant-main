@@ -31,6 +31,7 @@ from llm_provider import (
 )
 from token_counter import (
     count_messages_tokens,
+    count_single_message_tokens,
     count_tools_tokens,
     resolve_context_window,
     RESPONSE_RESERVE_TOKENS,
@@ -957,8 +958,8 @@ async def _build_llm_messages(
         non_system_indices = [idx for idx, msg in enumerate(base) if msg.get("role") != "system"]
         if len(non_system_indices) <= 2:
             break
-        base.pop(non_system_indices[0])
-        messages_tokens = count_messages_tokens(base)
+        removed_msg = base.pop(non_system_indices[0])
+        messages_tokens -= count_single_message_tokens(removed_msg)
         available = context_window - tools_tokens - messages_tokens - RESPONSE_RESERVE_TOKENS
 
     return base

@@ -18,19 +18,13 @@ from config import (
     DEVOPS_PAT,
     DEVOPS_ORG,
     DEVOPS_PROJECT,
-    DEVOPS_INDEX,
     DEVOPS_FIELDS,
     DEVOPS_AREAS,
     DEVOPS_WORKITEM_TYPES,
     DEBUG_LOG_SIZE,
-    AGENT_TOOL_RESULT_MAX_SIZE,
-    AGENT_TOOL_RESULT_KEEP_ITEMS,
-    EXPORT_ASYNC_THRESHOLD_ROWS,
 )
 from llm_provider import llm_simple
-from export_engine import to_csv
 from http_helpers import devops_request_with_retry
-from tools_knowledge import get_embedding
 from tools_export import _attach_auto_csv_export
 from tools_learning import _save_writer_profile, _load_writer_profile
 

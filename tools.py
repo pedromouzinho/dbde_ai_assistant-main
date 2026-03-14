@@ -5,19 +5,12 @@
 import json, base64, asyncio, logging, uuid, re, math, unicodedata, io, csv, statistics
 from datetime import datetime, timezone
 from collections import deque, Counter
-from urllib.parse import quote
 from typing import Optional
-import httpx
 
 from config import (
     DEVOPS_PAT, DEVOPS_ORG, DEVOPS_PROJECT,
     SEARCH_SERVICE, SEARCH_KEY, API_VERSION_SEARCH,
-    DEVOPS_INDEX, OMNI_INDEX,
-    DEVOPS_FIELDS, DEVOPS_AREAS, DEVOPS_WORKITEM_TYPES,
     AGENT_TOOL_RESULT_MAX_SIZE, AGENT_TOOL_RESULT_KEEP_ITEMS, DEBUG_LOG_SIZE,
-    EXPORT_ASYNC_THRESHOLD_ROWS,
-    RERANK_ENABLED, RERANK_ENDPOINT, RERANK_API_KEY, RERANK_MODEL,
-    RERANK_TOP_N, RERANK_TIMEOUT_SECONDS, RERANK_AUTH_MODE,
     UPLOAD_INDEX_TOP, GENERATED_FILES_BLOB_CONTAINER,
     VISION_ENABLED,
     CODE_INTERPRETER_MAX_MOUNT_BYTES,

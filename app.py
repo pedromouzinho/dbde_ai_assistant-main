@@ -87,7 +87,7 @@ from config import (
     MODEL_ROUTER_ENABLED, MODEL_ROUTER_SPEC, MODEL_ROUTER_TARGET_TIERS, MODEL_ROUTER_NON_PROD_ONLY,
     IS_PRODUCTION,
     RERANK_ENABLED, RERANK_MODEL, RERANK_ENDPOINT, RERANK_TOP_N, RERANK_AUTH_MODE,
-    ALLOWED_ORIGINS, DEBUG_MODE, LOG_FORMAT,
+    ALLOWED_ORIGINS, LOG_FORMAT,
     AUTH_COOKIE_NAME, AUTH_COOKIE_SECURE, AUTH_COOKIE_MAX_AGE_SECONDS,
     UPLOAD_MAX_FILES_PER_CONVERSATION, UPLOAD_MAX_FILE_BYTES,
     UPLOAD_MAX_CONCURRENT_JOBS, UPLOAD_MAX_PENDING_JOBS_PER_USER,
@@ -98,7 +98,9 @@ from config import (
     UPLOAD_TABULAR_ARTIFACT_ENABLED,
     UPLOAD_MAX_BATCH_TOTAL_BYTES,
     UPLOAD_BLOB_CONTAINER_RAW, UPLOAD_BLOB_CONTAINER_TEXT, UPLOAD_BLOB_CONTAINER_CHUNKS, UPLOAD_BLOB_CONTAINER_ARTIFACTS,
-    UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_WORKER_POLL_SECONDS,
+    UPLOAD_INDEX_TOP, UPLOAD_INLINE_WORKER_ENABLED, UPLOAD_INLINE_WORKER_RUNTIME_ENABLED,
+    UPLOAD_DEDICATED_WORKER_ENABLED,
+    UPLOAD_WORKER_POLL_SECONDS,
     UPLOAD_WORKER_BATCH_SIZE, UPLOAD_ARTIFACT_RETENTION_HOURS, UPLOAD_TABULAR_RAW_RETENTION_HOURS,
     UPLOAD_TABULAR_READY_RAW_RETENTION_HOURS,
     UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE,
@@ -107,11 +109,13 @@ from config import (
     DOC_INTEL_ENABLED, DOC_INTEL_MODEL,
     CHAT_TOOLRESULT_BLOB_CONTAINER,
     EXPORT_AUTO_ASYNC_ENABLED, EXPORT_ASYNC_THRESHOLD_ROWS, EXPORT_MAX_CONCURRENT_JOBS,
-    EXPORT_JOB_STALE_SECONDS, EXPORT_INLINE_WORKER_ENABLED, EXPORT_WORKER_POLL_SECONDS,
+    EXPORT_JOB_STALE_SECONDS, EXPORT_INLINE_WORKER_ENABLED, EXPORT_DEDICATED_WORKER_ENABLED,
+    EXPORT_WORKER_POLL_SECONDS,
     EXPORT_WORKER_BATCH_SIZE,
     EXPORT_BRAND_COLOR, EXPORT_BRAND_NAME, EXPORT_AGENT_NAME,
     STARTUP_FAIL_FAST, TOKEN_QUOTA_CONFIG, CHAT_BUDGET_PER_MINUTE,
     STORY_LANE_ENABLED,
+    WORKER_RUN_DIR, UPLOAD_WORKER_PID_FILE, EXPORT_WORKER_PID_FILE,
 )
 from models import (
     AgentChatRequest, AgentChatResponse,
@@ -161,7 +165,7 @@ from auth_runtime import (
     persist_user_invalidation,
 )
 from tools import (
-    get_embedding, get_devops_debug_log, get_generated_file,
+    get_embedding, get_generated_file,
     _store_generated_file,
     _devops_url, _devops_headers,
 )
@@ -178,7 +182,7 @@ from agent import (
     switch_conversation_mode,
 )
 from export_engine import to_csv, to_xlsx, to_pdf, to_svg_bar_chart, to_html_report
-from llm_provider import llm_simple, get_debug_log as get_llm_debug_log, close_all_providers
+from llm_provider import llm_simple, close_all_providers
 from rate_limit_storage import TableStorageRateLimit
 from tabular_loader import (
     TabularLoaderError,
@@ -237,9 +241,6 @@ _AUTH_EXEMPT_PATHS = {"/health", "/api/info", "/api/client-error", "/docs", "/op
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent
 _CHAT_BUDGET_LIMIT = f"{max(1, int(CHAT_BUDGET_PER_MINUTE or 10))}/minute"
-WORKER_RUN_DIR = os.getenv("WORKER_RUN_DIR", "/home/site/wwwroot/run")
-UPLOAD_WORKER_PID_FILE = os.getenv("UPLOAD_WORKER_PID_FILE", f"{WORKER_RUN_DIR}/upload-worker.pid")
-EXPORT_WORKER_PID_FILE = os.getenv("EXPORT_WORKER_PID_FILE", f"{WORKER_RUN_DIR}/export-worker.pid")
 _inline_worker_task: Optional[asyncio.Task] = None
 _inline_export_worker_task: Optional[asyncio.Task] = None
 _upload_retention_task: Optional[asyncio.Task] = None
@@ -1650,10 +1651,10 @@ MAX_FILES_PER_CONVERSATION = UPLOAD_MAX_FILES_PER_CONVERSATION
 MAX_UPLOAD_FILE_BYTES = UPLOAD_MAX_FILE_BYTES
 UPLOAD_JOB_TTL_SECONDS = 24 * 3600
 MAX_CONCURRENT_UPLOAD_JOBS = UPLOAD_MAX_CONCURRENT_JOBS
-WORKER_INSTANCE_ID = os.getenv("UPLOAD_WORKER_INSTANCE_ID", f"web-{uuid.uuid4().hex[:8]}")
-INLINE_WORKER_RUNTIME_GUARD = os.getenv("UPLOAD_INLINE_WORKER_RUNTIME_ENABLED", "true").strip().lower() == "true"
+WORKER_INSTANCE_ID = f"web-{uuid.uuid4().hex[:8]}"
+INLINE_WORKER_RUNTIME_GUARD = UPLOAD_INLINE_WORKER_RUNTIME_ENABLED
 INLINE_WORKER_ENABLED_EFFECTIVE = bool(UPLOAD_INLINE_WORKER_ENABLED and INLINE_WORKER_RUNTIME_GUARD)
-EXPORT_WORKER_INSTANCE_ID = os.getenv("EXPORT_WORKER_INSTANCE_ID", f"export-web-{uuid.uuid4().hex[:8]}")
+EXPORT_WORKER_INSTANCE_ID = f"export-web-{uuid.uuid4().hex[:8]}"
 EXPORT_INLINE_WORKER_ENABLED_EFFECTIVE = bool(EXPORT_INLINE_WORKER_ENABLED and INLINE_WORKER_RUNTIME_GUARD)
 EXPORT_JOB_TTL_SECONDS = 24 * 3600
 
@@ -4857,7 +4858,7 @@ def _build_admin_info_payload() -> dict:
             "inline_worker_enabled": INLINE_WORKER_ENABLED_EFFECTIVE,
             "inline_worker_configured": UPLOAD_INLINE_WORKER_ENABLED,
             "inline_worker_runtime_guard": INLINE_WORKER_RUNTIME_GUARD,
-            "dedicated_worker_sidecar": os.getenv("UPLOAD_DEDICATED_WORKER_ENABLED", "true").strip().lower() == "true",
+            "dedicated_worker_sidecar": UPLOAD_DEDICATED_WORKER_ENABLED,
             "worker_poll_seconds": UPLOAD_WORKER_POLL_SECONDS,
             "worker_batch_size": UPLOAD_WORKER_BATCH_SIZE,
         },
@@ -4870,7 +4871,7 @@ def _build_admin_info_payload() -> dict:
             "job_stale_seconds": EXPORT_JOB_STALE_SECONDS,
             "inline_worker_enabled": EXPORT_INLINE_WORKER_ENABLED_EFFECTIVE,
             "inline_worker_configured": EXPORT_INLINE_WORKER_ENABLED,
-            "dedicated_worker_sidecar": os.getenv("EXPORT_DEDICATED_WORKER_ENABLED", "true").strip().lower() == "true",
+            "dedicated_worker_sidecar": EXPORT_DEDICATED_WORKER_ENABLED,
             "worker_poll_seconds": EXPORT_WORKER_POLL_SECONDS,
             "worker_batch_size": EXPORT_WORKER_BATCH_SIZE,
         },
@@ -5385,7 +5386,7 @@ async def health(
 
     # 6) Dedicated workers (when enabled)
     try:
-        upload_worker_enabled = os.getenv("UPLOAD_DEDICATED_WORKER_ENABLED", "true").strip().lower() == "true"
+        upload_worker_enabled = UPLOAD_DEDICATED_WORKER_ENABLED
         if upload_worker_enabled:
             pid = _load_pid_from_file(UPLOAD_WORKER_PID_FILE)
             checks["upload_worker"] = "ok" if _is_process_alive(pid) else "error: worker_not_running"
@@ -5395,7 +5396,7 @@ async def health(
         checks["upload_worker"] = f"error: {str(e)[:100]}"
 
     try:
-        export_worker_enabled = os.getenv("EXPORT_DEDICATED_WORKER_ENABLED", "true").strip().lower() == "true"
+        export_worker_enabled = EXPORT_DEDICATED_WORKER_ENABLED
         if export_worker_enabled:
             pid = _load_pid_from_file(EXPORT_WORKER_PID_FILE)
             checks["export_worker"] = "ok" if _is_process_alive(pid) else "error: worker_not_running"

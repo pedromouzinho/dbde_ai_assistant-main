@@ -456,7 +456,10 @@ class AzureOpenAIProvider(LLMProvider):
     async def _get_client(self) -> httpx.AsyncClient:
         async with self._client_lock:
             if self._http_client is None or self._http_client.is_closed:
-                self._http_client = httpx.AsyncClient(timeout=180)
+                self._http_client = httpx.AsyncClient(
+                    timeout=180,
+                    limits=httpx.Limits(max_connections=50, max_keepalive_connections=10),
+                )
             return self._http_client
 
     async def close(self) -> None:
@@ -630,7 +633,10 @@ class AnthropicProvider(LLMProvider):
     async def _get_client(self) -> httpx.AsyncClient:
         async with self._client_lock:
             if self._http_client is None or self._http_client.is_closed:
-                self._http_client = httpx.AsyncClient(timeout=180)
+                self._http_client = httpx.AsyncClient(
+                    timeout=180,
+                    limits=httpx.Limits(max_connections=50, max_keepalive_connections=10),
+                )
             return self._http_client
 
     async def close(self) -> None:
