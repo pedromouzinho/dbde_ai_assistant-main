@@ -3001,18 +3001,53 @@ async def process_upload_jobs_once(max_jobs: int = UPLOAD_WORKER_BATCH_SIZE) -> 
     processed = 0
     claimed = 0
     skipped = 0
+    recovered = 0
 
+    # Fetch both queued and processing jobs — processing jobs that are stale
+    # (orphaned by a container restart) will be reclaimed and re-processed.
     try:
-        rows = await table_query(
+        rows_queued = await table_query(
             "UploadJobs",
             "PartitionKey eq 'upload' and Status eq 'queued'",
             top=max(target * 3, target),
         )
     except Exception as e:
         logger.warning("[App] process_upload_jobs_once query failed: %s", e)
-        rows = []
+        rows_queued = []
 
-    rows_sorted = sorted(rows, key=lambda r: str(r.get("CreatedAt", "")))
+    # Recover orphaned "processing" jobs (stale from dead container instances)
+    try:
+        rows_processing = await table_query(
+            "UploadJobs",
+            "PartitionKey eq 'upload' and Status eq 'processing'",
+            top=max(target * 2, target),
+        )
+    except Exception:
+        rows_processing = []
+
+    now = datetime.now(timezone.utc)
+    orphan_threshold = 120  # seconds — if processing for >2 min, assume orphaned
+    for row in rows_processing:
+        job = _job_from_storage_row(row)
+        updated_str = str(job.get("updated_at", "") or job.get("started_at", "") or "")
+        try:
+            updated_dt = datetime.fromisoformat(updated_str)
+        except Exception:
+            continue
+        if (now - updated_dt).total_seconds() > orphan_threshold:
+            job_id = str(job.get("job_id", "") or "")
+            if job_id:
+                job["status"] = "queued"
+                job["updated_at"] = now.isoformat()
+                job["worker_id"] = ""
+                job["claim_token"] = ""
+                await upload_jobs_store.put(job_id, job)
+                await _persist_upload_job(job)
+                rows_queued.append(row)
+                recovered += 1
+                logger.info("[Upload] recovered orphaned job %s (was processing for %ds)", job_id[:8], int((now - updated_dt).total_seconds()))
+
+    rows_sorted = sorted(rows_queued, key=lambda r: str(r.get("CreatedAt", "")))
     for row in rows_sorted:
         if processed >= target:
             break
@@ -3021,7 +3056,7 @@ async def process_upload_jobs_once(max_jobs: int = UPLOAD_WORKER_BATCH_SIZE) -> 
         if not job_id:
             skipped += 1
             continue
-        if str(job.get("status", "")).lower() != "queued":
+        if str(job.get("status", "")).lower() not in ("queued",):
             skipped += 1
             continue
 
@@ -3045,7 +3080,7 @@ async def process_upload_jobs_once(max_jobs: int = UPLOAD_WORKER_BATCH_SIZE) -> 
         await _run_upload_job(job_id)
         processed += 1
 
-    return {"processed": processed, "claimed": claimed, "skipped": skipped}
+    return {"processed": processed, "claimed": claimed, "skipped": skipped, "recovered": recovered}
 
 
 async def _upload_worker_loop() -> None:
