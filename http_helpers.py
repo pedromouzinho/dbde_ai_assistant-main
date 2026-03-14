@@ -9,6 +9,8 @@ from typing import Any
 
 import httpx
 
+logger = logging.getLogger(__name__)
+
 
 _SECRET_PATTERNS = [
     re.compile(

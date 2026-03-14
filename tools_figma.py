@@ -16,6 +16,8 @@ from config import FIGMA_ACCESS_TOKEN
 from http_helpers import _sanitize_error_response
 from tool_registry import register_tool
 
+logger = logging.getLogger(__name__)
+
 _FIGMA_API_BASE = "https://api.figma.com/v1"
 _FIGMA_CACHE_TTL_SECONDS = 300
 _MAX_CACHE_ENTRIES = 200

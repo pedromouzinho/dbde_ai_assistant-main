@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 
 from storage import table_query, table_insert, table_merge
 
+logger = logging.getLogger(__name__)
+
 _WRITER_PROFILE_PARTITION = "writer"
 
 def _normalize_author(author_name: str) -> str:

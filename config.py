@@ -176,13 +176,6 @@ LLM_TIER_PRO = _get_env("LLM_TIER_PRO", "anthropic:opus")                      #
 LLM_TIER_VISION = _get_env("LLM_TIER_VISION", "azure_openai:gpt-4-1-dz")      # DataZone, multimodal
 VISION_ENABLED = _get_env("VISION_ENABLED", "true").lower() == "true"
 
-LEGACY_FAST_DEPLOYMENT = _get_env("FAST_DEPLOYMENT", "")
-if LEGACY_FAST_DEPLOYMENT:
-    logger.warning(
-        "[Config] FAST_DEPLOYMENT=%s está obsoleto e é ignorado. Usa LLM_TIER_FAST.",
-        LEGACY_FAST_DEPLOYMENT,
-    )
-
 # PII Shield (Azure AI Language)
 PII_ENDPOINT = _get_env("PII_ENDPOINT", "")
 PII_API_KEY = _get_env("PII_API_KEY", "")

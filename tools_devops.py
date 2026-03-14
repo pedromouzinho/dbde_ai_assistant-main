@@ -34,6 +34,8 @@ from tools_knowledge import get_embedding
 from tools_export import _attach_auto_csv_export
 from tools_learning import _save_writer_profile, _load_writer_profile
 
+logger = logging.getLogger(__name__)
+
 _devops_debug_log: deque = deque(maxlen=DEBUG_LOG_SIZE)
 
 def get_devops_debug_log(): return list(_devops_debug_log)

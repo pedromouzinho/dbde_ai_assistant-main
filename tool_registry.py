@@ -8,6 +8,8 @@ import inspect
 import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
+logger = logging.getLogger(__name__)
+
 
 ToolHandler = Callable[[Dict[str, Any]], Awaitable[Any] | Any]
 
