@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from starlette.requests import Request
 
-import app
+import route_deps
 
 
 def _make_request(host: str, origin: str, scheme: str = "https") -> Request:
@@ -25,22 +25,22 @@ def _make_request(host: str, origin: str, scheme: str = "https") -> Request:
 
 
 def test_origin_allowlist_accepts_same_origin_custom_domain(monkeypatch):
-    monkeypatch.setattr(app, "_allowed_origins_set", {"https://millennium-ai-assistant.azurewebsites.net"})
+    monkeypatch.setattr(route_deps, "_allowed_origins_set", {"https://millennium-ai-assistant.azurewebsites.net"})
     request = _make_request("dbdeai.pt", "https://dbdeai.pt")
 
-    assert app._origin_allowed_for_request(request, "https://dbdeai.pt") is True
+    assert route_deps._origin_allowed_for_request(request, "https://dbdeai.pt") is True
 
 
 def test_origin_allowlist_rejects_unknown_cross_origin(monkeypatch):
-    monkeypatch.setattr(app, "_allowed_origins_set", {"https://millennium-ai-assistant.azurewebsites.net"})
+    monkeypatch.setattr(route_deps, "_allowed_origins_set", {"https://millennium-ai-assistant.azurewebsites.net"})
     request = _make_request("dbdeai.pt", "https://evil.example")
 
-    assert app._origin_allowed_for_request(request, "https://evil.example") is False
+    assert route_deps._origin_allowed_for_request(request, "https://evil.example") is False
 
 
 def test_origin_allowlist_still_accepts_configured_origin(monkeypatch):
     monkeypatch.setattr(
-        app,
+        route_deps,
         "_allowed_origins_set",
         {"https://millennium-ai-assistant.azurewebsites.net", "https://dbdeai.pt"},
     )
@@ -49,4 +49,4 @@ def test_origin_allowlist_still_accepts_configured_origin(monkeypatch):
         "https://dbdeai.pt",
     )
 
-    assert app._origin_allowed_for_request(request, "https://dbdeai.pt") is True
+    assert route_deps._origin_allowed_for_request(request, "https://dbdeai.pt") is True

@@ -89,7 +89,7 @@ _PENDING_POLYMORPHIC_SELECTION_KEY = "pending_polymorphic_selection"
 
 
 class ConversationStore(MutableMapping[str, List[dict]]):
-    """Store em memória com TTL + eviction LRU."""
+    """Store em memória com TTL + eviction LRU + write-through dirty tracking."""
 
     def __init__(
         self,
@@ -103,6 +103,9 @@ class ConversationStore(MutableMapping[str, List[dict]]):
         self.ttl_seconds = ttl_seconds
         self._on_evict = on_evict
         self._lock = asyncio.Lock()
+        # Write-through: dirty tracking
+        self._dirty: set[str] = set()
+        self._on_evict_persist: Optional[Callable] = None  # set externally after init
 
     @staticmethod
     def _utcnow() -> datetime:
@@ -111,7 +114,30 @@ class ConversationStore(MutableMapping[str, List[dict]]):
     def _touch(self, key: str) -> None:
         self._last_accessed[key] = self._utcnow()
 
+    def mark_dirty(self, key: str) -> None:
+        """Marca conversa como modificada (precisa de persist)."""
+        if key in self._data:
+            self._dirty.add(key)
+
+    def mark_clean(self, key: str) -> None:
+        """Marca conversa como persistida (já não precisa de persist)."""
+        self._dirty.discard(key)
+
+    def get_dirty_keys(self) -> set[str]:
+        """Devolve chaves que têm alterações por persistir."""
+        return self._dirty & set(self._data.keys())
+
     def _evict(self, key: str, reason: str) -> None:
+        # Write-through: persist snapshot before evicting dirty data
+        if key in self._dirty and key in self._data and self._on_evict_persist:
+            snapshot = list(self._data[key])  # shallow copy
+            try:
+                self._on_evict_persist(key, snapshot)
+            except Exception:
+                logging.getLogger(__name__).warning(
+                    "[ConversationStore] Pre-evict persist failed for %s", key
+                )
+        self._dirty.discard(key)
         self._data.pop(key, None)
         self._last_accessed.pop(key, None)
         if self._on_evict:
@@ -171,6 +197,7 @@ class ConversationStore(MutableMapping[str, List[dict]]):
                         break
             self._data[key] = value
             self._touch(key)
+            self._dirty.add(key)
 
     async def async_delete(self, key: str) -> None:
         """Thread-safe delete."""
@@ -198,6 +225,7 @@ class ConversationStore(MutableMapping[str, List[dict]]):
             self.ensure_capacity_for_new(new_key=key)
         self._data[key] = value
         self._touch(key)
+        self._dirty.add(key)
 
     def __delitem__(self, key: str) -> None:
         if key not in self._data:
@@ -270,6 +298,139 @@ conversations = ConversationStore(
 )
 logger = logging.getLogger(__name__)
 _AGENT_LLM_STEP_TIMEOUT_SECONDS = 90.0
+
+# ---------------------------------------------------------------------------
+# Write-through persistence — background loop + pre-evict + shutdown hook
+# ---------------------------------------------------------------------------
+_WRITETHROUGH_INTERVAL_SECONDS = 30
+_writethrough_task: Optional[asyncio.Task] = None
+
+
+def _pre_evict_persist(conv_id: str, snapshot: List[dict]) -> None:
+    """Fire-and-forget persist of conversation snapshot before eviction."""
+    meta = conversation_meta.get(conv_id, {})
+    pk = meta.get("partition_key", "")
+    if not pk:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_persist_conversation_snapshot(conv_id, pk, snapshot))
+    except RuntimeError:
+        pass
+
+
+conversations._on_evict_persist = _pre_evict_persist
+
+
+async def _persist_conversation_snapshot(
+    conv_id: str, partition_key: str, snapshot: List[dict]
+) -> None:
+    """Persist a snapshot of messages (used for pre-evict write-through)."""
+    try:
+        compact = [_compact_message_for_storage(m) for m in snapshot]
+        messages_json = json.dumps(compact, ensure_ascii=False, default=str)
+
+        # Same 60KB guard as _persist_conversation
+        if len(messages_json.encode("utf-8")) > 60000:
+            compact = [compact[0]] + compact[-10:] if compact else []
+            messages_json = json.dumps(compact, ensure_ascii=False, default=str)
+        if len(messages_json.encode("utf-8")) > 60000:
+            compact = [{"role": "system", "content": "Histórico truncado para persistência."}]
+            messages_json = json.dumps(compact, ensure_ascii=False, default=str)
+
+        meta = conversation_meta.get(conv_id, {})
+        entity = {
+            "PartitionKey": partition_key,
+            "RowKey": conv_id,
+            "Messages": messages_json,
+            "Mode": meta.get("mode", "general"),
+            "CreatedAt": meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+            "UpdatedAt": datetime.now(timezone.utc).isoformat(),
+            "MessageCount": len(compact),
+        }
+
+        safe_pk = odata_escape(partition_key)
+        safe_conv = odata_escape(conv_id)
+        existing = await table_query(
+            "ChatHistory",
+            f"PartitionKey eq '{safe_pk}' and RowKey eq '{safe_conv}'",
+            top=1,
+        )
+        if existing:
+            await table_merge("ChatHistory", entity)
+        else:
+            inserted = await table_insert("ChatHistory", entity)
+            if not inserted:
+                await table_merge("ChatHistory", entity)
+        logger.info("[WriteThrough] Pre-evict persist OK for %s", conv_id)
+    except Exception as e:
+        logger.warning("[WriteThrough] Pre-evict persist failed for %s: %s", conv_id, e)
+
+
+async def _writethrough_loop() -> None:
+    """Background loop: persists all dirty conversations every N seconds."""
+    while True:
+        try:
+            await asyncio.sleep(_WRITETHROUGH_INTERVAL_SECONDS)
+            dirty_keys = conversations.get_dirty_keys()
+            if not dirty_keys:
+                continue
+            logger.info("[WriteThrough] %d dirty conversation(s) to persist", len(dirty_keys))
+            for conv_id in list(dirty_keys):
+                meta = conversation_meta.get(conv_id, {})
+                pk = meta.get("partition_key", "")
+                if not pk:
+                    continue
+                try:
+                    await asyncio.wait_for(
+                        _persist_conversation(conv_id, pk), timeout=10.0
+                    )
+                except Exception as e:
+                    logger.warning("[WriteThrough] Background persist failed for %s: %s", conv_id, e)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.warning("[WriteThrough] Loop iteration failed: %s", e)
+
+
+async def flush_dirty_conversations() -> int:
+    """Persist all dirty conversations (used on shutdown). Returns count persisted."""
+    dirty_keys = conversations.get_dirty_keys()
+    if not dirty_keys:
+        return 0
+    logger.info("[WriteThrough] Shutdown flush: %d dirty conversation(s)", len(dirty_keys))
+    persisted = 0
+    for conv_id in list(dirty_keys):
+        meta = conversation_meta.get(conv_id, {})
+        pk = meta.get("partition_key", "")
+        if not pk:
+            continue
+        try:
+            await asyncio.wait_for(
+                _persist_conversation(conv_id, pk), timeout=8.0
+            )
+            persisted += 1
+        except Exception as e:
+            logger.warning("[WriteThrough] Shutdown persist failed for %s: %s", conv_id, e)
+    logger.info("[WriteThrough] Shutdown flush complete: %d/%d persisted", persisted, len(dirty_keys))
+    return persisted
+
+
+def start_writethrough_loop() -> None:
+    """Start the background write-through loop. Call from app startup."""
+    global _writethrough_task
+    if _writethrough_task and not _writethrough_task.done():
+        return
+    _writethrough_task = asyncio.create_task(_writethrough_loop())
+    logger.info("[WriteThrough] Background persist loop started (interval=%ds)", _WRITETHROUGH_INTERVAL_SECONDS)
+
+
+def stop_writethrough_loop() -> None:
+    """Cancel the background write-through loop. Call from app shutdown."""
+    global _writethrough_task
+    if _writethrough_task and not _writethrough_task.done():
+        _writethrough_task.cancel()
+    _writethrough_task = None
 
 
 def _fallback_answer_from_tool_details(tool_details: List[dict]) -> str:
@@ -1228,6 +1389,7 @@ async def _run_forced_workitem_filter_followup(
         person_name,
     )
     conversations[conv_id].append(_make_tool_calls_assistant_message([forced_call]))
+    conversations.mark_dirty(conv_id)
     return await _execute_tool_calls([forced_call], conv_id, user_sub=user_sub)
 
 
@@ -1456,6 +1618,7 @@ async def _run_forced_dual_hierarchy(
         conv_id,
     )
     conversations[conv_id].append(_make_tool_calls_assistant_message(forced_calls))
+    conversations.mark_dirty(conv_id)
     return await _execute_tool_calls(forced_calls, conv_id, user_sub=user_sub)
 
 
@@ -1514,6 +1677,7 @@ async def _run_forced_visual_userstory(
         conv_id,
     )
     conversations[conv_id].append(_make_tool_calls_assistant_message([forced_call]))
+    conversations.mark_dirty(conv_id)
     return await _execute_tool_calls([forced_call], conv_id, user_sub=user_sub)
 
 
@@ -1600,6 +1764,8 @@ async def _persist_conversation(conv_id: str, partition_key: str) -> None:
             inserted = await table_insert("ChatHistory", entity)
             if not inserted:
                 await table_merge("ChatHistory", entity)
+        conversations.mark_clean(conv_id)
+        logger.debug("[Agent] _persist_conversation OK for %s (write-through clean)", conv_id)
     except Exception as e:
         logger.warning("[Agent] _persist_conversation failed for %s: %s", conv_id, e)
 
@@ -1974,7 +2140,8 @@ async def _execute_tool_calls(
             "content": result_str,
             "result_blob_ref": result_blob_ref,
         })
-    
+        conversations.mark_dirty(conv_id)
+
     return tools_used, tool_details
 
 
@@ -2011,6 +2178,7 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
         if pending_reply:
             answer = pending_reply
             conversations[conv_id].append({"role": "assistant", "content": answer})
+            conversations.mark_dirty(conv_id)
             should_persist = True
         else:
             quota_reason = await _check_token_quota(tier, conv_id)
@@ -2020,6 +2188,7 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
                     "Tenta novamente mais tarde ou muda de tier."
                 )
                 conversations[conv_id].append({"role": "assistant", "content": answer})
+                conversations.mark_dirty(conv_id)
                 should_persist = True
             else:
                 try:
@@ -2099,6 +2268,7 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
                         conversations[conv_id].append(
                             make_assistant_message_from_response(response)
                         )
+                        conversations.mark_dirty(conv_id)
 
                         # Execute tools
                         tu, td = await _execute_tool_calls(
@@ -2140,6 +2310,7 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
                     answer = response.content or "Não consegui processar a tua pergunta."
                     await _refresh_polymorphic_pending_state(conv_id, effective_question, answer)
                     conversations[conv_id].append({"role": "assistant", "content": answer})
+                    conversations.mark_dirty(conv_id)
                     should_persist = True
 
                 except Exception as e:
@@ -2228,6 +2399,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
 
         if pending_reply:
             conversations[conv_id].append({"role": "assistant", "content": pending_reply})
+            conversations.mark_dirty(conv_id)
             should_persist = True
             yield _sse({"type": "token", "text": pending_reply})
             total_time = int((datetime.now(timezone.utc) - start).total_seconds() * 1000)
@@ -2340,6 +2512,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                         conversations[conv_id].append(
                             make_assistant_message_from_response(response)
                         )
+                        conversations.mark_dirty(conv_id)
 
                         # Signal tool execution
                         for tc in current_calls:
@@ -2368,6 +2541,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                             yield _sse({"type": "token", "text": response.content})
                             await _refresh_polymorphic_pending_state(conv_id, effective_question, response.content)
                             conversations[conv_id].append({"role": "assistant", "content": response.content})
+                            conversations.mark_dirty(conv_id)
                             should_persist = True
                         elif not response.tool_calls:
                             ttft_start = time.perf_counter()
@@ -2411,6 +2585,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                             if stream_content:
                                 await _refresh_polymorphic_pending_state(conv_id, effective_question, stream_content)
                                 conversations[conv_id].append({"role": "assistant", "content": stream_content})
+                                conversations.mark_dirty(conv_id)
                                 should_persist = True
                             else:
                                 yield _sse({"type": "token", "text": "Não consegui processar a tua pergunta."})
@@ -2421,6 +2596,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                     yield _sse({"type": "token", "text": fallback_text})
                     await _refresh_polymorphic_pending_state(conv_id, effective_question, fallback_text)
                     conversations[conv_id].append({"role": "assistant", "content": fallback_text})
+                    conversations.mark_dirty(conv_id)
                     should_persist = True
 
             except Exception as e:

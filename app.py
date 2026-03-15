@@ -180,6 +180,7 @@ from agent import (
     agent_chat as _agent_chat, agent_chat_stream,
     conversations, conversation_meta, uploaded_files_store,
     switch_conversation_mode,
+    start_writethrough_loop, stop_writethrough_loop, flush_dirty_conversations,
 )
 from export_engine import to_csv, to_xlsx, to_pdf, to_svg_bar_chart, to_html_report
 from llm_provider import llm_simple, close_all_providers
@@ -229,15 +230,21 @@ from story_knowledge_index import sync_story_knowledge_index
 from speech_prompt import normalize_spoken_prompt
 from privacy_service import build_user_privacy_export, delete_user_personal_data
 from provider_governance import evaluate_provider_governance
+from route_deps import (
+    security, limiter,
+    _allowed_origins, _allowed_origins_set, _AUTH_EXEMPT_PATHS,
+    _client_ip, _extract_request_token, _auth_payload_from_request,
+    _is_admin_user, _conversation_belongs_to_user,
+    _login_rate_key, _user_or_ip_rate_key,
+    _RateLimitRule, _DecoratorRateLimiter, _rate_limiter_backend,
+    _request_is_https, _normalize_origin_value, _request_origin, _origin_allowed_for_request,
+    log_audit, _audit_clip, feedback_memory,
+)
+from routes_auth import router as _auth_router
 
 # =============================================================================
 # APP SETUP
 # =============================================================================
-
-security = HTTPBearer(auto_error=False)
-_allowed_origins = [o.strip().rstrip("/") for o in ALLOWED_ORIGINS.split(",") if o.strip()]
-_allowed_origins_set = set(_allowed_origins)
-_AUTH_EXEMPT_PATHS = {"/health", "/api/info", "/api/client-error", "/docs", "/openapi.json", "/redoc"}
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent
 _CHAT_BUDGET_LIMIT = f"{max(1, int(CHAT_BUDGET_PER_MINUTE or 10))}/minute"
@@ -246,204 +253,8 @@ _inline_export_worker_task: Optional[asyncio.Task] = None
 _upload_retention_task: Optional[asyncio.Task] = None
 
 
-def _client_ip(request: Request) -> str:
-    xff = (request.headers.get("x-forwarded-for") or "").strip()
-    if xff:
-        return xff.split(",")[0].strip() or "unknown"
-    if request.client and request.client.host:
-        return request.client.host
-    return "unknown"
-
-
-def _extract_request_token(request: Request) -> str:
-    cookie_token = (request.cookies.get(AUTH_COOKIE_NAME) or "").strip()
-    authz = (request.headers.get("authorization") or "").strip()
-    bearer_token = ""
-    if authz.lower().startswith("bearer "):
-        bearer_token = authz.split(" ", 1)[1].strip()
-    return cookie_token or bearer_token
-
-
-def _auth_payload_from_request(request: Request) -> dict:
-    cached_payload = getattr(request.state, "auth_payload", None)
-    if isinstance(cached_payload, dict) and cached_payload:
-        return cached_payload
-    if str(getattr(request.state, "auth_error", "") or "").strip():
-        return {}
-
-    token = _extract_request_token(request)
-    if not token:
-        return {}
-    try:
-        return jwt_decode(token)
-    except Exception:
-        return {}
-
-
-def _is_admin_user(user: Optional[dict]) -> bool:
-    return principal_is_admin(user)
-
-
-async def _conversation_belongs_to_user(conversation_id: str, user_sub: str) -> bool:
-    safe_conv = str(conversation_id or "").strip()
-    safe_user = str(user_sub or "").strip()
-    if not safe_conv or not safe_user:
-        return False
-    meta = conversation_meta.get(safe_conv, {})
-    owner_sub = str((meta or {}).get("owner_sub", "") or (meta or {}).get("partition_key", "") or "").strip()
-    if owner_sub:
-        return owner_sub == safe_user
-    try:
-        rows = await table_query(
-            "ChatHistory",
-            f"PartitionKey eq '{odata_escape(safe_user)}' and RowKey eq '{odata_escape(safe_conv)}'",
-            top=1,
-        )
-        return bool(rows)
-    except Exception:
-        return False
-
-
-def _login_rate_key(request: Request) -> str:
-    return f"ip:{_client_ip(request)}"
-
-
-def _user_or_ip_rate_key(request: Request) -> str:
-    payload = _auth_payload_from_request(request)
-    sub = str(payload.get("sub", "")).strip()
-    if sub:
-        return f"user:{sub}"
-    return f"ip:{_client_ip(request)}"
-
-
-@dataclass(frozen=True)
-class _RateLimitRule:
-    max_requests: int
-    window_seconds: int
-    key_func: Callable[[Request], str]
-    scope: Optional[str] = None
-
-
-class _DecoratorRateLimiter:
-    """Compat layer para manter @limiter.limit e @limiter.shared_limit."""
-
-    def __init__(self, key_func: Callable[[Request], str]):
-        self._default_key_func = key_func
-
-    @staticmethod
-    def _parse_limit(limit_spec: str) -> Tuple[int, int]:
-        text = str(limit_spec or "").strip().lower()
-        match = re.fullmatch(r"(\d+)\s*/\s*(second|seconds|minute|minutes|hour|hours|day|days)", text)
-        if not match:
-            raise ValueError(f"Rate limit inválido: {limit_spec}")
-        amount = int(match.group(1))
-        unit = match.group(2)
-        factor = 1
-        if unit.startswith("minute"):
-            factor = 60
-        elif unit.startswith("hour"):
-            factor = 3600
-        elif unit.startswith("day"):
-            factor = 86400
-        return amount, factor
-
-    def limit(self, limit_spec: str, key_func: Optional[Callable[[Request], str]] = None):
-        max_requests, window_seconds = self._parse_limit(limit_spec)
-        resolved_key_func = key_func or self._default_key_func
-
-        def decorator(fn):
-            setattr(
-                fn,
-                "__dbde_rate_limit__",
-                _RateLimitRule(
-                    max_requests=max_requests,
-                    window_seconds=window_seconds,
-                    key_func=resolved_key_func,
-                    scope=None,
-                ),
-            )
-            return fn
-
-        return decorator
-
-    def shared_limit(
-        self,
-        limit_spec: str,
-        scope: str,
-        key_func: Optional[Callable[[Request], str]] = None,
-    ):
-        max_requests, window_seconds = self._parse_limit(limit_spec)
-        resolved_key_func = key_func or self._default_key_func
-        shared_scope = str(scope or "").strip()
-
-        def decorator(fn):
-            setattr(
-                fn,
-                "__dbde_rate_limit__",
-                _RateLimitRule(
-                    max_requests=max_requests,
-                    window_seconds=window_seconds,
-                    key_func=resolved_key_func,
-                    scope=shared_scope if shared_scope else None,
-                ),
-            )
-            return fn
-
-        return decorator
-
-    @staticmethod
-    def resolve(request: Request) -> Optional[_RateLimitRule]:
-        route = request.scope.get("route")
-        endpoint = getattr(route, "endpoint", None)
-        if endpoint is None:
-            return None
-        return getattr(endpoint, "__dbde_rate_limit__", None)
-
-
-def _request_is_https(request: Request) -> bool:
-    proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
-    return request.url.scheme == "https" or proto == "https"
-
-
-def _normalize_origin_value(origin: str) -> str:
-    raw = str(origin or "").strip().rstrip("/")
-    if not raw:
-        return ""
-    parsed = urlsplit(raw)
-    if not parsed.scheme or not parsed.netloc:
-        return raw
-    scheme = parsed.scheme.lower()
-    host = (parsed.hostname or "").strip().lower()
-    if not host:
-        return raw
-    port = parsed.port
-    default_port = 443 if scheme == "https" else 80 if scheme == "http" else None
-    suffix = "" if port in (None, default_port) else f":{port}"
-    return f"{scheme}://{host}{suffix}"
-
-
-def _request_origin(request: Request) -> str:
-    host = (request.headers.get("host") or request.url.netloc or "").strip()
-    if not host:
-        return ""
-    scheme = "https" if _request_is_https(request) else request.url.scheme
-    return _normalize_origin_value(f"{scheme}://{host}")
-
-
-def _origin_allowed_for_request(request: Request, origin: str) -> bool:
-    normalized_origin = _normalize_origin_value(origin)
-    if not normalized_origin:
-        return True
-    if normalized_origin in _allowed_origins_set:
-        return True
-    request_origin = _request_origin(request)
-    return bool(request_origin and normalized_origin == request_origin)
-
-
-_rate_limiter_backend = TableStorageRateLimit()
 _last_rate_cache_cleanup = 0.0
 _last_blacklist_cleanup = 0.0
-limiter = _DecoratorRateLimiter(key_func=_user_or_ip_rate_key)
 
 @contextlib.asynccontextmanager
 async def lifespan(app_instance: FastAPI):
@@ -1334,10 +1145,17 @@ async def startup_event():
             EXPORT_INLINE_WORKER_ENABLED,
             INLINE_WORKER_RUNTIME_GUARD,
         )
+    start_writethrough_loop()
     logger.info("DBDE AI Agent v%s ready", APP_VERSION)
 
 async def shutdown_event():
     global _inline_worker_task, _inline_export_worker_task, _upload_retention_task
+    # Write-through: flush all dirty conversations before shutdown
+    stop_writethrough_loop()
+    try:
+        await asyncio.wait_for(flush_dirty_conversations(), timeout=15.0)
+    except Exception as e:
+        logger.warning("[Shutdown] flush_dirty_conversations failed: %s", e)
     if _inline_worker_task:
         _inline_worker_task.cancel()
         try:
@@ -1370,7 +1188,6 @@ async def shutdown_event():
 # =============================================================================
 # LEARNING / FEW-SHOT HELPERS
 # =============================================================================
-feedback_memory = deque(maxlen=100)
 
 async def _index_example(example_id, question, answer, rating, tools_used=None, feedback_note="", example_type="positive"):
     try:
@@ -1387,56 +1204,6 @@ async def _index_example(example_id, question, answer, rating, tools_used=None, 
                 await c.post(url, json=payload, headers=headers)
     except Exception as e:
         logger.error("[App] _index_example failed: %s", e)
-
-def _audit_clip(value: Any, limit: int) -> str:
-    return str(value or "")[: max(1, int(limit or 1))]
-
-
-async def log_audit(user_id, action, question="", tools_used=None, tokens=None, duration_ms=0, metadata: Optional[dict] = None):
-    try:
-        ts = datetime.now(timezone.utc)
-        safe_meta = metadata if isinstance(metadata, dict) else {}
-        governance = evaluate_provider_governance(
-            provider_used=safe_meta.get("provider_used", ""),
-            model_used=safe_meta.get("model_used", ""),
-            action=action,
-            mode=safe_meta.get("mode", ""),
-            tools_used=tools_used,
-        )
-        safe_meta = {
-            **safe_meta,
-            "provider_policy_mode": governance["policy_mode"],
-            "provider_family": governance["provider_family"],
-            "external_provider": governance["external_provider"],
-            "data_sensitivity": governance["data_sensitivity"],
-            "provider_policy_note": governance["policy_note"],
-        }
-        await table_insert(
-            "AuditLog",
-            {
-                "PartitionKey": ts.strftime("%Y-%m"),
-                "RowKey": f"{ts.strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}",
-                "UserId": user_id or "anon",
-                "Action": _audit_clip(action, 120),
-                "Question": _audit_clip(question, 500),
-                "ToolsUsed": ",".join(tools_used) if tools_used else "",
-                "TotalTokens": tokens.get("total_tokens", 0) if tokens else 0,
-                "DurationMs": int(duration_ms or 0),
-                "Timestamp": ts.isoformat(),
-                "Mode": _audit_clip(safe_meta.get("mode", ""), 32),
-                "ModelUsed": _audit_clip(safe_meta.get("model_used", ""), 160),
-                "ProviderUsed": _audit_clip(safe_meta.get("provider_used", ""), 80),
-                "ProviderFamily": _audit_clip(safe_meta.get("provider_family", ""), 64),
-                "ExternalProvider": _audit_clip(safe_meta.get("external_provider", ""), 8),
-                "DataSensitivity": _audit_clip(safe_meta.get("data_sensitivity", ""), 32),
-                "PolicyMode": _audit_clip(safe_meta.get("provider_policy_mode", ""), 32),
-                "ConversationId": _audit_clip(safe_meta.get("conversation_id", ""), 128),
-                "Confidence": _audit_clip(safe_meta.get("confidence", ""), 32),
-                "MetadataJson": _audit_clip(json.dumps(safe_meta, ensure_ascii=False, default=str), 4000),
-            },
-        )
-    except Exception as e:
-        logger.error("[App] log_audit failed: %s", e)
 
 # =============================================================================
 # AGENT ENDPOINTS
@@ -3964,298 +3731,8 @@ async def download_generated_file(request: Request, download_id: str, credential
         headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
 
-# =============================================================================
-# AUTH ENDPOINTS
-# =============================================================================
-
-@app.post("/api/auth/login")
-@limiter.limit("5/minute", key_func=_login_rate_key)
-async def login(request: Request, login_request: LoginRequest):
-    if is_account_locked(login_request.username) or await is_account_locked_persistent(login_request.username):
-        raise HTTPException(
-            429,
-            f"Conta temporariamente bloqueada. Tenta novamente em {_LOCKOUT_DURATION_MINUTES} minutos.",
-        )
-
-    safe_username = odata_escape(login_request.username)
-    users = await table_query("Users", f"PartitionKey eq 'user' and RowKey eq '{safe_username}'", top=1)
-    if not users:
-        record_login_failure(login_request.username)
-        await record_login_failure_persistent(login_request.username)
-        raise HTTPException(401, "Credenciais inválidas")
-    user = users[0]
-    if not verify_password(login_request.password, user.get("PasswordHash","")):
-        record_login_failure(login_request.username)
-        await record_login_failure_persistent(login_request.username)
-        raise HTTPException(401, "Credenciais inválidas")
-    if user.get("IsActive") == False:
-        raise HTTPException(403, "Conta desactivada")
-    clear_login_attempts(login_request.username)
-    await clear_login_failures_persistent(login_request.username)
-    token = jwt_encode({"sub":login_request.username, "role":user.get("Role","user"), "name":user.get("DisplayName",login_request.username)})
-    response = JSONResponse(
-        content={
-            "status": "ok",
-            "username": login_request.username,
-            "role": user.get("Role", "user"),
-            "display_name": user.get("DisplayName", login_request.username),
-        }
-    )
-    secure_cookie = AUTH_COOKIE_SECURE if _request_is_https(request) else False
-    response.set_cookie(
-        key=AUTH_COOKIE_NAME,
-        value=token,
-        httponly=True,
-        secure=secure_cookie,
-        samesite="lax",
-        path="/",
-        max_age=AUTH_COOKIE_MAX_AGE_SECONDS,
-    )
-    return response
-
-
-@app.post("/api/auth/logout")
-@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
-async def logout(request: Request):
-    token = _extract_request_token(request)
-    if token:
-        try:
-            payload = jwt_decode(token)
-            jti = str(payload.get("jti", "") or "")
-            exp_raw = payload.get("exp")
-            if jti and isinstance(exp_raw, str):
-                exp = datetime.fromisoformat(exp_raw)
-                if exp.tzinfo is None:
-                    exp = exp.replace(tzinfo=timezone.utc)
-                await revoke_token_persistent(jti, exp, username=str(payload.get("sub", "") or ""))
-        except ValueError:
-            pass
-
-    response = JSONResponse(content={"status": "ok"})
-    secure_cookie = AUTH_COOKIE_SECURE if _request_is_https(request) else False
-    response.set_cookie(
-        key=AUTH_COOKIE_NAME,
-        value="",
-        httponly=True,
-        secure=secure_cookie,
-        samesite="lax",
-        path="/",
-        max_age=0,
-    )
-    return response
-
-@app.post("/api/auth/create-user")
-@limiter.limit("10/minute", key_func=_user_or_ip_rate_key)
-async def create_user(request: Request, payload: CreateUserRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Apenas admins")
-    safe_username = odata_escape(payload.username)
-    existing = await table_query("Users", f"PartitionKey eq 'user' and RowKey eq '{safe_username}'", top=1)
-    if existing: raise HTTPException(409, "Username já existe")
-    entity = {"PartitionKey":"user","RowKey":payload.username,"PasswordHash":hash_password(payload.password),"DisplayName":payload.display_name or payload.username,"Role":payload.role or "user","IsActive":True,"CreatedAt":datetime.now(timezone.utc).isoformat(),"CreatedBy":user.get("sub")}
-    created = await table_insert("Users", entity)
-    if not created:
-        raise HTTPException(500, "Falha ao criar utilizador")
-    return {"status":"ok","username":payload.username}
-
-@app.get("/api/auth/users")
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def list_users(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Apenas admins")
-    users = await table_query("Users", "PartitionKey eq 'user'", top=100)
-    return {"users":[{"username":u.get("RowKey"),"display_name":u.get("DisplayName"),"role":u.get("Role"),"is_active":u.get("IsActive",True)} for u in users]}
-
-@app.delete("/api/auth/users/{username}")
-@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
-async def deactivate_user(request: Request, username: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Apenas admins")
-    if username == user.get("sub"): raise HTTPException(400, "Não podes desactivar-te")
-    await table_merge("Users", {"PartitionKey":"user","RowKey":username,"IsActive":False})
-    await persist_user_invalidation(username)
-    return {"status":"ok"}
-
-@app.post("/api/auth/change-password")
-@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
-async def change_password(request: Request, payload: ChangePasswordRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    username = user.get("sub")
-    safe_username = odata_escape(username)
-    users = await table_query("Users", f"PartitionKey eq 'user' and RowKey eq '{safe_username}'", top=1)
-    if not users: raise HTTPException(404, "User não encontrado")
-    if not verify_password(payload.current_password, users[0].get("PasswordHash","")): raise HTTPException(401, "Password actual incorrecta")
-    await table_merge("Users", {"PartitionKey":"user","RowKey":username,"PasswordHash":hash_password(payload.new_password)})
-    await persist_user_invalidation(username)
-    return {"status":"ok"}
-
-@app.post("/api/auth/reset-password/{username}")
-@limiter.limit("15/minute", key_func=_user_or_ip_rate_key)
-async def admin_reset_password(request: Request, username: str, payload: LoginRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Apenas admins")
-    await table_merge("Users", {"PartitionKey":"user","RowKey":username,"PasswordHash":hash_password(payload.password)})
-    await persist_user_invalidation(username)
-    return {"status":"ok"}
-
-@app.post("/api/auth/force-logout/{username}")
-@limiter.limit("10/minute", key_func=_user_or_ip_rate_key)
-async def force_logout_user(request: Request, username: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    await persist_user_invalidation(username)
-    return {"status": "ok", "message": f"Tokens de {username} invalidados"}
-
-@app.get("/api/auth/me")
-@limiter.limit("60/minute", key_func=_user_or_ip_rate_key)
-async def get_me(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    return {"username":user.get("sub"),"role":user.get("role"),"name":user.get("name")}
-
-
-@app.post("/api/speech/prompt", response_model=SpeechPromptNormalizeResponse)
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def normalize_speech_prompt(
-    request: Request,
-    payload: SpeechPromptNormalizeRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    transcript = str(payload.transcript or "").strip()
-    if not transcript:
-        raise HTTPException(400, "Transcrição vazia")
-
-    started = time.perf_counter()
-    result = await normalize_spoken_prompt(
-        transcript=transcript,
-        mode=str(payload.mode or "general"),
-        language=str(payload.language or "pt-PT"),
-    )
-    logger.info(
-        "[Speech] normalized prompt provider=%s confidence=%s auto_send=%s elapsed_ms=%d",
-        result.get("provider_used", "unknown"),
-        result.get("confidence", "unknown"),
-        result.get("auto_send_allowed", False),
-        int((time.perf_counter() - started) * 1000),
-    )
-    try:
-        await log_audit(
-            user.get("sub"),
-            "speech_prompt",
-            transcript,
-            tools_used=["speech_prompt"],
-            duration_ms=int((time.perf_counter() - started) * 1000),
-            metadata={
-                "mode": str(payload.mode or "general"),
-                "provider_used": result.get("provider_used", "unknown"),
-                "model_used": result.get("model_used", ""),
-                "confidence": result.get("confidence", "unknown"),
-                "auto_send_allowed": bool(result.get("auto_send_allowed", False)),
-                "conversation_id": payload.conversation_id or "",
-                "provider_family": result.get("provider_family", ""),
-                "external_provider": bool(result.get("external_provider", False)),
-                "data_sensitivity": result.get("data_sensitivity", ""),
-                "provider_policy_mode": result.get("provider_policy_mode", ""),
-                "provider_policy_note": result.get("provider_policy_note", ""),
-            },
-        )
-    except Exception as exc:
-        logger.warning("[App] speech prompt audit failed: %s", exc)
-    return SpeechPromptNormalizeResponse(**result)
-
-
-@app.post("/api/speech/token", response_model=SpeechPromptTokenResponse)
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def issue_speech_token(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    get_current_user(credentials)
-    if not (AZURE_SPEECH_ENABLED and AZURE_SPEECH_KEY and AZURE_SPEECH_REGION):
-        raise HTTPException(503, "Azure Speech não está configurado.")
-
-    token_url = f"https://{AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issuetoken"
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                token_url,
-                headers={"Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY, "Content-Length": "0"},
-            )
-            response.raise_for_status()
-    except Exception as exc:
-        logger.error("[Speech] token issuance failed: %s", exc)
-        raise HTTPException(502, "Falha ao obter token do Azure Speech")
-
-    token = str(response.text or "").strip()
-    if not token:
-        raise HTTPException(502, "Azure Speech não devolveu token válido")
-
-    return SpeechPromptTokenResponse(
-        token=token,
-        region=AZURE_SPEECH_REGION,
-        language=AZURE_SPEECH_LANGUAGE,
-        expires_in_seconds=600,
-    )
-
-
-@app.post("/api/speech/synthesize")
-@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
-async def synthesize_speech(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    """Azure TTS — converte texto curto em áudio MP3 (para clarificações em modo voz)."""
-    get_current_user(credentials)
-    if not (AZURE_SPEECH_ENABLED and AZURE_SPEECH_KEY and AZURE_SPEECH_REGION):
-        raise HTTPException(503, "Azure Speech TTS não está configurado.")
-
-    try:
-        body = await request.json()
-    except Exception:
-        raise HTTPException(400, "Body JSON inválido.")
-
-    text = str(body.get("text", "") or "").strip()
-    if not text or len(text) > 1000:
-        raise HTTPException(400, "Texto em falta ou demasiado longo (max 1000 chars).")
-
-    voice = str(body.get("voice", "") or "").strip() or "pt-PT-RaquelNeural"
-    language = str(body.get("language", "") or "").strip() or "pt-PT"
-
-    # Validate voice/language against injection (only allow Azure Neural voice format)
-    import re as _re
-    if not _re.fullmatch(r'[a-zA-Z]{2,5}-[A-Z]{2,5}-[A-Za-z]+Neural', voice):
-        voice = "pt-PT-RaquelNeural"
-    if not _re.fullmatch(r'[a-zA-Z]{2,5}-[A-Z]{2,5}', language):
-        language = "pt-PT"
-
-    # Sanitize text for SSML
-    safe_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-    ssml = (
-        f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="{language}">'
-        f'<voice name="{voice}">{safe_text}</voice>'
-        f'</speak>'
-    )
-    tts_url = f"https://{AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1"
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.post(
-                tts_url,
-                headers={
-                    "Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY,
-                    "Content-Type": "application/ssml+xml",
-                    "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
-                },
-                content=ssml.encode("utf-8"),
-            )
-            resp.raise_for_status()
-    except Exception as exc:
-        logger.warning("[App] TTS synthesis failed: %s", exc)
-        raise HTTPException(502, "Falha na síntese de voz.")
-
-    return Response(content=resp.content, media_type="audio/mpeg")
-
+# AUTH + SPEECH endpoints → routes_auth.py
+app.include_router(_auth_router)
 
 # =============================================================================
 # FEEDBACK

@@ -1,18 +1,15 @@
 # DBDE AI Assistant — Plano de Melhorias v2
 
-> **Ultima atualizacao:** 2026-03-15
-> **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt`
-> **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU)
-> **Total testes:** 481 (392 base + 33 PPTX + 56 XLSX) · Todos a passar
+> **Ultima atualizacao:** 2026-03-15 **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt` **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU) **Total testes:** 493 (392 base + 33 PPTX + 56 XLSX + 12 write-through) · Todos a passar
 
----
+------------------------------------------------------------------------
 
 ## Estado Geral
 
 ### Fase 1 — Features Originais (Concluidas)
 
-| # | Feature | Estado | Commits | Testes |
-|---|---------|--------|---------|--------|
+| \# | Feature | Estado | Commits | Testes |
+|----|----|----|----|----|
 | 0 | Infraestrutura P1v3 | DONE | `a967512` | — |
 | 1 | Perguntas de Clarificacao | DONE | `57a5226` | Pass |
 | 2 | PowerPoint Branded (BCP) | DONE | `56f215c` `2fd4d25` `06275ac` `61ffc02` | 33 |
@@ -21,10 +18,10 @@
 
 ### Fase 2 — Bugfixes e Polish (Prioridade Alta)
 
-| # | Issue | Estado | Severidade | Ficheiros |
-|---|-------|--------|------------|-----------|
+| \# | Issue | Estado | Severidade | Ficheiros |
+|----|----|----|----|----|
 | B1 | Run Code mostra "N/A" e "0 resultados" | DONE `9b4380a` | Media | `agent.py` |
-| B2 | Markdown (#, **, etc) aparece em raw | DONE `9b4380a` | Alta | `frontend/src/utils/markdown.js` |
+| B2 | Markdown (#, \*\*, etc) aparece em raw | DONE `9b4380a` | Alta | `frontend/src/utils/markdown.js` |
 | B3 | Clarification nao bloqueia input | DONE `9b4380a` | Media | `ChatComposer.jsx`, `App.jsx` |
 | B4 | PII Hardening mascara numeros do utilizador | DONE `9b4380a` | Alta | `pii_shield.py` |
 | B5 | PPTX sem bullets formatados / estetica fraca | DONE `9b4380a` | Alta | `pptx_engine.py` |
@@ -32,10 +29,10 @@
 
 ### Fase 3 — Melhorias Arquiteturais
 
-| # | Melhoria | Estado | Prioridade | Ficheiros |
-|---|----------|--------|------------|-----------|
-| A1 | Persistencia write-through | TODO | ALTA | `agent.py` |
-| A2 | Separar app.py (5400+ linhas) | TODO | ALTA | `app.py` |
+| \# | Melhoria | Estado | Prioridade | Ficheiros |
+|----|----|----|----|----|
+| A1 | Persistencia write-through | DONE | ALTA | `agent.py`, `app.py` |
+| A2 | Separar app.py (5506→4975 linhas) | PARTIAL | ALTA | `app.py`, `route_deps.py`, `routes_auth.py` |
 | A3 | Frontend CDN / Azure Front Door | TODO | Media | infra |
 | A4 | Resumo automatico pos-upload | TODO | Media | `app.py`, `agent.py` |
 | A5 | Multi-file analysis (cross-file joins) | TODO | Media | `tools.py` |
@@ -44,33 +41,66 @@
 | A8 | Streaming progresso upload (SSE) | TODO | Baixa | `app.py`, frontend |
 | A9 | Versionamento de conhecimento | TODO | Baixa | `app.py` |
 
----
+------------------------------------------------------------------------
+
+## Fase 3 — Diagnostico e Solucoes
+
+### A1 — Persistencia write-through
+
+**Problema:** O ConversationStore era puramente in-memory com fire-and-forget persist so no fim de cada chat turn. Se o app crashava mid-turn, reiniciava (deploy), ou o TTL/LRU evictava uma conversa antes do persist correr, os dados eram perdidos. Num ambiente com dados confidenciais, isto era inaceitavel.
+
+**Solucao implementada — 3 camadas de protecao:**
+
+1. **Dirty tracking** (`_dirty: set[str]`): Cada mutacao ao ConversationStore (setitem, append) marca a conversa como dirty. `mark_clean()` e chamado apos persist bem-sucedido.
+
+2. **Background persist loop** (`_writethrough_loop`): A cada 30s, percorre todas as conversas dirty e persiste-as no Azure Table Storage. Garante que mesmo sem o persist de fim-de-turn, os dados sao salvos.
+
+3. **Pre-evict persist**: Quando o TTL ou LRU evicta uma conversa dirty, um snapshot dos dados e persistido como background task antes da evicao.
+
+4. **Shutdown flush** (`flush_dirty_conversations`): No shutdown graceful da app, todas as conversas dirty sao persistidas antes de fechar (timeout 15s).
+
+**Ficheiros modificados:**
+- `agent.py`: ConversationStore dirty tracking, `mark_dirty()` em 15 pontos de mutacao, background loop, pre-evict, shutdown flush
+- `app.py`: Imports de `start_writethrough_loop`, `stop_writethrough_loop`, `flush_dirty_conversations`; startup/shutdown hooks
+
+**Testes:** 12 testes em `tests/test_writethrough.py` cobrindo dirty tracking, pre-evict, LRU eviction, e flush.
+
+------------------------------------------------------------------------
 
 ## Fase 2 — Diagnostico e Solucoes
 
 ### B1 — Run Code mostra "N/A resultados" e "0 resultados"
 
-**Diagnostico:**
-Em `agent.py:1948-1952`, o `result_summary` tenta extrair `total_count` de chaves
-como `total_count`, `total_results`, `total_found`. Tools como `run_code` nao retornam
-nenhuma dessas chaves — o resultado e um dict com `stdout`, `stderr`, `exit_code`.
-Resultado: `total_count = "N/A"` e `items_returned = 0`.
+### A2 — Separar app.py (fase 1)
+
+**Problema:** app.py tinha 5506 linhas — monolito com auth, upload, export, admin, chat tudo misturado. Dificil de navegar, testar, e modificar.
+
+**Solucao implementada — fase 1 (modular pattern):**
+
+1. **`route_deps.py`** (320 linhas): Modulo com dependencias partilhadas — `security` (HTTPBearer), rate limiter, auth helpers (`_auth_payload_from_request`, `_is_admin_user`, `_conversation_belongs_to_user`), origin helpers, `log_audit`.
+
+2. **`routes_auth.py`** (357 linhas): Auth + Speech endpoints extraidos para APIRouter. Inclui login, logout, CRUD users, change password, force logout, speech prompt normalize, speech token, TTS synthesize.
+
+3. **app.py** atualizado: Importa de route_deps.py e inclui o auth router via `app.include_router(_auth_router)`.
+
+**Resultado:** app.py reduzido de 5506 → 4975 linhas (-531). Pattern de APIRouter estabelecido para futuras extracoes (upload ~2000 linhas, export ~200 linhas, admin ~700 linhas).
+
+**Ficheiros:** `route_deps.py` (novo), `routes_auth.py` (novo), `app.py` (refactored), `tests/test_allowed_origins.py` (updated)
+
+------------------------------------------------------------------------
+
+**Diagnostico:** Em `agent.py:1948-1952`, o `result_summary` tenta extrair `total_count` de chaves como `total_count`, `total_results`, `total_found`. Tools como `run_code` nao retornam nenhuma dessas chaves — o resultado e um dict com `stdout`, `stderr`, `exit_code`. Resultado: `total_count = "N/A"` e `items_returned = 0`.
 
 Depois em `agent.py:2337-2338`:
-```python
+
+``` python
 count = d["result_summary"].get("total_count", d["result_summary"].get("items_returned", ""))
 yield _sse({"type": "tool_result", "tool": d["tool"], "text": f"{d['tool']}: {count} resultados"})
 ```
 
-**Solucao:**
-1. Criar mapeamento de tool -> label personalizado para o SSE
-2. Para tools sem contagem (run_code, generate_presentation, generate_file, etc.):
-   - tool_start: "Run Code..." (sem "resultados")
-   - tool_result: "Run Code (concluido)" — sem mostrar contagem
-3. So mostrar "X resultados" quando `total_count` e um numero real (int > 0)
-4. Fallback: se count == "N/A" ou 0, mostrar apenas "concluido"
+**Solucao:** 1. Criar mapeamento de tool -\> label personalizado para o SSE 2. Para tools sem contagem (run_code, generate_presentation, generate_file, etc.): - tool_start: "Run Code..." (sem "resultados") - tool_result: "Run Code (concluido)" — sem mostrar contagem 3. So mostrar "X resultados" quando `total_count` e um numero real (int \> 0) 4. Fallback: se count == "N/A" ou 0, mostrar apenas "concluido"
 
-```python
+``` python
 # Proposta:
 if isinstance(count, int) and count > 0:
     text = f"{d['tool']}: {count} resultados"
@@ -80,103 +110,49 @@ else:
     text = f"{d['tool']}"  # sem contagem
 ```
 
----
+------------------------------------------------------------------------
 
-### B2 — Markdown (#, **, etc) aparece em raw
+### B2 — Markdown (#, \*\*, etc) aparece em raw
 
-**Diagnostico:**
-O `markdown.js` so processa `**bold**`, links `[text](url)` e tabelas.
-Faltam: headings (#, ##, ###), listas (- , * , 1.), italic (*text*),
-code blocks (```), inline code (`code`), horizontal rules (---).
+**Diagnostico:** O `markdown.js` so processa `**bold**`, links `[text](url)` e tabelas. Faltam: headings (#, ##, \###), listas (- , \* , 1.), italic (*text*), code blocks (\`\``), inline code (`code\`), horizontal rules (---).
 
-O `escapeHtml()` na linha 17 escapa `<` e `>` ANTES de processar markdown,
-mas os simbolos markdown nao sao HTML — sao texto. O problema e que o parser
-e demasiado simples e nao cobre a sintaxe completa.
+O `escapeHtml()` na linha 17 escapa `<` e `>` ANTES de processar markdown, mas os simbolos markdown nao sao HTML — sao texto. O problema e que o parser e demasiado simples e nao cobre a sintaxe completa.
 
-**Solucao:**
-Reescrever `renderInlineMarkdown()` e `renderMarkdown()` para suportar:
-- `# Heading 1` → `<h3>`, `## Heading 2` → `<h4>`, `### Heading 3` → `<h5>`
-  (usar h3-h5 para nao conflitar com o layout da pagina)
-- `- item` e `* item` → `<ul><li>` agrupadas
-- `1. item` → `<ol><li>` agrupadas
-- `` `code` `` → `<code>`
-- `*italic*` → `<em>`
-- ` ``` ` code blocks → `<pre><code>`
-- `---` → `<hr>`
-- Manter **bold**, links, tabelas como estao
+**Solucao:** Reescrever `renderInlineMarkdown()` e `renderMarkdown()` para suportar: - `# Heading 1` → `<h3>`, `## Heading 2` → `<h4>`, `### Heading 3` → `<h5>` (usar h3-h5 para nao conflitar com o layout da pagina) - `- item` e `* item` → `<ul><li>` agrupadas - `1. item` → `<ol><li>` agrupadas - `` `code` `` → `<code>` - `*italic*` → `<em>` - ```` ``` ```` code blocks → `<pre><code>` - `---` → `<hr>` - Manter **bold**, links, tabelas como estao
 
-Nao usar bibliotecas externas (marked.js etc.) para manter o bundle leve
-e o controlo de sanitizacao. Expandir o parser existente.
+Nao usar bibliotecas externas (marked.js etc.) para manter o bundle leve e o controlo de sanitizacao. Expandir o parser existente.
 
----
+------------------------------------------------------------------------
 
 ### B3 — Clarification nao bloqueia input (estilo AskUserQuestion)
 
-**Diagnostico:**
-Atualmente o `QuickReplyBar` renderiza pills que auto-enviam via `onSelect(opt)`.
-O input fica livre para o utilizador escrever ao mesmo tempo.
-O comportamento ideal (estilo Claude) e:
-- Input fica bloqueado/disabled com placeholder "Seleciona uma opcao..."
-- Pills aparecem acima ou dentro do input
-- Clicar preenche o input e envia automaticamente
+**Diagnostico:** Atualmente o `QuickReplyBar` renderiza pills que auto-enviam via `onSelect(opt)`. O input fica livre para o utilizador escrever ao mesmo tempo. O comportamento ideal (estilo Claude) e: - Input fica bloqueado/disabled com placeholder "Seleciona uma opcao..." - Pills aparecem acima ou dentro do input - Clicar preenche o input e envia automaticamente
 
-**Solucao:**
-1. Quando o agente envia clarification options, guardar em state `pendingQuickReplies`
-2. O input textarea fica `disabled` com placeholder "Escolhe uma opcao ou escreve..."
-3. As pills aparecem numa barra fixa acima do input (nao no bubble da mensagem)
-4. Clicar numa pill: preenche o input + envia
-5. O utilizador pode tambem clicar no input para desbloquear e escrever algo custom
-6. Apos enviar, limpar `pendingQuickReplies` e restaurar input normal
+**Solucao:** 1. Quando o agente envia clarification options, guardar em state `pendingQuickReplies` 2. O input textarea fica `disabled` com placeholder "Escolhe uma opcao ou escreve..." 3. As pills aparecem numa barra fixa acima do input (nao no bubble da mensagem) 4. Clicar numa pill: preenche o input + envia 5. O utilizador pode tambem clicar no input para desbloquear e escrever algo custom 6. Apos enviar, limpar `pendingQuickReplies` e restaurar input normal
 
-Componentes a modificar:
-- `App.jsx`: novo state `pendingQuickReplies`, logica de disable/enable
-- `QuickReplyBar.jsx`: mover para junto do input, estilo diferente
-- Remover as pills de dentro do `MessageBubble`
+Componentes a modificar: - `App.jsx`: novo state `pendingQuickReplies`, logica de disable/enable - `QuickReplyBar.jsx`: mover para junto do input, estilo diferente - Remover as pills de dentro do `MessageBubble`
 
----
+------------------------------------------------------------------------
 
 ### B4 — PII Hardening mascara numeros do utilizador
 
-**Diagnostico:**
-Em `pii_shield.py:29`, a categoria `"Quantity"` esta na lista `PII_CATEGORIES`.
-O Azure AI Language deteta numeros como "85", "12", "3.2%", "28", "6" como
-entidades `Quantity` com confidence >= 0.8 (threshold na linha 60).
+**Diagnostico:** Em `pii_shield.py:29`, a categoria `"Quantity"` esta na lista `PII_CATEGORIES`. O Azure AI Language deteta numeros como "85", "12", "3.2%", "28", "6" como entidades `Quantity` com confidence \>= 0.8 (threshold na linha 60).
 
-Resultado: o prompt que chega ao LLM tem `[QUANTITY_1]`, `[QUANTITY_2]` em vez
-dos numeros reais. O LLM ve placeholders e pede ao utilizador para "preencher".
+Resultado: o prompt que chega ao LLM tem `[QUANTITY_1]`, `[QUANTITY_2]` em vez dos numeros reais. O LLM ve placeholders e pede ao utilizador para "preencher".
 
-**Solucao:**
-1. **Remover `"Quantity"` de `PII_CATEGORIES`** — numeros nao sao PII.
-   Quantidades como "85 user stories" ou "3.2%" sao dados de negocio, nao dados pessoais.
-2. **Remover `"DateTime"` tambem** — datas como "Sprint 14" ou "Abril" nao sao PII.
-   Datas de nascimento sao apanhadas pela categoria `Person` indiretamente.
-3. **Remover `"URL"` da lista** — URLs de projetos internos nao sao PII.
-   Manter apenas nas `_REGEX_PATTERNS` para URLs com dados sensíveis especificos.
-4. Manter todas as categorias financeiras e de identidade (NIF, IBAN, CC, NISS, etc.)
+**Solucao:** 1. **Remover `"Quantity"` de `PII_CATEGORIES`** — numeros nao sao PII. Quantidades como "85 user stories" ou "3.2%" sao dados de negocio, nao dados pessoais. 2. **Remover `"DateTime"` tambem** — datas como "Sprint 14" ou "Abril" nao sao PII. Datas de nascimento sao apanhadas pela categoria `Person` indiretamente. 3. **Remover `"URL"` da lista** — URLs de projetos internos nao sao PII. Manter apenas nas `_REGEX_PATTERNS` para URLs com dados sensíveis especificos. 4. Manter todas as categorias financeiras e de identidade (NIF, IBAN, CC, NISS, etc.)
 
-Impacto: zero risco de seguranca — `Quantity`, `DateTime`, `URL` nao sao dados pessoais.
-As categorias realmente sensíveis (Person, PhoneNumber, Email, financeiras) ficam intactas.
+Impacto: zero risco de seguranca — `Quantity`, `DateTime`, `URL` nao sao dados pessoais. As categorias realmente sensíveis (Person, PhoneNumber, Email, financeiras) ficam intactas.
 
----
+------------------------------------------------------------------------
 
 ### B5 — PPTX estetica fraca / bullets sem formatacao
 
-**Diagnostico:**
-Analisei o PPTX "Boas Praticas de Code Review" gerado:
-- 19 slides, branding OK (cor, fonte, badge, KPIs) ✓
-- MAS: bullets sao texto plain sem caractere de bullet (sem •)
-- Sem XML `buChar` / `buFont` no paragrafo
-- O `p.level = 0` define indentacao mas o python-pptx nao adiciona
-  bullet character automaticamente sem layout master
-- Usamos layout 6 (Blank) → nao ha bullet defaults herdados
-- Espacamento entre bullets e 6pt — pouco
-- Sem contraste visual entre titulo e corpo (mesma escala)
+**Diagnostico:** Analisei o PPTX "Boas Praticas de Code Review" gerado: - 19 slides, branding OK (cor, fonte, badge, KPIs) ✓ - MAS: bullets sao texto plain sem caractere de bullet (sem •) - Sem XML `buChar` / `buFont` no paragrafo - O `p.level = 0` define indentacao mas o python-pptx nao adiciona bullet character automaticamente sem layout master - Usamos layout 6 (Blank) → nao ha bullet defaults herdados - Espacamento entre bullets e 6pt — pouco - Sem contraste visual entre titulo e corpo (mesma escala)
 
-**Solucao:**
-1. **Adicionar bullet character via XML** — injetar `buChar` e `buFont` no
-   paragrafo XML para forcar o bullet character "•" (nível 0) e "–" (nível 1)
+**Solucao:** 1. **Adicionar bullet character via XML** — injetar `buChar` e `buFont` no paragrafo XML para forcar o bullet character "•" (nível 0) e "–" (nível 1)
 
-```python
+``` python
 from pptx.oxml.ns import qn
 from lxml import etree
 
@@ -211,114 +187,83 @@ def _add_bullet_formatting(paragraph, level=0):
     pPr.set('marL', str(margin))
 ```
 
-2. **Melhorar espacamento** — `space_after = Pt(10)` em vez de 6
-3. **Adicionar `space_before`** no primeiro bullet para dar respiro ao titulo
-4. **Titulo de conteudo maior** — usar 28pt bold em vez de 24pt
-5. **Subtitulo nos content slides** — suportar campo `subtitle` opcional
-6. **Line spacing** — 1.2x para melhor legibilidade
+2.  **Melhorar espacamento** — `space_after = Pt(10)` em vez de 6
+3.  **Adicionar `space_before`** no primeiro bullet para dar respiro ao titulo
+4.  **Titulo de conteudo maior** — usar 28pt bold em vez de 24pt
+5.  **Subtitulo nos content slides** — suportar campo `subtitle` opcional
+6.  **Line spacing** — 1.2x para melhor legibilidade
 
----
+------------------------------------------------------------------------
 
 ### B6 — Excel Dashboard sheet sem freeze/autofilter
 
-**Diagnostico:**
-No ficheiro "Dashboard Equipas", a sheet "Dashboard" nao tem freeze panes nem
-auto-filter. As outras sheets (Dados por Equipa, Velocity) tem.
-Parece ser um bug no engine onde a sheet de resumo/dashboard e tratada
-diferentemente das data sheets.
+**Diagnostico:** No ficheiro "Dashboard Equipas", a sheet "Dashboard" nao tem freeze panes nem auto-filter. As outras sheets (Dados por Equipa, Velocity) tem. Parece ser um bug no engine onde a sheet de resumo/dashboard e tratada diferentemente das data sheets.
 
-**Solucao:**
-Garantir que `freeze_panes` e `auto_filter` sao aplicados em TODAS as sheets
-que tenham headers, incluindo a sheet de dashboard/resumo.
+**Solucao:** Garantir que `freeze_panes` e `auto_filter` sao aplicados em TODAS as sheets que tenham headers, incluindo a sheet de dashboard/resumo.
 
----
+------------------------------------------------------------------------
 
 ## Fase 3 — Melhorias Arquiteturais (Detalhe)
 
 ### A1 — Persistencia Write-Through
 
-**Problema:** Deploys apagam conversas em memoria. `ConversationStore` e in-memory
-com persist fire-and-forget (timeout 8s + fallback async). Se o persist falha
-e o container reinicia, a conversa perde-se.
+**Problema:** Deploys apagam conversas em memoria. `ConversationStore` e in-memory com persist fire-and-forget (timeout 8s + fallback async). Se o persist falha e o container reinicia, a conversa perde-se.
 
-**Solucao:**
-- Write-through: persistir para Table Storage imediatamente apos cada mensagem
-- Read-through: ao fazer `get()`, se nao esta em memoria, ir buscar ao Table Storage
-- Cache LRU em memoria para performance (atual), mas o Table Storage e source of truth
-- Estimativa: ~2 horas de trabalho
+**Solucao:** - Write-through: persistir para Table Storage imediatamente apos cada mensagem - Read-through: ao fazer `get()`, se nao esta em memoria, ir buscar ao Table Storage - Cache LRU em memoria para performance (atual), mas o Table Storage e source of truth - Estimativa: \~2 horas de trabalho
 
 ### A2 — Separar app.py (5400+ linhas)
 
 **Problema:** Monolito dificil de manter. Qualquer mudanca e arriscada.
 
-**Solucao:** Separar em modulos:
-- `routes_chat.py` — SSE streaming, agent_chat, agent_chat_stream
-- `routes_upload.py` — upload, processing, artifacts
-- `routes_export.py` — download, export, file generation
-- `routes_admin.py` — debug, health, config endpoints
-- `routes_auth.py` — SSO, tokens, session management
-- `app.py` — apenas startup, middleware, imports dos routers
-- Estimativa: ~4 horas de trabalho (refactoring puro, zero mudancas funcionais)
+**Solucao:** Separar em modulos: - `routes_chat.py` — SSE streaming, agent_chat, agent_chat_stream - `routes_upload.py` — upload, processing, artifacts - `routes_export.py` — download, export, file generation - `routes_admin.py` — debug, health, config endpoints - `routes_auth.py` — SSO, tokens, session management - `app.py` — apenas startup, middleware, imports dos routers - Estimativa: \~4 horas de trabalho (refactoring puro, zero mudancas funcionais)
 
 ### A3 — Frontend CDN / Azure Front Door
 
 **Problema:** Assets JS/CSS servidos pelo Web App. Latencia desnecessaria.
 
-**Solucao:** Azure Front Door ou CDN para assets estaticos. Reduz carga no server.
-- Estimativa: ~1 hora (config Azure + build pipeline adjustment)
+**Solucao:** Azure Front Door ou CDN para assets estaticos. Reduz carga no server. - Estimativa: \~1 hora (config Azure + build pipeline adjustment)
 
 ### A4 — Resumo automatico pos-upload
 
 **Problema:** Ficheiro processado, utilizador nao sabe o que perguntar.
 
-**Solucao:** Apos upload concluido, gerar automaticamente:
-- Schema (colunas, tipos, nulls)
-- Estatisticas basicas (count, media, min, max)
-- Top insights (outliers, padroes)
-- Estimativa: ~3 horas
+**Solucao:** Apos upload concluido, gerar automaticamente: - Schema (colunas, tipos, nulls) - Estatisticas basicas (count, media, min, max) - Top insights (outliers, padroes) - Estimativa: \~3 horas
 
 ### A5 — Multi-file analysis
 
 **Problema:** Pipeline processa ficheiro a ficheiro. Sem cross-file joins.
 
-**Solucao:** DuckDB suporta multi-table queries nativamente. Montar os artifacts
-de multiplos ficheiros como tabelas e permitir JOINs.
-- Estimativa: ~2 horas
+**Solucao:** DuckDB suporta multi-table queries nativamente. Montar os artifacts de multiplos ficheiros como tabelas e permitir JOINs. - Estimativa: \~2 horas
 
 ### A6 — Dashboards persistentes
 
 **Problema:** Graficos Plotly morrem com a conversa.
 
-**Solucao:** "Fixar" grafico como dashboard reutilizavel em Azure Blob + URL.
-- Estimativa: ~4 horas
+**Solucao:** "Fixar" grafico como dashboard reutilizavel em Azure Blob + URL. - Estimativa: \~4 horas
 
 ### A7 — Autoscale P1v3
 
 **Problema:** Instancia unica, sem escala.
 
-**Solucao:** Config autoscale 1-3 instancias baseado em CPU/Memory.
-- Estimativa: ~30 minutos (config Azure)
-- Requer: A1 (persistencia write-through) primeiro para nao perder conversas
+**Solucao:** Config autoscale 1-3 instancias baseado em CPU/Memory. - Estimativa: \~30 minutos (config Azure) - Requer: A1 (persistencia write-through) primeiro para nao perder conversas
 
 ### A8 — Streaming progresso upload
 
 **Problema:** Polling para saber estado do upload.
 
-**Solucao:** SSE para feedback real-time ("a ler XLSX... 50%... embeddings... 80%")
-- Estimativa: ~3 horas
+**Solucao:** SSE para feedback real-time ("a ler XLSX... 50%... embeddings... 80%") - Estimativa: \~3 horas
 
 ### A9 — Versionamento de conhecimento
 
 **Problema:** Upload de ficheiro atualizado substitui o anterior.
 
-**Solucao:** Manter versoes anteriores em Blob Storage com diff.
-- Estimativa: ~4 horas
+**Solucao:** Manter versoes anteriores em Blob Storage com diff. - Estimativa: \~4 horas
 
----
+------------------------------------------------------------------------
 
 ## Ordem de Execucao Recomendada
 
-```
+```         
 Fase 2 (Bugfixes — impacto imediato):
   B4 PII Hardening numeros    ← 15 min, fix critico
   B2 Markdown rendering        ← 1-2 horas
@@ -341,27 +286,28 @@ Fase 3 (Arquitectura):
   >>> DEPLOY <<<
 ```
 
----
+------------------------------------------------------------------------
 
 ## Deploy
 
-**Ultimo deploy:** 2026-03-15 10:22 UTC
-**Estado:** LIVE em https://dbdeai.pt
+**Ultimo deploy:** 2026-03-15 10:22 UTC **Estado:** LIVE em <https://dbdeai.pt>
 
-```bash
+``` bash
 az webapp up --name millennium-ai-assistant --resource-group rg-MS_Access_Chabot --runtime "PYTHON:3.12"
 ```
 
----
+------------------------------------------------------------------------
 
 ## Pilar 0 — Seguranca (VNet/Private Endpoints/SSO)
+
 > BLOQUEADO pela DSI — aguarda aprovacao. Nao tocar.
 
----
+------------------------------------------------------------------------
 
 ## Principios
-1. **Seguranca e #1** — dados confidenciais, zero compromissos
-2. **Opus para qualidade** — operacoes criticas usam Claude Opus 4.6
-3. **Testes obrigatorios** — cada feature tem test suite completa
-4. **Deploy so apos validacao** — todos os testes devem passar
-5. **Bugfixes antes de features** — nunca construir sobre base instavel
+
+1.  **Seguranca e #1** — dados confidenciais, zero compromissos
+2.  **Opus para qualidade** — operacoes criticas usam Claude Opus 4.6
+3.  **Testes obrigatorios** — cada feature tem test suite completa
+4.  **Deploy so apos validacao** — todos os testes devem passar
+5.  **Bugfixes antes de features** — nunca construir sobre base instavel
