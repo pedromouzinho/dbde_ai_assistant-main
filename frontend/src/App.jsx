@@ -261,9 +261,13 @@ function App() {
                                 if (Array.isArray(result.all_files)) {
                                     nextUploadedFiles = result.all_files;
                                 }
+                                // A4: Use auto_summary from backend if available
+                                const summaryText = result.auto_summary
+                                    ? String(result.auto_summary)
+                                    : `Anexo processado com sucesso: **${result.filename || job.filename || "ficheiro"}**${rows > 0 ? ` (${rows.toLocaleString("pt-PT")} linhas` : ""}${columns > 0 ? ` · ${columns} colunas` : ""}).`;
                                 newMessages.push({
                                     role: "assistant",
-                                    content: `Anexo processado com sucesso: **${result.filename || job.filename || "ficheiro"}**${rows > 0 ? ` (${rows.toLocaleString("pt-PT")} linhas` : ""}${columns > 0 ? ` · ${columns} colunas` : ""}).`,
+                                    content: summaryText,
                                     tools_used: ["upload_file"],
                                 });
                                 jobStateChanged = true;

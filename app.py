@@ -2454,6 +2454,77 @@ def _build_upload_blob_paths(conv_id: str, job_id: str, filename: str) -> dict:
     }
 
 
+def _build_upload_auto_summary(store_entry: dict, filename: str) -> str:
+    """Build a smart auto-summary from upload metadata (no LLM, instant)."""
+    parts = []
+    row_count = int(store_entry.get("row_count", 0) or 0)
+    col_names = store_entry.get("col_names", [])
+    if not isinstance(col_names, list):
+        col_names = []
+    is_tabular = is_tabular_filename(filename)
+
+    # Header
+    if is_tabular and row_count > 0:
+        parts.append(f"📊 **{filename}** — {row_count:,} linhas × {len(col_names)} colunas")
+    elif is_tabular:
+        parts.append(f"📊 **{filename}** carregado")
+    else:
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        icon = {"pdf": "📄", "pptx": "📑", "docx": "📝", "txt": "📃"}.get(ext, "📎")
+        parts.append(f"{icon} **{filename}** carregado")
+
+    # Columns
+    if col_names:
+        if len(col_names) <= 8:
+            parts.append(f"\n**Colunas:** {', '.join(col_names)}")
+        else:
+            parts.append(f"\n**Colunas ({len(col_names)}):** {', '.join(col_names[:6])}, …")
+
+    # Statistics highlights
+    full_stats = store_entry.get("full_col_stats")
+    if isinstance(full_stats, list) and full_stats:
+        numeric_cols = [s for s in full_stats if s.get("type") == "numeric"]
+        if numeric_cols:
+            highlights = []
+            for s in numeric_cols[:3]:
+                name = str(s.get("name", ""))
+                mn, mx = s.get("min"), s.get("max")
+                avg = s.get("mean")
+                if mn is not None and mx is not None:
+                    avg_str = f", avg {avg}" if avg is not None else ""
+                    highlights.append(f"`{name}`: {mn}–{mx}{avg_str}")
+            if highlights:
+                parts.append(f"\n**Métricas:** {' · '.join(highlights)}")
+
+    # Date-like columns
+    if isinstance(full_stats, list):
+        for s in full_stats:
+            if s.get("type") == "text" and s.get("first") and s.get("last"):
+                name = str(s.get("name", ""))
+                if any(kw in name.lower() for kw in ("data", "date", "created", "updated", "timestamp")):
+                    parts.append(f"\n**Período:** `{name}` de {s['first']} a {s['last']}")
+                    break
+
+    # Polymorphic
+    poly = store_entry.get("polymorphic_schema")
+    if isinstance(poly, dict) and poly.get("is_polymorphic"):
+        pivot = poly.get("pivot_column", "")
+        count = poly.get("pivot_values_count", 0)
+        parts.append(f"\n⚠️ Dataset polimórfico detetado (pivô: `{pivot}`, {count} perfis)")
+
+    # Document with chunks
+    if store_entry.get("has_chunks") or (isinstance(store_entry.get("chunks"), list) and store_entry.get("chunks")):
+        parts.append(f"\n🔍 Documento indexado com pesquisa semântica disponível")
+
+    # Call to action
+    if is_tabular:
+        parts.append("\n\nPodes perguntar-me sobre análises, gráficos, filtros, ou resumos deste ficheiro.")
+    else:
+        parts.append("\n\nPodes perguntar-me sobre o conteúdo deste ficheiro.")
+
+    return "".join(parts)
+
+
 async def _process_upload_job(job: dict, *, inline_content: bytes | None = None) -> None:
     conv_id = str(job.get("conversation_id", "") or "")
     user_sub = str(job.get("user_sub", "") or "")
@@ -2627,6 +2698,14 @@ async def _process_upload_job(job: dict, *, inline_content: bytes | None = None)
     if artifact_format:
         result_payload["tabular_artifact_format"] = artifact_format
     result_payload["index_row_key"] = upload_index_entity["RowKey"]
+
+    # A4: Auto-summary — instant metadata-based summary
+    try:
+        auto_summary = _build_upload_auto_summary(store_entry, filename)
+        result_payload["auto_summary"] = auto_summary
+    except Exception as e:
+        logger.warning("[Upload] auto-summary generation failed for %s: %s", filename, e)
+        result_payload["auto_summary"] = f"📎 **{filename}** carregado com sucesso."
 
     job["status"] = "completed"
     job["result"] = result_payload
