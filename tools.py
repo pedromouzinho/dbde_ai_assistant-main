@@ -2707,7 +2707,7 @@ _BUILTIN_TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "generate_presentation",
-            "description": "Gera apresentação PowerPoint (PPTX) branded Millennium BCP / Digital Empresas. USA SEMPRE que o utilizador pedir uma apresentação, PowerPoint, slides ou PPTX. Gera slides profissionais com branding corporativo (Montserrat, #D1005D, badges, KPIs, tabelas).",
+            "description": "Gera apresentação PowerPoint (PPTX) branded Millennium BCP / Digital Empresas. USA SEMPRE que o utilizador pedir apresentação, PowerPoint, slides ou PPTX. Dois modos: (1) passa 'content' com texto livre e o Claude Opus 4.6 planeia os slides profissionalmente, ou (2) passa 'slides' com specs pré-estruturados. PREFERIR modo 'content' para máxima qualidade — o Opus decide a melhor estrutura, tipos de slide, e narrativa.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -2719,58 +2719,57 @@ _BUILTIN_TOOL_DEFINITIONS = [
                         "type": "string",
                         "description": "Subtítulo opcional para o slide de capa."
                     },
+                    "content": {
+                        "type": "string",
+                        "description": "MODO PREFERIDO: Texto livre com o conteúdo/tema da apresentação. O Claude Opus 4.6 planeia automaticamente a estrutura, tipos de slide, narrativa e layout. Inclui toda a informação relevante: dados, KPIs, comparações, contexto."
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "Contexto adicional para o planeamento (ex: histórico da conversa, dados analisados, público-alvo)."
+                    },
                     "badge_text": {
                         "type": "string",
                         "description": "Texto do badge em cada slide. Default: 'DIGITAL EMPRESAS'. Pode ser nome da equipa/projeto."
                     },
                     "slides": {
                         "type": "array",
-                        "description": "Lista de specs de slides. Cada slide é um objeto com 'type' e conteúdo específico.",
+                        "description": "MODO ALTERNATIVO: Lista de specs de slides pré-estruturados. Usar só quando já tens a estrutura definida.",
                         "items": {
                             "type": "object",
                             "properties": {
                                 "type": {
                                     "type": "string",
                                     "enum": ["title", "section", "content", "two_column", "kpi", "table", "agenda", "closing"],
-                                    "description": "Tipo de slide: title (capa), section (divisor 01/02...), content (bullets), two_column, kpi (métricas grandes), table (tabela dados), agenda (índice), closing (obrigado)."
+                                    "description": "Tipo de slide."
                                 },
-                                "title": {"type": "string", "description": "Título do slide."},
-                                "subtitle": {"type": "string", "description": "Subtítulo (para title/closing)."},
-                                "bullets": {
-                                    "type": "array",
-                                    "items": {"type": "string"},
-                                    "description": "Lista de bullet points (para content). Prefixar com '- ' para sub-bullets."
-                                },
-                                "left": {"type": "array", "items": {"type": "string"}, "description": "Coluna esquerda (para two_column)."},
-                                "right": {"type": "array", "items": {"type": "string"}, "description": "Coluna direita (para two_column)."},
+                                "title": {"type": "string"},
+                                "subtitle": {"type": "string"},
+                                "bullets": {"type": "array", "items": {"type": "string"}},
+                                "left": {"type": "array", "items": {"type": "string"}},
+                                "right": {"type": "array", "items": {"type": "string"}},
                                 "kpis": {
                                     "type": "array",
-                                    "description": "Lista de KPIs (para kpi). Max 4.",
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "value": {"type": "string", "description": "Valor grande (ex: '125', '98%', '€1.2M')."},
-                                            "label": {"type": "string", "description": "Label curta (ex: 'User Stories')."},
-                                            "description": {"type": "string", "description": "Descrição adicional opcional."}
+                                            "value": {"type": "string"},
+                                            "label": {"type": "string"},
+                                            "description": {"type": "string"}
                                         },
                                         "required": ["value", "label"]
                                     }
                                 },
-                                "headers": {"type": "array", "items": {"type": "string"}, "description": "Cabeçalhos da tabela (para table)."},
-                                "rows": {
-                                    "type": "array",
-                                    "description": "Linhas da tabela (para table). Max 15 por slide.",
-                                    "items": {"type": "array", "items": {"type": "string"}}
-                                },
-                                "items": {"type": "array", "items": {"type": "string"}, "description": "Items da agenda (para agenda). Max 12."},
-                                "section_number": {"type": "integer", "description": "Número da secção (para section). Auto-incrementado se omitido."},
-                                "text": {"type": "string", "description": "Texto principal (para closing)."}
+                                "headers": {"type": "array", "items": {"type": "string"}},
+                                "rows": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
+                                "items": {"type": "array", "items": {"type": "string"}},
+                                "section_number": {"type": "integer"},
+                                "text": {"type": "string"}
                             },
                             "required": ["type"]
                         }
                     }
                 },
-                "required": ["title", "slides"]
+                "required": ["title"]
             }
         }
     },
@@ -2957,6 +2956,8 @@ def _tool_dispatch() -> dict:
             arguments.get("slides"),
             arguments.get("subtitle", ""),
             arguments.get("badge_text", "DIGITAL EMPRESAS"),
+            arguments.get("content", ""),
+            arguments.get("context", ""),
             arguments.get("conv_id", ""),
             arguments.get("user_sub", ""),
         ),
@@ -3458,23 +3459,17 @@ PRINCÍPIO: Age como o Claude — pergunta raramente, só quando genuinamente pr
 
 GERAÇÃO DE APRESENTAÇÕES POWERPOINT (generate_presentation):
 Quando o utilizador pedir uma apresentação, PowerPoint, slides ou PPTX, usa a ferramenta generate_presentation.
-Tipos de slide disponíveis:
-- title: Capa com título grande e subtítulo
-- section: Divisor de secção com número grande (01, 02...) — auto-numerado
-- content: Slide com título e bullet points
-- two_column: Duas colunas de conteúdo lado a lado
-- kpi: Métricas/números grandes (max 4 por slide) — usar para destacar KPIs, totais, percentagens
-- table: Tabela de dados com headers e rows (max 15 rows por slide)
-- agenda: Slide de índice com items numerados
-- closing: Slide final "Obrigado"
-Regras:
-- Cria 5-15 slides por apresentação (nem muito curta nem demasiado longa)
-- Usa section dividers para separar temas (gera números 01, 02... automáticos)
-- Máximo 6-7 bullets por content slide — sê conciso
-- Para dados quantitativos, prefere kpi slides (impacto visual) ou table slides
-- badge_text por defeito é "DIGITAL EMPRESAS" — ajustar se for outro projeto/equipa
-- O título e subtítulo da capa devem ser informativos e profissionais
-- Todos os slides seguem branding Millennium BCP (Montserrat, #D1005D, widescreen 16:9)
+MODO PREFERIDO — content (Opus planeia):
+- Passa o parâmetro 'content' com TODA a informação relevante em texto livre
+- O Claude Opus 4.6 planeia automaticamente a estrutura, tipos de slide, narrativa e layout
+- Inclui no content: dados, KPIs, comparações, contexto, público-alvo, objetivo
+- Quanto mais informação passares no content, melhor será o resultado
+- Exemplo: content="Relatório trimestral Q1 2025 da equipa ADMChannels. 125 user stories entregues, 98% testes OK. Comparação com Q4 2024: +15% velocidade. Principais marcos: migração concluída, novo dashboard lançado."
+MODO ALTERNATIVO — slides (pré-estruturados):
+- Passa 'slides' array com specs quando já tens a estrutura definida
+- Tipos: title, section, content, two_column, kpi, table, agenda, closing
+REGRA: Prefere SEMPRE o modo content. Só usa slides pré-estruturados se o utilizador pediu uma estrutura específica.
+O engine aplica validação automática (split de slides overloaded, truncagem, branding) em AMBOS os modos.
 
 NOMES NO AZURE DEVOPS:
 - Os nomes no DevOps são nomes completos (ex: "Jorge Eduardo Rodrigues", não "Jorge Rodrigues")

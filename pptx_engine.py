@@ -911,3 +911,151 @@ def generate_presentation_from_outline(
         subtitle=subtitle,
         badge_text=badge_text,
     )
+
+
+# ---------------------------------------------------------------------------
+# Opus-powered slide planner — AI-driven slide structure generation
+# ---------------------------------------------------------------------------
+# When the conversation LLM (any tier) calls generate_presentation, it can
+# pass a `content` string instead of pre-structured slides. The planner then
+# uses Claude Opus 4.6 (pro tier) to produce professional slide specs.
+# ---------------------------------------------------------------------------
+
+_SLIDE_PLANNER_PROMPT = """Tu és um designer de apresentações profissional especializado em apresentações corporativas do Millennium BCP / Digital Empresas.
+
+A tua tarefa é transformar o conteúdo fornecido numa estrutura de slides JSON profissional e visualmente impactante.
+
+TIPOS DE SLIDE DISPONÍVEIS:
+- "title": Capa. Campos: title, subtitle
+- "section": Divisor de secção com número grande. Campos: title
+- "content": Slide com bullets. Campos: title, bullets (array de strings, max 6 por slide)
+- "two_column": Duas colunas. Campos: title, left (array), right (array)
+- "kpi": Métricas grandes visuais (max 4). Campos: title, kpis (array de {value, label, description?})
+- "table": Tabela de dados. Campos: title, headers (array), rows (array de arrays)
+- "agenda": Índice. Campos: items (array de strings)
+- "closing": Slide final. Campos: text, subtitle
+
+REGRAS DE OURO PARA APRESENTAÇÕES PROFISSIONAIS:
+1. MENOS É MAIS: máximo 6 bullets por slide, cada bullet curto e impactante (< 100 chars)
+2. USE KPIs: sempre que houver números/métricas, use slide tipo "kpi" — impacto visual máximo
+3. SECTION DIVIDERS: separe temas com slides "section" para narrativa clara
+4. FLOW NARRATIVO: Title → Agenda → Section 1 → Content → Section 2 → Content → Closing
+5. DUAS COLUNAS: use para comparações (antes/depois, prós/contras, problema/solução)
+6. TABELAS: só para dados estruturados, max 10 linhas
+7. TÍTULOS: curtos, assertivos, sem pontos finais
+8. LINGUAGEM: profissional, concisa, em português de Portugal
+9. AGENDA: sempre após a capa se houver 3+ secções
+10. 8-15 SLIDES: apresentações focadas, sem padding
+
+Responde APENAS com um JSON array de slide specs. Sem explicações, sem markdown, só o JSON.
+Exemplo:
+[
+  {"type": "section", "title": "Contexto"},
+  {"type": "content", "title": "Situação Atual", "bullets": ["Ponto 1", "Ponto 2"]},
+  {"type": "kpi", "title": "Resultados", "kpis": [{"value": "98%", "label": "Uptime"}]}
+]"""
+
+
+async def plan_slides_with_opus(
+    content: str,
+    title: str = "",
+    context: str = "",
+    *,
+    tier: str = "pro",
+) -> List[Dict[str, Any]]:
+    """Use Claude Opus (pro tier) to plan professional slide structure.
+
+    Args:
+        content: Free-text content/topic for the presentation
+        title: Optional title hint
+        context: Optional context (conversation history, data, etc.)
+        tier: LLM tier to use (default: "pro" = Opus)
+
+    Returns:
+        List of slide spec dicts ready for generate_presentation()
+    """
+    import json as _json
+    from llm_provider import llm_simple
+
+    user_prompt_parts = []
+    if title:
+        user_prompt_parts.append(f"TÍTULO DA APRESENTAÇÃO: {title}")
+    if context:
+        user_prompt_parts.append(f"CONTEXTO ADICIONAL:\n{context}")
+    user_prompt_parts.append(f"CONTEÚDO PARA A APRESENTAÇÃO:\n{content}")
+
+    user_prompt = "\n\n".join(user_prompt_parts)
+    full_prompt = f"{_SLIDE_PLANNER_PROMPT}\n\n{user_prompt}"
+
+    try:
+        raw = await llm_simple(full_prompt, tier=tier, max_tokens=4000)
+
+        # Extract JSON from response (handle markdown code blocks)
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            # Remove ```json ... ``` wrapper
+            lines = cleaned.split("\n")
+            lines = [l for l in lines if not l.strip().startswith("```")]
+            cleaned = "\n".join(lines).strip()
+
+        # Find JSON array boundaries
+        start = cleaned.find("[")
+        end = cleaned.rfind("]")
+        if start == -1 or end == -1:
+            logger.warning("[PptxPlanner] No JSON array in Opus response, falling back")
+            return _fallback_slides_from_content(content, title)
+
+        json_str = cleaned[start:end + 1]
+        slides = _json.loads(json_str)
+
+        if not isinstance(slides, list) or len(slides) == 0:
+            logger.warning("[PptxPlanner] Empty slides from Opus, falling back")
+            return _fallback_slides_from_content(content, title)
+
+        # Validate each slide has a type
+        validated = []
+        for s in slides:
+            if isinstance(s, dict) and s.get("type"):
+                validated.append(s)
+        if not validated:
+            return _fallback_slides_from_content(content, title)
+
+        logger.info("[PptxPlanner] Opus generated %d slides for '%s'",
+                    len(validated), (title or content[:50]))
+        return validated
+
+    except Exception as e:
+        logger.warning("[PptxPlanner] Opus planning failed: %s — falling back", e)
+        return _fallback_slides_from_content(content, title)
+
+
+def _fallback_slides_from_content(content: str, title: str = "") -> List[Dict[str, Any]]:
+    """Simple fallback: split content into bullet slides when Opus is unavailable."""
+    lines = [l.strip() for l in content.split("\n") if l.strip()]
+    if not lines:
+        return [{"type": "content", "title": title or "Conteúdo", "bullets": ["(sem conteúdo)"]}]
+
+    slides = []
+    current_bullets = []
+    current_title = title or "Conteúdo"
+
+    for line in lines:
+        if line.startswith("# "):
+            if current_bullets:
+                slides.append({"type": "content", "title": current_title, "bullets": current_bullets})
+                current_bullets = []
+            current_title = line[2:].strip()
+        elif line.startswith("## "):
+            if current_bullets:
+                slides.append({"type": "content", "title": current_title, "bullets": current_bullets})
+                current_bullets = []
+            current_title = line[3:].strip()
+        else:
+            bullet = line.lstrip("- •").strip()
+            if bullet:
+                current_bullets.append(bullet)
+
+    if current_bullets:
+        slides.append({"type": "content", "title": current_title, "bullets": current_bullets})
+
+    return slides if slides else [{"type": "content", "title": title, "bullets": lines[:7]}]

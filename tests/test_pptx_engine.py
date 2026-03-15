@@ -291,6 +291,39 @@ class TestValidationLayer:
         assert len(content) > 5000
 
 
+class TestOpusFallback:
+    """Tests for the Opus planner fallback logic."""
+
+    def test_fallback_from_content_creates_slides(self):
+        """Fallback parser creates slides from simple text."""
+        from pptx_engine import _fallback_slides_from_content
+        content = """# Introdução
+- Ponto 1
+- Ponto 2
+## Detalhes
+- Sub-ponto A
+- Sub-ponto B"""
+        slides = _fallback_slides_from_content(content, "Test")
+        assert len(slides) >= 2
+        assert all(s.get("type") == "content" for s in slides)
+
+    def test_fallback_from_empty_content(self):
+        """Fallback with empty content still produces something."""
+        from pptx_engine import _fallback_slides_from_content
+        slides = _fallback_slides_from_content("", "Título")
+        assert len(slides) >= 1
+
+    def test_fallback_slides_generate_valid_pptx(self):
+        """Fallback slides can be rendered into valid PPTX."""
+        from pptx_engine import _fallback_slides_from_content, generate_presentation
+        slides = _fallback_slides_from_content(
+            "Dados importantes\n- KPI 1: 95%\n- KPI 2: 120\n- Análise completa",
+            "Relatório"
+        )
+        buf = generate_presentation("Relatório", slides)
+        assert buf.getvalue()[:2] == b"PK"
+
+
 class TestToolIntegration:
     """Test tool_generate_presentation integration."""
 
@@ -308,17 +341,18 @@ class TestToolIntegration:
         assert "_file_download" in result
         assert result["_file_download"]["format"] == "pptx"
         assert result["_file_download"]["size_bytes"] > 1000
+        assert result.get("planning_model") == "structured_input"
 
     @pytest.mark.asyncio
-    async def test_tool_rejects_empty_slides(self):
+    async def test_tool_rejects_empty_slides_and_content(self):
         from tools_export import tool_generate_presentation
-        result = await tool_generate_presentation(title="Bad", slides=[])
+        result = await tool_generate_presentation(title="Bad", slides=[], content="")
         assert "error" in result
 
     @pytest.mark.asyncio
-    async def test_tool_rejects_no_slides(self):
+    async def test_tool_rejects_no_input(self):
         from tools_export import tool_generate_presentation
-        result = await tool_generate_presentation(title="Bad", slides=None)
+        result = await tool_generate_presentation(title="Bad", slides=None, content="")
         assert "error" in result
 
     @pytest.mark.asyncio

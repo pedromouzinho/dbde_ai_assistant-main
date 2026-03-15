@@ -404,15 +404,51 @@ async def tool_generate_presentation(
     slides: list = None,
     subtitle: str = "",
     badge_text: str = "DIGITAL EMPRESAS",
+    content: str = "",
+    context: str = "",
     conv_id: str = "",
     user_sub: str = "",
 ):
-    """Gera apresentação PPTX branded Millennium BCP e devolve metadados de download."""
-    if not isinstance(slides, list) or len(slides) == 0:
-        return {"error": "Campo 'slides' deve ser array com pelo menos um slide spec."}
+    """Gera apresentação PPTX branded Millennium BCP e devolve metadados de download.
 
-    if len(slides) > 50:
+    Dois modos:
+    1. Structured: passa 'slides' com array de slide specs pré-estruturados
+    2. AI-planned: passa 'content' com texto livre — Claude Opus 4.6 planeia
+       os slides profissionalmente antes de renderizar
+    """
+    # ── Mode detection ──
+    has_slides = isinstance(slides, list) and len(slides) > 0
+    has_content = bool(content and content.strip())
+
+    if not has_slides and not has_content:
+        return {"error": "Fornece 'slides' (array de specs) ou 'content' (texto para o Opus planear)."}
+
+    if has_slides and len(slides) > 50:
         return {"error": "Máximo 50 slides por apresentação."}
+
+    # ── AI Planning with Opus (when content is provided) ──
+    planning_used = False
+    if has_content:
+        try:
+            from pptx_engine import plan_slides_with_opus
+            planned_slides = await plan_slides_with_opus(
+                content, title=title, context=context, tier="pro",
+            )
+            if planned_slides:
+                if has_slides:
+                    # Merge: user slides take priority, append planned at end
+                    slides = slides + planned_slides
+                else:
+                    slides = planned_slides
+                planning_used = True
+        except Exception as e:
+            logging.warning("[Tools] Opus slide planning failed: %s", e)
+            if not has_slides:
+                # Fallback: try to create simple slides from content
+                from pptx_engine import _fallback_slides_from_content
+                slides = _fallback_slides_from_content(content, title)
+                if not slides:
+                    return {"error": f"Erro no planeamento de slides: {str(e)[:200]}"}
 
     safe_title = "".join(
         ch if ch.isalnum() or ch in " _-" else "_"
@@ -433,15 +469,15 @@ async def tool_generate_presentation(
         logging.error("[Tools] tool_generate_presentation failed: %s", e)
         return {"error": f"Erro ao gerar apresentação: {str(e)[:200]}"}
 
-    content = buf.getvalue()
-    if not content:
+    file_content = buf.getvalue()
+    if not file_content:
         return {"error": "Apresentação gerada está vazia"}
 
     mime_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     filename = f"{safe_title}.pptx"
 
     download_id = await _store_generated_file(
-        content,
+        file_content,
         mime_type,
         filename,
         "pptx",
@@ -452,23 +488,27 @@ async def tool_generate_presentation(
     if not download_id:
         return {"error": "Ficheiro demasiado grande para armazenamento temporário"}
 
-    return {
+    result = {
         "presentation_generated": True,
         "format": "pptx",
         "title": safe_title,
         "total_slides": len(slides) + 2,  # +title +closing auto-added
+        "planning_model": "claude-opus-4.6" if planning_used else "structured_input",
         "_file_download": {
             "download_id": download_id,
             "endpoint": f"/api/download/{download_id}",
             "filename": filename,
             "format": "pptx",
             "mime_type": mime_type,
-            "size_bytes": len(content),
+            "size_bytes": len(file_content),
             "expires_in_seconds": _GENERATED_FILE_TTL_SECONDS,
             "primary": True,
             "label": f"📥 Download {filename}",
         },
     }
+    if planning_used:
+        result["planning_note"] = "Slides planeados por Claude Opus 4.6 para máxima qualidade"
+    return result
 
 
 def truncate_tool_result(result_str):
