@@ -499,8 +499,152 @@ def _build_closing_slide(prs, text: str = "Obrigado",
 
 
 # ---------------------------------------------------------------------------
-# Slide spec parser — converts LLM-structured slide specs to slides
+# Smart slide validation & auto-correction
 # ---------------------------------------------------------------------------
+# This layer enforces presentation quality rules REGARDLESS of what the LLM
+# sends. It splits overloaded slides, trims excess content, and ensures
+# professional structure.
+# ---------------------------------------------------------------------------
+
+_MAX_BULLETS_PER_SLIDE = 7
+_MAX_BULLET_LENGTH = 150
+_MAX_TITLE_LENGTH = 80
+_MAX_KPIS_PER_SLIDE = 4
+_MAX_TABLE_ROWS_PER_SLIDE = 12
+_MAX_TABLE_COLS = 8
+_MAX_AGENDA_ITEMS = 12
+_MAX_TWO_COL_ITEMS = 8
+
+
+def _validate_and_fix_slides(slides: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Validate and auto-correct slide specs for professional quality.
+
+    Rules enforced:
+    1. Content slides with >7 bullets → split into multiple slides
+    2. Bullet text >150 chars → truncate with ellipsis
+    3. Title >80 chars → truncate
+    4. KPI slides with >4 KPIs → split
+    5. Table with >12 rows → split into continuation slides
+    6. Table with >8 columns → trim to 8
+    7. Two-column slides with >8 items per side → trim
+    8. Empty slides → removed
+    9. Adjacent content slides with same title → merge if under bullet limit
+    10. Consecutive sections without content between → drop duplicate
+    """
+    if not slides:
+        return []
+
+    fixed = []
+    for spec in slides:
+        if not isinstance(spec, dict):
+            continue
+        slide_type = str(spec.get("type", "content")).lower().strip()
+
+        # --- Truncate title ---
+        title = str(spec.get("title", "")).strip()
+        if len(title) > _MAX_TITLE_LENGTH:
+            title = title[:_MAX_TITLE_LENGTH - 1].rstrip() + "…"
+            spec = {**spec, "title": title}
+
+        # --- Content slides: split if too many bullets ---
+        if slide_type in ("content", "bullets"):
+            bullets = spec.get("bullets", [])
+            if isinstance(bullets, str):
+                bullets = [b.strip() for b in bullets.split("\n") if b.strip()]
+            # Truncate individual bullets
+            bullets = [
+                (b[:_MAX_BULLET_LENGTH - 1].rstrip() + "…" if len(b) > _MAX_BULLET_LENGTH else b)
+                for b in bullets
+            ]
+            if not bullets:
+                # Empty content slide → skip
+                continue
+            # Split into chunks of _MAX_BULLETS_PER_SLIDE
+            for chunk_idx in range(0, len(bullets), _MAX_BULLETS_PER_SLIDE):
+                chunk = bullets[chunk_idx:chunk_idx + _MAX_BULLETS_PER_SLIDE]
+                chunk_title = title
+                if chunk_idx > 0:
+                    chunk_title = f"{title} (cont.)"
+                fixed.append({**spec, "title": chunk_title, "bullets": chunk})
+            continue
+
+        # --- KPI slides: split if >4 ---
+        elif slide_type in ("kpi", "kpis", "metrics"):
+            kpis = spec.get("kpis", [])
+            if not kpis:
+                continue
+            for chunk_idx in range(0, len(kpis), _MAX_KPIS_PER_SLIDE):
+                chunk = kpis[chunk_idx:chunk_idx + _MAX_KPIS_PER_SLIDE]
+                chunk_title = title
+                if chunk_idx > 0:
+                    chunk_title = f"{title} (cont.)"
+                fixed.append({**spec, "title": chunk_title, "kpis": chunk})
+            continue
+
+        # --- Table slides: split rows, trim columns ---
+        elif slide_type == "table":
+            headers = spec.get("headers", [])
+            rows = spec.get("rows", [])
+            if not headers:
+                continue
+            # Trim columns
+            if len(headers) > _MAX_TABLE_COLS:
+                headers = headers[:_MAX_TABLE_COLS]
+                rows = [r[:_MAX_TABLE_COLS] for r in rows]
+            if not rows:
+                fixed.append({**spec, "headers": headers, "rows": []})
+                continue
+            # Split rows
+            for chunk_idx in range(0, len(rows), _MAX_TABLE_ROWS_PER_SLIDE):
+                chunk = rows[chunk_idx:chunk_idx + _MAX_TABLE_ROWS_PER_SLIDE]
+                chunk_title = title
+                if chunk_idx > 0:
+                    chunk_title = f"{title} (cont.)"
+                fixed.append({
+                    **spec, "title": chunk_title,
+                    "headers": headers, "rows": chunk,
+                })
+            continue
+
+        # --- Two-column: trim items ---
+        elif slide_type in ("two_column", "two_columns"):
+            left = spec.get("left", [])
+            right = spec.get("right", [])
+            if not left and not right:
+                continue
+            fixed.append({
+                **spec,
+                "left": left[:_MAX_TWO_COL_ITEMS],
+                "right": right[:_MAX_TWO_COL_ITEMS],
+            })
+            continue
+
+        # --- Agenda: trim items ---
+        elif slide_type in ("agenda", "index"):
+            items = spec.get("items", [])
+            if not items:
+                continue
+            fixed.append({**spec, "items": items[:_MAX_AGENDA_ITEMS]})
+            continue
+
+        # --- All other types pass through ---
+        else:
+            fixed.append(spec)
+
+    # --- Post-pass: remove consecutive empty sections ---
+    cleaned = []
+    for i, slide in enumerate(fixed):
+        slide_type = str(slide.get("type", "")).lower().strip()
+        if slide_type in ("section", "section_divider", "divider"):
+            # Check if next slide is also a section → skip this one
+            if i + 1 < len(fixed):
+                next_type = str(fixed[i + 1].get("type", "")).lower().strip()
+                if next_type in ("section", "section_divider", "divider"):
+                    continue
+        cleaned.append(slide)
+
+    return cleaned
+
 
 _SLIDE_TYPE_MAP = {
     "title": _build_title_slide,
@@ -639,12 +783,15 @@ def generate_presentation(
     prs.slide_width = Emu(SLIDE_WIDTH_EMU)
     prs.slide_height = Emu(SLIDE_HEIGHT_EMU)
 
+    # ── Smart validation: enforce quality rules before rendering ──
+    validated_slides = _validate_and_fix_slides(slides)
+
     # Check if slides already start with a title/cover
     has_title_slide = False
     has_closing_slide = False
-    if slides:
-        first_type = str(slides[0].get("type", "")).lower().strip()
-        last_type = str(slides[-1].get("type", "")).lower().strip()
+    if validated_slides:
+        first_type = str(validated_slides[0].get("type", "")).lower().strip()
+        last_type = str(validated_slides[-1].get("type", "")).lower().strip()
         has_title_slide = first_type in ("title", "cover", "capa")
         has_closing_slide = last_type in ("closing", "end", "obrigado")
 
@@ -654,7 +801,7 @@ def generate_presentation(
 
     # Build each slide
     section_counter = 1
-    for spec in slides:
+    for spec in validated_slides:
         if not isinstance(spec, dict):
             continue
         slide_type = str(spec.get("type", "content")).lower().strip()

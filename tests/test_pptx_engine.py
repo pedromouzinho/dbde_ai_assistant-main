@@ -170,6 +170,127 @@ class TestGenerateFromOutline:
         assert len(prs.slides) == 2  # title + closing only
 
 
+class TestValidationLayer:
+    """Tests for the smart validation and auto-correction layer."""
+
+    def test_split_overloaded_bullets(self):
+        """Content slide with 15 bullets splits into 3 slides."""
+        from pptx import Presentation as PptxRead
+        slides = [{"type": "content", "title": "Big List",
+                   "bullets": [f"Item {i}" for i in range(15)]}]
+        buf = generate_presentation("T", slides,
+                                    include_title_slide=False,
+                                    include_closing_slide=False)
+        prs = PptxRead(buf)
+        # 15 bullets / 7 per slide = 3 slides (7+7+1)
+        assert len(prs.slides) == 3
+
+    def test_split_slide_adds_cont_suffix(self):
+        """Split slides get '(cont.)' in title."""
+        from pptx_engine import _validate_and_fix_slides
+        slides = [{"type": "content", "title": "Results",
+                   "bullets": [f"B{i}" for i in range(10)]}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed) == 2
+        assert fixed[0]["title"] == "Results"
+        assert fixed[1]["title"] == "Results (cont.)"
+
+    def test_truncate_long_bullet(self):
+        """Bullets >150 chars are truncated with ellipsis."""
+        from pptx_engine import _validate_and_fix_slides
+        long_bullet = "A" * 200
+        slides = [{"type": "content", "title": "T", "bullets": [long_bullet]}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed[0]["bullets"][0]) == 150
+        assert fixed[0]["bullets"][0].endswith("…")
+
+    def test_truncate_long_title(self):
+        """Titles >80 chars are truncated."""
+        from pptx_engine import _validate_and_fix_slides
+        long_title = "T" * 100
+        slides = [{"type": "content", "title": long_title, "bullets": ["X"]}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed[0]["title"]) == 80
+        assert fixed[0]["title"].endswith("…")
+
+    def test_split_kpis_over_four(self):
+        """KPI slide with 6 KPIs splits into 2 slides."""
+        from pptx_engine import _validate_and_fix_slides
+        kpis = [{"value": str(i), "label": f"KPI{i}"} for i in range(6)]
+        slides = [{"type": "kpi", "title": "Metrics", "kpis": kpis}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed) == 2
+        assert len(fixed[0]["kpis"]) == 4
+        assert len(fixed[1]["kpis"]) == 2
+
+    def test_split_large_table(self):
+        """Table with 25 rows splits into multiple slides."""
+        from pptx_engine import _validate_and_fix_slides
+        slides = [{"type": "table", "title": "Data",
+                   "headers": ["A", "B"],
+                   "rows": [[str(i), str(i*2)] for i in range(25)]}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed) == 3  # 12 + 12 + 1
+
+    def test_trim_excess_columns(self):
+        """Table with >8 columns is trimmed to 8."""
+        from pptx_engine import _validate_and_fix_slides
+        headers = [f"Col{i}" for i in range(12)]
+        slides = [{"type": "table", "title": "Wide",
+                   "headers": headers, "rows": [["x"] * 12]}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed[0]["headers"]) == 8
+
+    def test_remove_empty_content(self):
+        """Content slides with no bullets are removed."""
+        from pptx_engine import _validate_and_fix_slides
+        slides = [
+            {"type": "content", "title": "Empty", "bullets": []},
+            {"type": "content", "title": "Full", "bullets": ["X"]},
+        ]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed) == 1
+        assert fixed[0]["title"] == "Full"
+
+    def test_remove_consecutive_sections(self):
+        """Consecutive section dividers: only last is kept."""
+        from pptx_engine import _validate_and_fix_slides
+        slides = [
+            {"type": "section", "title": "First"},
+            {"type": "section", "title": "Second"},
+            {"type": "content", "title": "Content", "bullets": ["X"]},
+        ]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed) == 2
+        assert fixed[0]["title"] == "Second"
+
+    def test_two_column_trimmed(self):
+        """Two-column items trimmed to max 8."""
+        from pptx_engine import _validate_and_fix_slides
+        slides = [{"type": "two_column", "title": "T",
+                   "left": [f"L{i}" for i in range(15)],
+                   "right": [f"R{i}" for i in range(15)]}]
+        fixed = _validate_and_fix_slides(slides)
+        assert len(fixed[0]["left"]) == 8
+        assert len(fixed[0]["right"]) == 8
+
+    def test_end_to_end_validation_generates_valid_pptx(self):
+        """Full pipeline with overloaded slides still produces valid PPTX."""
+        slides = [
+            {"type": "content", "title": "A" * 100,
+             "bullets": [f"Bullet {i}" for i in range(20)]},
+            {"type": "kpi", "title": "KPIs",
+             "kpis": [{"value": str(i), "label": f"K{i}"} for i in range(8)]},
+            {"type": "table", "title": "Data",
+             "headers": [f"C{i}" for i in range(10)],
+             "rows": [[str(i)] * 10 for i in range(30)]},
+        ]
+        buf = generate_presentation("Stress Test", slides)
+        content = buf.getvalue()
+        assert content[:2] == b"PK"  # valid ZIP/PPTX
+        assert len(content) > 5000
+
+
 class TestToolIntegration:
     """Test tool_generate_presentation integration."""
 
