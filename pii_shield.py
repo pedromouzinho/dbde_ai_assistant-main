@@ -23,10 +23,10 @@ PII_CATEGORIES = [
     "PhoneNumber",
     "Address",
     "Email",
-    "URL",
+    # "URL",        — removed: project/internal URLs are not PII
     "IPAddress",
-    "DateTime",
-    "Quantity",
+    # "DateTime",   — removed: business dates (sprints, milestones) are not PII
+    # "Quantity",   — removed: business numbers (85 USs, 3.2%) are not PII
     "PTTaxIdentificationNumber",
     "InternationalBankingAccountNumber",
     "SWIFTCode",
@@ -54,10 +54,7 @@ _CONFIDENCE_THRESHOLDS: dict[str, float] = {
     "Person": 0.7,
     "PersonType": 0.7,
     "Address": 0.7,
-    "URL": 0.8,
     "IPAddress": 0.7,
-    "DateTime": 0.8,
-    "Quantity": 0.8,
 }
 
 _DEFAULT_THRESHOLD = 0.7

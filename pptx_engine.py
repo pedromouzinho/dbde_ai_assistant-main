@@ -94,6 +94,55 @@ def _set_font(run, *, size: int = BODY_FONT_SIZE, bold: bool = False,
     run.font.name = font_name
 
 
+def _add_bullet_formatting(paragraph, level: int = 0):
+    """Add proper bullet character, color and indentation via OOXML XML.
+
+    Level 0: brand-colored bullet '•' with hanging indent
+    Level 1: gray en-dash '–' with deeper indent
+    """
+    from pptx.oxml.ns import qn
+    from lxml import etree
+
+    pPr = paragraph._p.get_or_add_pPr()
+
+    # Remove any existing bullet settings
+    for tag_suffix in ('buNone', 'buChar', 'buAutoNum', 'buFont', 'buClr', 'buSzPct'):
+        for child in list(pPr):
+            if child.tag.endswith(tag_suffix):
+                pPr.remove(child)
+
+    # Bullet size relative to text (100% = same size)
+    buSzPct = etree.SubElement(pPr, qn('a:buSzPct'))
+    buSzPct.set('val', '100000')  # 100%
+
+    # Bullet font — use Arial for reliable bullet rendering
+    buFont = etree.SubElement(pPr, qn('a:buFont'))
+    buFont.set('typeface', 'Arial')
+    buFont.set('panose', '020B0604020202020204')
+
+    # Bullet color
+    buClr = etree.SubElement(pPr, qn('a:buClr'))
+    srgbClr = etree.SubElement(buClr, qn('a:srgbClr'))
+    srgbClr.set('val', BRAND_ACCENT_HEX if level == 0 else BRAND_DARK_TEXT_HEX)
+
+    # Bullet character
+    buChar = etree.SubElement(pPr, qn('a:buChar'))
+    buChar.set('char', '\u2022' if level == 0 else '\u2013')  # • or –
+
+    # Indentation: marL = left margin, indent = hanging indent (negative)
+    if level == 0:
+        pPr.set('marL', '457200')    # 0.5 inch margin
+        pPr.set('indent', '-228600')  # 0.25 inch hanging indent
+    else:
+        pPr.set('marL', '914400')    # 1.0 inch margin
+        pPr.set('indent', '-228600')  # 0.25 inch hanging indent
+
+    # Line spacing: 1.2x for readability
+    lnSpc = etree.SubElement(pPr, qn('a:lnSpc'))
+    spcPct = etree.SubElement(lnSpc, qn('a:spcPct'))
+    spcPct.set('val', '120000')  # 120%
+
+
 def _add_text_box(slide, left, top, width, height, text: str, *,
                   size: int = BODY_FONT_SIZE, bold: bool = False,
                   color: str = BRAND_DARK_TEXT_HEX, alignment=None,
@@ -232,10 +281,10 @@ def _build_content_slide(prs, title: str, bullets: List[str],
     if badge_text:
         _add_badge(slide, badge_text)
 
-    # Title
+    # Title — 28pt for strong visual hierarchy over 12pt body
     _add_text_box(
         slide, MARGIN_LEFT, _emu(0.85), CONTENT_WIDTH, _emu(0.6),
-        title, size=24, bold=True, color=BRAND_BLACK_HEX,
+        title, size=28, bold=True, color=BRAND_BLACK_HEX,
     )
 
     # Bullets
@@ -253,19 +302,26 @@ def _build_content_slide(prs, title: str, bullets: List[str],
             else:
                 p = tf.add_paragraph()
 
-            # Support sub-bullets with "- " prefix inside a bullet
+            # Support sub-bullets with "- " or "• " prefix
             text = str(bullet_text).strip()
             is_sub = text.startswith("- ") or text.startswith("• ")
             if is_sub:
                 text = text[2:].strip()
-                p.level = 1
+                level = 1
             else:
-                p.level = 0
+                level = 0
 
-            p.space_after = Pt(6)
+            p.level = level
+            p.space_after = Pt(8)
+            if idx == 0:
+                p.space_before = Pt(4)
+
+            # Apply proper bullet formatting via XML
+            _add_bullet_formatting(p, level=level)
+
             run = p.add_run()
             run.text = text
-            font_size = BODY_FONT_SIZE if not is_sub else (BODY_FONT_SIZE - 1)
+            font_size = BODY_FONT_SIZE if level == 0 else (BODY_FONT_SIZE - 1)
             _set_font(run, size=font_size, color=BRAND_DARK_TEXT_HEX)
     return slide
 
@@ -297,12 +353,22 @@ def _build_two_column_slide(prs, title: str, left_content: List[str],
         txBox.word_wrap = True
         tf = txBox.text_frame
         tf.word_wrap = True
-        for idx, text in enumerate(items):
+        for idx, item_text in enumerate(items):
             p = tf.paragraphs[0] if idx == 0 else tf.add_paragraph()
-            p.space_after = Pt(6)
+            text = str(item_text).strip()
+            is_sub = text.startswith("- ") or text.startswith("• ")
+            if is_sub:
+                text = text[2:].strip()
+                level = 1
+            else:
+                level = 0
+            p.level = level
+            p.space_after = Pt(8)
+            _add_bullet_formatting(p, level=level)
             run = p.add_run()
-            run.text = str(text).strip()
-            _set_font(run, size=BODY_FONT_SIZE, color=BRAND_DARK_TEXT_HEX)
+            run.text = text
+            font_size = BODY_FONT_SIZE if level == 0 else (BODY_FONT_SIZE - 1)
+            _set_font(run, size=font_size, color=BRAND_DARK_TEXT_HEX)
     return slide
 
 

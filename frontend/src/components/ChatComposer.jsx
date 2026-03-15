@@ -37,7 +37,10 @@ export default function ChatComposer({
   speechProvider,
   onToggleSpeech,
   onToggleSpeechSubmitMode,
+  clarificationOptions,
+  onClarificationSelect,
 }) {
+  const hasClarification = Array.isArray(clarificationOptions) && clarificationOptions.length > 0 && !loading;
   return (
     <div className="app-input-bar">
       <div className="app-input-bar-inner">
@@ -139,7 +142,26 @@ export default function ChatComposer({
           </div>
         ) : null}
 
-        <div className="composer-shell">
+        {hasClarification ? (
+          <div className="clarification-bar">
+            <div className="clarification-label">Escolhe uma opção ou escreve a tua resposta:</div>
+            <div className="clarification-pills">
+              {clarificationOptions.map((opt, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="clarification-pill"
+                  onClick={() => onClarificationSelect(opt)}
+                >
+                  <span className="clarification-pill-number">{i + 1}</span>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className={`composer-shell${hasClarification ? ' clarification-active' : ''}`}>
           <input
             ref={fileInputRef}
             type="file"
@@ -211,7 +233,7 @@ export default function ChatComposer({
             onChange={onInputChange}
             onKeyDown={onInputKeyDown}
             onPaste={onInputPaste}
-            placeholder={inputPlaceholder}
+            placeholder={hasClarification ? 'Ou escreve a tua resposta aqui...' : inputPlaceholder}
             rows={1}
             className="composer-input"
             onInput={(event) => {

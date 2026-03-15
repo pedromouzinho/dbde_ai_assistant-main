@@ -2191,6 +2191,29 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
     
     def _sse(event: dict) -> str:
         return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+    def _tool_result_text(detail: dict) -> str:
+        """Build human-friendly tool_result text.
+
+        Only shows 'X resultados' when the count is a real positive integer.
+        For tools without a meaningful count (run_code, generate_presentation,
+        generate_file, etc.) just shows the tool name without a count.
+        """
+        summary = detail.get("result_summary", {})
+        has_error = summary.get("has_error", False)
+        if has_error:
+            return f"⚠️ {detail['tool']}: erro"
+        count = summary.get("total_count", summary.get("items_returned", ""))
+        if isinstance(count, (int, float)) and count > 0:
+            return f"✅ {detail['tool']}: {int(count)} resultados"
+        if isinstance(count, str) and count not in ("N/A", "0", ""):
+            try:
+                n = int(count)
+                if n > 0:
+                    return f"✅ {detail['tool']}: {n} resultados"
+            except (ValueError, TypeError):
+                pass
+        return f"✅ {detail['tool']}"
     
     async with await _get_conversation_lock(conv_id):
         await _ensure_conversation(conv_id, mode, partition_key, user_sub=str((user or {}).get("sub", "") or ""))
@@ -2264,9 +2287,8 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                     tools_used.extend(forced_tu)
                     tool_details.extend(forced_td)
                     for d in forced_td:
-                        yield _sse({"type": "tool_start", "tool": d["tool"], "text": f"🔍 {d['tool']} (forced)..."})
-                        count = d["result_summary"].get("total_count", d["result_summary"].get("items_returned", ""))
-                        yield _sse({"type": "tool_result", "tool": d["tool"], "text": f"✅ {d['tool']}: {count} resultados"})
+                        yield _sse({"type": "tool_start", "tool": d["tool"], "text": f"🔍 {d['tool']}..."})
+                        yield _sse({"type": "tool_result", "tool": d["tool"], "text": _tool_result_text(d)})
 
                 forced_fu, forced_fd = await _run_forced_workitem_filter_followup(
                     effective_question,
@@ -2277,9 +2299,8 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                     tools_used.extend(forced_fu)
                     tool_details.extend(forced_fd)
                     for d in forced_fd:
-                        yield _sse({"type": "tool_start", "tool": d["tool"], "text": f"🔍 {d['tool']} (forced)..."})
-                        count = d["result_summary"].get("total_count", d["result_summary"].get("items_returned", ""))
-                        yield _sse({"type": "tool_result", "tool": d["tool"], "text": f"✅ {d['tool']}: {count} resultados"})
+                        yield _sse({"type": "tool_start", "tool": d["tool"], "text": f"🔍 {d['tool']}..."})
+                        yield _sse({"type": "tool_result", "tool": d["tool"], "text": _tool_result_text(d)})
 
                 provider = get_provider(tier)
                 model_used = getattr(provider, 'model', getattr(provider, 'deployment', ''))
@@ -2334,8 +2355,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                         tool_details.extend(td)
 
                         for d in td:
-                            count = d["result_summary"].get("total_count", d["result_summary"].get("items_returned", ""))
-                            yield _sse({"type": "tool_result", "tool": d["tool"], "text": f"✅ {d['tool']}: {count} resultados"})
+                            yield _sse({"type": "tool_result", "tool": d["tool"], "text": _tool_result_text(d)})
 
                         # Continue loop for next LLM call
                         need_final_response = True

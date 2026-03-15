@@ -708,6 +708,9 @@ def build_summary_sheet(
         from openpyxl.utils import get_column_letter
         ws.column_dimensions[get_column_letter(col)].width = 18
 
+    # Freeze panes below title area for scrolling
+    ws.freeze_panes = "A5"
+
     return safe_name
 
 

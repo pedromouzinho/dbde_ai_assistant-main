@@ -94,13 +94,7 @@ export default function MessageBubble({
           dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
         />
 
-        {isLastAssistant && message.clarification_options && message.clarification_options.length > 0 ? (
-          <QuickReplyBar
-            options={message.clarification_options}
-            onSelect={onQuickReply}
-            disabled={!isLastAssistant}
-          />
-        ) : null}
+        {/* Quick replies moved to ChatComposer for AskUserQuestion-style UX */}
 
         {getChartSpecs(message.tool_results).map((spec, ci) => (
           <ChartBlock key={`chart-${ci}`} chartSpec={spec} chartId={`chart-${messageIndex}-${ci}`} />

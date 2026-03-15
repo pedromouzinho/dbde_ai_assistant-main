@@ -119,7 +119,7 @@ class TestDifferentiatedThresholds:
 
     def test_general_categories_standard_threshold(self):
         assert _CONFIDENCE_THRESHOLDS["Person"] >= 0.7
-        assert _CONFIDENCE_THRESHOLDS["DateTime"] >= 0.7
+        # DateTime, Quantity, URL removed from PII — not personal data
 
     def test_all_pii_categories_have_threshold(self):
         from pii_shield import PII_CATEGORIES
@@ -234,7 +234,7 @@ class TestMaskPiiIntegration:
                                     {
                                         "offset": 6,
                                         "length": 5,
-                                        "category": "Quantity",
+                                        "category": "Person",
                                         "confidenceScore": 0.99,
                                     }
                                 ]

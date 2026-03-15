@@ -2034,6 +2034,12 @@ function App() {
                     speechProvider={speechProvider}
                     onToggleSpeech={toggleSpeech}
                     onToggleSpeechSubmitMode={toggleSpeechSubmitMode}
+                    clarificationOptions={(() => {
+                        if (loading) return null;
+                        const last = activeMessages[activeMessages.length - 1];
+                        return last && last.role === 'assistant' && last.clarification_options ? last.clarification_options : null;
+                    })()}
+                    onClarificationSelect={(opt) => { if (!loading) send(opt); }}
                 />
 
                 {renameTarget ? (
