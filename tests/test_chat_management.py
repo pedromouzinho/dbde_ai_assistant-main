@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException
 
-import app as app_module
+import routes_chat as chat_module
 from models import UpdateChatTitleRequest
 
 
@@ -19,11 +19,11 @@ async def test_update_chat_title_updates_existing_conversation(monkeypatch):
         merged["entity"] = entity
         return True
 
-    monkeypatch.setattr(app_module, "get_current_user", lambda _credentials=None: {"sub": "user-1", "role": "user"})
-    monkeypatch.setattr(app_module, "table_query", _fake_table_query)
-    monkeypatch.setattr(app_module, "table_merge", _fake_table_merge)
+    monkeypatch.setattr(chat_module, "get_current_user", lambda _credentials=None: {"sub": "user-1", "role": "user"})
+    monkeypatch.setattr(chat_module, "table_query", _fake_table_query)
+    monkeypatch.setattr(chat_module, "table_merge", _fake_table_merge)
 
-    result = await app_module.update_chat_title(
+    result = await chat_module.update_chat_title(
         None,
         "ignored-user",
         "conv-1",
@@ -45,11 +45,11 @@ async def test_update_chat_title_returns_404_when_conversation_missing(monkeypat
     async def _fake_table_query(table, filter_expr, top=1):
         return []
 
-    monkeypatch.setattr(app_module, "get_current_user", lambda _credentials=None: {"sub": "user-1", "role": "user"})
-    monkeypatch.setattr(app_module, "table_query", _fake_table_query)
+    monkeypatch.setattr(chat_module, "get_current_user", lambda _credentials=None: {"sub": "user-1", "role": "user"})
+    monkeypatch.setattr(chat_module, "table_query", _fake_table_query)
 
     with pytest.raises(HTTPException) as exc:
-        await app_module.update_chat_title(
+        await chat_module.update_chat_title(
             None,
             "user-1",
             "missing-conv",

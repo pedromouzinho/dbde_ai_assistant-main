@@ -241,6 +241,9 @@ from route_deps import (
     log_audit, _audit_clip, feedback_memory,
 )
 from routes_auth import router as _auth_router
+from routes_digest import router as _digest_router
+from routes_chat import router as _chat_router, _router_state as _chat_state
+from routes_admin import router as _admin_router, _router_state as _admin_state
 
 # =============================================================================
 # APP SETUP
@@ -421,37 +424,6 @@ async def enforce_allowed_origins(request: Request, call_next):
         reset_request_auth_payload(auth_payload_ref)
         reset_request_cookie_token(token_ref)
 
-
-def _file_sha256(path: Path) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        while True:
-            chunk = f.read(1024 * 1024)
-            if not chunk:
-                break
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def _load_pid_from_file(path: str) -> Optional[int]:
-    try:
-        txt = Path(path).read_text(encoding="utf-8").strip()
-        if not txt:
-            return None
-        pid = int(txt)
-        return pid if pid > 0 else None
-    except Exception:
-        return None
-
-
-def _is_process_alive(pid: Optional[int]) -> bool:
-    if not pid:
-        return False
-    try:
-        os.kill(pid, 0)
-        return True
-    except Exception:
-        return False
 
 
 def _build_permissions_policy() -> str:
@@ -3467,150 +3439,6 @@ async def upload_index_for_conversation(
     return {"conversation_id": conversation_id, "total": len(items), "items": items}
 
 # =============================================================================
-# DAILY DIGEST (Task 6.3)
-# =============================================================================
-
-_DIGEST_FIELDS = [
-    "System.Id",
-    "System.Title",
-    "System.State",
-    "System.WorkItemType",
-    "System.AssignedTo",
-    "System.CreatedDate",
-]
-
-
-def _digest_format_item(raw_item: dict) -> dict:
-    fields = raw_item.get("fields", {}) if isinstance(raw_item, dict) else {}
-    assigned = fields.get("System.AssignedTo", "")
-    if isinstance(assigned, dict):
-        assigned_to = assigned.get("displayName", "")
-    else:
-        assigned_to = str(assigned or "")
-    wi_id = raw_item.get("id")
-    return {
-        "id": wi_id,
-        "title": fields.get("System.Title", ""),
-        "state": fields.get("System.State", ""),
-        "type": fields.get("System.WorkItemType", ""),
-        "assigned_to": assigned_to,
-        "created_date": fields.get("System.CreatedDate", ""),
-        "url": f"https://dev.azure.com/{DEVOPS_ORG}/{DEVOPS_PROJECT}/_workitems/edit/{wi_id}" if wi_id else "",
-    }
-
-
-async def _run_digest_section(section_name: str, wiql_query: str) -> dict:
-    headers = _devops_headers()
-    section = {"count": 0, "items": []}
-    batch_errors = []
-
-    try:
-        wiql_resp = await _devops_request_with_retry(
-            "POST",
-            _devops_url("wit/wiql?api-version=7.1"),
-            headers,
-            {"query": wiql_query},
-            max_retries=3,
-            timeout=60,
-        )
-        if "error" in wiql_resp:
-            section["error"] = wiql_resp["error"]
-            return section
-
-        ids = [wi.get("id") for wi in wiql_resp.get("workItems", []) if wi.get("id")]
-        section["count"] = len(ids)
-        if not ids:
-            return section
-
-        details = []
-        for i in range(0, len(ids), 100):
-            batch = ids[i:i + 100]
-            batch_resp = await _devops_request_with_retry(
-                "POST",
-                _devops_url("wit/workitemsbatch?api-version=7.1"),
-                headers,
-                {"ids": batch, "fields": _DIGEST_FIELDS},
-                max_retries=3,
-                timeout=60,
-            )
-            if "error" in batch_resp:
-                batch_errors.append(batch_resp["error"])
-                continue
-            details.extend(batch_resp.get("value", []))
-
-        section["items"] = [_digest_format_item(item) for item in details]
-        if batch_errors:
-            section["error"] = "; ".join(batch_errors[:3])
-        return section
-    except Exception as e:
-        section["error"] = f"{section_name} failed: {str(e)}"
-        return section
-
-
-@app.get("/api/digest")
-@limiter.shared_limit(
-    "10/minute",
-    scope="chat_budget",
-    key_func=_user_or_ip_rate_key,
-)
-async def api_digest(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    get_current_user(credentials)
-
-    sections_wiql = {
-        "created_yesterday": (
-            "SELECT [System.Id] FROM WorkItems "
-            f"WHERE [System.TeamProject] = '{DEVOPS_PROJECT}' "
-            "AND [System.WorkItemType] = 'User Story' "
-            "AND [System.CreatedDate] >= @Today-1 "
-            "AND [System.CreatedDate] < @Today "
-            "ORDER BY [System.CreatedDate] DESC"
-        ),
-        "old_bugs": (
-            "SELECT [System.Id] FROM WorkItems "
-            f"WHERE [System.TeamProject] = '{DEVOPS_PROJECT}' "
-            "AND [System.WorkItemType] = 'Bug' "
-            "AND [System.State] = 'Active' "
-            "AND [System.CreatedDate] < @Today-7 "
-            "ORDER BY [System.CreatedDate] ASC"
-        ),
-        "unassigned": (
-            "SELECT [System.Id] FROM WorkItems "
-            f"WHERE [System.TeamProject] = '{DEVOPS_PROJECT}' "
-            "AND [System.State] <> 'Closed' "
-            "AND [System.State] <> 'Removed' "
-            "AND [System.AssignedTo] = '' "
-            "ORDER BY [System.ChangedDate] DESC"
-        ),
-        "closed_this_week": (
-            "SELECT [System.Id] FROM WorkItems "
-            f"WHERE [System.TeamProject] = '{DEVOPS_PROJECT}' "
-            "AND [System.State] = 'Closed' "
-            "AND [Microsoft.VSTS.Common.ClosedDate] >= @StartOfWeek "
-            "ORDER BY [Microsoft.VSTS.Common.ClosedDate] DESC"
-        ),
-    }
-
-    payload = {
-        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "project": DEVOPS_PROJECT,
-    }
-    section_items = list(sections_wiql.items())
-    section_results = await asyncio.gather(
-        *[_run_digest_section(section_name, wiql_query) for section_name, wiql_query in section_items],
-        return_exceptions=True,
-    )
-    for (section_name, _), result in zip(section_items, section_results):
-        if isinstance(result, Exception):
-            payload[section_name] = {
-                "count": 0,
-                "items": [],
-                "error": f"{section_name} failed: {str(result)}",
-            }
-        else:
-            payload[section_name] = result
-    return payload
-
-# =============================================================================
 # EXPORT ENDPOINTS (Fase 3)
 # =============================================================================
 
@@ -3813,112 +3641,30 @@ async def download_generated_file(request: Request, download_id: str, credential
 # AUTH + SPEECH endpoints → routes_auth.py
 app.include_router(_auth_router)
 
-# =============================================================================
-# FEEDBACK
-# =============================================================================
+# DIGEST endpoints → routes_digest.py
+app.include_router(_digest_router)
 
-@app.post("/feedback")
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def submit_feedback(request: Request, payload: FeedbackRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    question, answer = "", ""
-    cid = payload.conversation_id
-    if not await _conversation_belongs_to_user(cid, str(user.get("sub", "") or "")):
-        raise HTTPException(403, "Sem permissão para esta conversa")
-    if cid in conversations:
-        um = [m for m in conversations[cid] if m.get("role")=="user"]
-        am = [m for m in conversations[cid] if m.get("role")=="assistant"]
-        if um: question = um[-1].get("content","") if isinstance(um[-1].get("content"),str) else str(um[-1].get("content",""))
-        if am: answer = am[-1].get("content","")
-    
-    ts = datetime.now(timezone.utc).isoformat()
-    safe_conv = cid.replace("-","")[:32]
-    entity = {"PartitionKey":safe_conv,"RowKey":f"{payload.message_index}_{ts.replace(':','').replace('-','').replace('.','')}", "Rating":payload.rating,"Note":payload.note or "","Question":question[:2000],"Answer":answer[:4000],"Timestamp_str":ts,"UserSub":str(user.get("sub", "") or "")}
-    stored = await table_insert("feedback", entity)
-    if not stored: feedback_memory.append(entity)
-
-    if question and answer and (payload.rating >= 7 or payload.rating <= 3):
-        etype = "positive" if payload.rating >= 7 else "negative"
-        eid = f"{safe_conv}_{payload.message_index}"
-        await table_insert("examples", {"PartitionKey":etype,"RowKey":eid,"Question":question[:2000],"Answer":answer[:4000],"Rating":payload.rating,"Note":payload.note or "","Timestamp_str":ts,"UserSub":str(user.get("sub", "") or "")})
-        try: await _index_example(eid, question, answer, payload.rating, example_type=etype, feedback_note=payload.note or "")
-        except Exception as e:
-            logger.error("[App] _index_example in feedback failed: %s", e)
-    
-    return {"status":"ok","message":f"Feedback: {payload.rating}/10","persisted":"table_storage" if stored else "memory"}
-
-@app.get("/feedback/stats")
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def feedback_stats(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if not _is_admin_user(user):
-        raise HTTPException(403, "Apenas admins")
-    fbs = await table_query("feedback", top=1000)
-    all_fb = fbs + list(feedback_memory)
-    if not all_fb: return {"total":0,"average_rating":0}
-    ratings = [f.get("Rating",0) for f in all_fb if f.get("Rating",0)>0]
-    if not ratings: return {"total":0,"average_rating":0}
-    return {"total":len(ratings),"average_rating":round(sum(ratings)/len(ratings),1),"distribution":{str(r):ratings.count(r) for r in range(1,11)}}
+# FEEDBACK + LEARNING + ADMIN + DEBUG + HEALTH endpoints → routes_admin.py
+_admin_state.update({
+    "conversations": conversations,
+    "conversation_meta": conversation_meta,
+    "uploaded_files_store": uploaded_files_store,
+    "upload_jobs_store": upload_jobs_store,
+    "export_jobs_store": export_jobs_store,
+    "tool_metrics": tool_metrics,
+    "tq_module": _tq_module,
+    "inline_worker_task": _inline_worker_task,
+    "index_example": _index_example,
+    "job_public_view": _job_public_view,
+    "load_upload_job_from_storage": _load_upload_job_from_storage,
+    "worker_instance_id": WORKER_INSTANCE_ID,
+    "inline_worker_enabled": INLINE_WORKER_ENABLED_EFFECTIVE,
+})
+app.include_router(_admin_router)
 
 # =============================================================================
-# CHAT PERSISTENCE
+# UPLOAD RETENTION & CLEANUP
 # =============================================================================
-
-@app.post("/api/chats/save")
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def save_chat(request: Request, payload: SaveChatRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    uid = user.get("sub", payload.user_id)
-    msgs = [{"role":m.get("role",""),"content":m.get("content","")} for m in payload.messages]
-    msgs_json = json.dumps(msgs, ensure_ascii=False)
-    while len(msgs_json)>60000 and len(msgs)>4: msgs.pop(1); msgs_json = json.dumps(msgs, ensure_ascii=False)
-    entity = {"PartitionKey":uid,"RowKey":payload.conversation_id,"Title":(payload.title or "Nova conversa")[:100],"Messages":msgs_json,"MessageCount":len(payload.messages),"UpdatedAt":datetime.now(timezone.utc).isoformat()}
-    if not await table_insert("ChatHistory", entity): await table_merge("ChatHistory", entity)
-    return {"status":"ok","conversation_id":payload.conversation_id}
-
-@app.get("/api/chats/{user_id}")
-@limiter.limit("60/minute", key_func=_user_or_ip_rate_key)
-async def list_chats(request: Request, user_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    uid = user.get("sub") if user.get("role")!="admin" else user_id
-    safe_uid = odata_escape(uid)
-    entities = await table_query("ChatHistory", f"PartitionKey eq '{safe_uid}'", top=100)
-    chats = sorted([{"conversation_id":e.get("RowKey",""),"title":e.get("Title",""),"message_count":e.get("MessageCount",0),"updated_at":e.get("UpdatedAt","")} for e in entities], key=lambda c:c["updated_at"], reverse=True)
-    return {"chats":chats}
-
-@app.get("/api/chats/{user_id}/{conversation_id}")
-@limiter.limit("60/minute", key_func=_user_or_ip_rate_key)
-async def get_chat(request: Request, user_id: str, conversation_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    uid = user.get("sub") if user.get("role")!="admin" else user_id
-    safe_uid = odata_escape(uid)
-    safe_conv = odata_escape(conversation_id)
-    es = await table_query("ChatHistory", f"PartitionKey eq '{safe_uid}' and RowKey eq '{safe_conv}'", top=1)
-    if not es: raise HTTPException(404, "Não encontrada")
-    return {"conversation_id":conversation_id,"title":es[0].get("Title",""),"messages":json.loads(es[0].get("Messages","[]")),"updated_at":es[0].get("UpdatedAt","")}
-
-
-@app.post("/api/chats/{user_id}/{conversation_id}/title")
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def update_chat_title(request: Request, user_id: str, conversation_id: str, payload: UpdateChatTitleRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    uid = user.get("sub") if user.get("role") != "admin" else user_id
-    safe_uid = odata_escape(uid)
-    safe_conv = odata_escape(conversation_id)
-    existing = await table_query("ChatHistory", f"PartitionKey eq '{safe_uid}' and RowKey eq '{safe_conv}'", top=1)
-    if not existing:
-        raise HTTPException(404, "Conversa não encontrada")
-    title = str(payload.title or "").strip()
-    if not title:
-        raise HTTPException(400, "Título inválido")
-    entity = {
-        "PartitionKey": uid,
-        "RowKey": conversation_id,
-        "Title": title[:100],
-        "UpdatedAt": datetime.now(timezone.utc).isoformat(),
-    }
-    await table_merge("ChatHistory", entity)
-    return {"status": "ok", "conversation_id": conversation_id, "title": entity["Title"], "updated_at": entity["UpdatedAt"]}
 
 
 async def _purge_upload_index_row(row: dict, *, delete_job: bool = True) -> dict:
@@ -3969,13 +3715,7 @@ async def _clear_upload_index_raw_blob(row: dict, *, purged_at: str) -> int:
     try:
         await table_merge(
             "UploadIndex",
-            {
-                "PartitionKey": row_pk,
-                "RowKey": row_key,
-                "RawBlobRef": "",
-                "RawBlobRetentionUntil": "",
-                "RawBlobPurgedAt": purged_at[:64],
-            },
+            {"PartitionKey": row_pk, "RowKey": row_key, "RawBlobRef": "", "RawBlobRetentionUntil": "", "RawBlobPurgedAt": purged_at[:64]},
         )
         return 1
     except Exception as e:
@@ -3990,13 +3730,7 @@ async def _clear_upload_job_raw_blob(job_id: str, *, purged_at: str) -> int:
     try:
         await table_merge(
             "UploadJobs",
-            {
-                "PartitionKey": "upload",
-                "RowKey": safe_job_id,
-                "RawBlobRef": "",
-                "RawBlobRetentionUntil": "",
-                "RawBlobPurgedAt": purged_at[:64],
-            },
+            {"PartitionKey": "upload", "RowKey": safe_job_id, "RawBlobRef": "", "RawBlobRetentionUntil": "", "RawBlobPurgedAt": purged_at[:64]},
         )
         cached = upload_jobs_store.get(safe_job_id)
         if cached:
@@ -4064,9 +3798,7 @@ async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
 
     for row in upload_job_rows:
         job_id = str(row.get("RowKey", "") or "").strip()
-        if not job_id:
-            continue
-        if job_id in deleted_job_ids:
+        if not job_id or job_id in deleted_job_ids:
             continue
         status = str(row.get("Status", "") or "").strip().lower()
         if status not in ("completed", "failed"):
@@ -4107,11 +3839,7 @@ async def _purge_expired_upload_artifacts(limit: int = 120) -> dict:
         except Exception as e:
             logger.warning("[App] stale upload job delete failed for %s: %s", job_id, e)
 
-    return {
-        "rows_deleted": rows_deleted,
-        "blobs_deleted": blobs_deleted,
-        "jobs_deleted": jobs_deleted,
-    }
+    return {"rows_deleted": rows_deleted, "blobs_deleted": blobs_deleted, "jobs_deleted": jobs_deleted}
 
 
 async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BACKFILL_BATCH_SIZE) -> dict:
@@ -4119,7 +3847,6 @@ async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BA
     queried = 0
     completed = 0
     skipped = 0
-
     try:
         rows = await table_query("UploadIndex", top=min(max(safe_limit * 10, 50), 250))
     except Exception as e:
@@ -4149,12 +3876,10 @@ async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BA
         if not conv_id or not job_id or not filename or not artifact_blob_ref:
             skipped += 1
             continue
-
         container, blob_name = parse_blob_ref(artifact_blob_ref)
         if not container or not blob_name:
             skipped += 1
             continue
-
         try:
             artifact_bytes = await blob_download_bytes(container, blob_name)
             columns = []
@@ -4164,14 +3889,10 @@ async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BA
                     columns = [str(col or "").strip() for col in parsed_cols if str(col or "").strip()]
             except Exception:
                 columns = []
-            chunks = await _build_tabular_semantic_chunks_from_artifact(
-                artifact_bytes,
-                columns=columns or None,
-            )
+            chunks = await _build_tabular_semantic_chunks_from_artifact(artifact_bytes, columns=columns or None)
             if not chunks:
                 skipped += 1
                 continue
-
             chunks_blob_ref = str(row.get("ChunksBlobRef", "") or "").strip()
             if chunks_blob_ref:
                 chunks_container, chunks_blob_name = parse_blob_ref(chunks_blob_ref)
@@ -4182,45 +3903,16 @@ async def _backfill_tabular_artifact_chunks(limit: int = UPLOAD_TABULAR_CHUNK_BA
             if not chunks_container or not chunks_blob_name:
                 skipped += 1
                 continue
-
-            chunks_blob = await blob_upload_json(
-                chunks_container,
-                chunks_blob_name,
-                {"chunks": chunks},
-            )
+            chunks_blob = await blob_upload_json(chunks_container, chunks_blob_name, {"chunks": chunks})
             new_chunks_blob_ref = str(chunks_blob.get("blob_ref", "") or "")
             if not new_chunks_blob_ref:
                 skipped += 1
                 continue
-
             raw_blob_retention_until = _raw_blob_retention_until_iso(
-                filename=filename,
-                artifact_blob_ref=artifact_blob_ref,
-                has_chunks=True,
-                fallback_hours=UPLOAD_ARTIFACT_RETENTION_HOURS,
+                filename=filename, artifact_blob_ref=artifact_blob_ref, has_chunks=True, fallback_hours=UPLOAD_ARTIFACT_RETENTION_HOURS,
             )
-            await table_merge(
-                "UploadIndex",
-                {
-                    "PartitionKey": conv_id,
-                    "RowKey": job_id,
-                    "ChunksBlobRef": new_chunks_blob_ref,
-                    "HasChunks": True,
-                    "RawBlobRetentionUntil": raw_blob_retention_until[:64],
-                    "RawBlobPurgedAt": "",
-                },
-            )
-            await table_merge(
-                "UploadJobs",
-                {
-                    "PartitionKey": "upload",
-                    "RowKey": job_id,
-                    "ChunksBlobName": str(chunks_blob_name)[:500],
-                    "RawBlobRetentionUntil": raw_blob_retention_until[:64],
-                    "RawBlobPurgedAt": "",
-                    "UpdatedAt": datetime.now(timezone.utc).isoformat(),
-                },
-            )
+            await table_merge("UploadIndex", {"PartitionKey": conv_id, "RowKey": job_id, "ChunksBlobRef": new_chunks_blob_ref, "HasChunks": True, "RawBlobRetentionUntil": raw_blob_retention_until[:64], "RawBlobPurgedAt": ""})
+            await table_merge("UploadJobs", {"PartitionKey": "upload", "RowKey": job_id, "ChunksBlobName": str(chunks_blob_name)[:500], "RawBlobRetentionUntil": raw_blob_retention_until[:64], "RawBlobPurgedAt": "", "UpdatedAt": datetime.now(timezone.utc).isoformat()})
             cached_job = upload_jobs_store.get(job_id)
             if cached_job:
                 cached_job = dict(cached_job)
@@ -4261,7 +3953,6 @@ async def _purge_upload_artifacts_for_conversation(conversation_id: str, user_su
     except Exception as e:
         logger.warning("[App] upload artifact purge query failed for %s: %s", safe_conv, e)
         return {"rows_deleted": 0, "blobs_deleted": 0, "jobs_deleted": 0}
-
     allowed_user = str(user_sub or "").strip()
     for row in rows:
         row_owner = str(row.get("UserSub", "") or "").strip()
@@ -4274,770 +3965,15 @@ async def _purge_upload_artifacts_for_conversation(conversation_id: str, user_su
     uploaded_files_store.pop(safe_conv, None)
     return {"rows_deleted": rows_deleted, "blobs_deleted": blobs_deleted, "jobs_deleted": jobs_deleted}
 
-@app.delete("/api/chats/{user_id}/{conversation_id}")
-@limiter.limit("30/minute", key_func=_user_or_ip_rate_key)
-async def delete_chat(request: Request, user_id: str, conversation_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    is_admin = _is_admin_user(user)
-    uid = user.get("sub") if not is_admin else user_id
-    await table_delete("ChatHistory", uid, conversation_id)
-    await _purge_upload_artifacts_for_conversation(
-        conversation_id,
-        user_sub=str(uid or ""),
-        include_all_users=is_admin,
-    )
-    conversation_meta.pop(conversation_id, None)
-    uploaded_files_store.pop(conversation_id, None)
-    if conversation_id in conversations:
-        del conversations[conversation_id]
-    return {"status":"ok"}
 
-
-@app.get("/api/privacy/export")
-@limiter.limit("5/hour", key_func=_user_or_ip_rate_key)
-async def export_my_data(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    principal = get_current_principal(credentials, request=request)
-    export_payload = await build_user_privacy_export(principal.sub)
-    filename = f"dbde-privacy-export-{safe_blob_component(principal.sub, 'user')}.json"
-    content = json.dumps(export_payload, ensure_ascii=False, indent=2, default=str).encode("utf-8")
-    download_id = await _store_generated_file(
-        content,
-        "application/json",
-        filename,
-        "json",
-        user_sub=principal.sub,
-        scope="privacy_export",
-    )
-    await log_audit(
-        principal.sub,
-        "privacy_export",
-        metadata={
-            "mode": "privacy",
-            "provider_used": "internal",
-            "conversation_id": "",
-            "summary": export_payload.get("summary", {}),
-        },
-    )
-    return {
-        "status": "ok",
-        "download_id": download_id,
-        "url": f"/api/download/{download_id}" if download_id else "",
-        "filename": filename,
-        "summary": export_payload.get("summary", {}),
-    }
-
-
-@app.post("/api/privacy/delete")
-@limiter.limit("2/hour", key_func=_user_or_ip_rate_key)
-async def delete_my_data(
-    request: Request,
-    payload: PrivacyDeleteRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    principal = get_current_principal(credentials, request=request)
-    if payload.confirmation != "DELETE_MY_DATA":
-        raise HTTPException(400, "Confirmação inválida.")
-    result = await delete_user_personal_data(principal.sub, delete_account=bool(payload.delete_account))
-    for conversation_id in result.get("conversation_ids_deleted", []) or []:
-        safe_conv = str(conversation_id or "").strip()
-        if not safe_conv:
-            continue
-        conversations.pop(safe_conv, None)
-        conversation_meta.pop(safe_conv, None)
-        uploaded_files_store.pop(safe_conv, None)
-    if payload.delete_account:
-        await persist_user_invalidation(principal.sub)
-    await log_audit(
-        principal.sub,
-        "privacy_delete",
-        metadata={
-            "mode": "privacy",
-            "provider_used": "internal",
-            "conversation_id": "",
-            "delete_account": bool(payload.delete_account),
-            "summary": result,
-        },
-    )
-    return {"status": "ok", **result}
-
-# =============================================================================
-# LEARNING ENDPOINTS
-# =============================================================================
-
-@app.post("/api/learning/rules")
-@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
-async def add_rule(request: Request, rule_text: str, category: str = "general", credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Admin only")
-    rid = f"rule_{uuid.uuid4().hex[:8]}"
-    await table_insert("PromptRules", {"PartitionKey":"active","RowKey":rid,"RuleText":rule_text,"Category":category,"CreatedBy":user.get("sub"),"CreatedAt":datetime.now(timezone.utc).isoformat()})
-    invalidate_prompt_rules_cache()
-    return {"status":"ok","rule_id":rid}
-
-@app.get("/api/learning/rules")
-@limiter.limit("60/minute", key_func=_user_or_ip_rate_key)
-async def list_rules(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if not _is_admin_user(user):
-        raise HTTPException(403, "Admin only")
-    rules = await table_query("PromptRules", "PartitionKey eq 'active'", top=50)
-    return {"rules":[{"id":r.get("RowKey"),"text":r.get("RuleText"),"category":r.get("Category"),"created_by":r.get("CreatedBy")} for r in rules]}
-
-@app.delete("/api/learning/rules/{rule_id}")
-@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
-async def delete_rule(request: Request, rule_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Admin only")
-    await table_delete("PromptRules", "active", rule_id)
-    invalidate_prompt_rules_cache()
-    return {"status":"ok"}
-
-@app.post("/api/learning/analyze")
-@limiter.limit("10/minute", key_func=_user_or_ip_rate_key)
-async def analyze_feedback(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403, "Admin only")
-    fbs = await table_query("feedback", top=500)
-    if not fbs: return {"analysis":"Sem feedback suficiente.","suggestions":[]}
-    
-    neg = [f for f in fbs if f.get("Rating",10) <= 3]
-    pos = [f for f in fbs if f.get("Rating",0) >= 8]
-    summary = f"Total: {len(fbs)} feedbacks. Positivos(8+): {len(pos)}. Negativos(3-): {len(neg)}.\n\n"
-    if neg:
-        summary += "FEEDBACK NEGATIVO:\n"
-        for f in neg[:10]: summary += f"- Q: {f.get('Question','')[:80]}... Rating: {f.get('Rating')}, Nota: {f.get('Note','')}\n"
-    
-    try:
-        analysis = await llm_simple(f"Analisa feedback de agente AI e sugere melhorias:\n\n{summary}", tier="standard", max_tokens=1500)
-    except Exception as e:
-        logger.warning("[App] analyze_feedback LLM failed, using summary fallback: %s", e)
-        analysis = summary
-    
-    return {"analysis":analysis, "total":len(fbs), "positive":len(pos), "negative":len(neg)}
-
-# =============================================================================
-# INFO / HEALTH / DEBUG
-# =============================================================================
-
-def _build_admin_info_payload() -> dict:
-    return {
-        "service": APP_TITLE,
-        "version": APP_VERSION,
-        "status": "running",
-        "models": {"fast": LLM_TIER_FAST, "standard": LLM_TIER_STANDARD, "pro": LLM_TIER_PRO, "vision": LLM_TIER_VISION},
-        "routing": {
-            "model_router_enabled": MODEL_ROUTER_ENABLED,
-            "model_router_effective": bool(MODEL_ROUTER_ENABLED and (not MODEL_ROUTER_NON_PROD_ONLY or not IS_PRODUCTION)),
-            "model_router_spec": MODEL_ROUTER_SPEC,
-            "model_router_target_tiers": list(MODEL_ROUTER_TARGET_TIERS),
-            "model_router_non_prod_only": MODEL_ROUTER_NON_PROD_ONLY,
-        },
-        "rerank": {
-            "enabled": RERANK_ENABLED,
-            "model": RERANK_MODEL,
-            "endpoint_configured": bool(str(RERANK_ENDPOINT or "").strip()),
-            "top_n": RERANK_TOP_N,
-            "auth_mode": RERANK_AUTH_MODE,
-        },
-        "indexes": {"devops": DEVOPS_INDEX, "omni": OMNI_INDEX, "examples": EXAMPLES_INDEX},
-        "active_tools": get_registered_tool_names(),
-        "capabilities": [
-            "multi_model",
-            "streaming_sse",
-            "jwt_cookie_auth",
-            "agent_routing",
-            "parallel_tools",
-            "export_csv_xlsx_pdf_svg_html_zip",
-            "feedback",
-            "file_upload",
-            "chat_persistence",
-            "adaptive_learning",
-        ],
-        "upload_limits": {
-            "max_files_per_conversation": MAX_FILES_PER_CONVERSATION,
-            "max_images_per_message": UPLOAD_MAX_IMAGES_PER_MESSAGE,
-            "max_file_bytes": MAX_UPLOAD_FILE_BYTES,
-            "max_file_bytes_by_extension": get_tabular_upload_limits(),
-            "max_batch_total_bytes": UPLOAD_MAX_BATCH_TOTAL_BYTES,
-            "frontend_async_threshold_bytes": UPLOAD_FRONTEND_ASYNC_THRESHOLD_BYTES,
-            "max_concurrent_jobs": MAX_CONCURRENT_UPLOAD_JOBS,
-            "max_pending_jobs_per_user": UPLOAD_MAX_PENDING_JOBS_PER_USER,
-            "embedding_concurrency": UPLOAD_EMBEDDING_CONCURRENCY,
-            "max_chunks_per_file": UPLOAD_MAX_CHUNKS_PER_FILE,
-            "job_stale_seconds": UPLOAD_JOB_STALE_SECONDS,
-            "index_top": UPLOAD_INDEX_TOP,
-        },
-        "upload_storage": {
-            "raw_container": UPLOAD_BLOB_CONTAINER_RAW,
-            "text_container": UPLOAD_BLOB_CONTAINER_TEXT,
-            "chunks_container": UPLOAD_BLOB_CONTAINER_CHUNKS,
-            "inline_worker_enabled": INLINE_WORKER_ENABLED_EFFECTIVE,
-            "inline_worker_configured": UPLOAD_INLINE_WORKER_ENABLED,
-            "inline_worker_runtime_guard": INLINE_WORKER_RUNTIME_GUARD,
-            "dedicated_worker_sidecar": UPLOAD_DEDICATED_WORKER_ENABLED,
-            "worker_poll_seconds": UPLOAD_WORKER_POLL_SECONDS,
-            "worker_batch_size": UPLOAD_WORKER_BATCH_SIZE,
-        },
-        "export_storage": {
-            "jobs_table": "ExportJobs",
-            "payload_container": CHAT_TOOLRESULT_BLOB_CONTAINER,
-            "auto_async_enabled": EXPORT_AUTO_ASYNC_ENABLED,
-            "async_threshold_rows": EXPORT_ASYNC_THRESHOLD_ROWS,
-            "max_concurrent_jobs": EXPORT_MAX_CONCURRENT_JOBS,
-            "job_stale_seconds": EXPORT_JOB_STALE_SECONDS,
-            "inline_worker_enabled": EXPORT_INLINE_WORKER_ENABLED_EFFECTIVE,
-            "inline_worker_configured": EXPORT_INLINE_WORKER_ENABLED,
-            "dedicated_worker_sidecar": EXPORT_DEDICATED_WORKER_ENABLED,
-            "worker_poll_seconds": EXPORT_WORKER_POLL_SECONDS,
-            "worker_batch_size": EXPORT_WORKER_BATCH_SIZE,
-        },
-        "pptx_status": "ok" if Presentation is not None else "unavailable",
-    }
-
-
-@app.get("/api/info")
-@limiter.limit("120/minute", key_func=_login_rate_key)
-async def api_info(request: Request):
-    return {
-        "service": APP_TITLE,
-        "version": APP_VERSION,
-        "status": "running",
-        "mode": "public",
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "upload_limits": {
-            "max_files_per_conversation": MAX_FILES_PER_CONVERSATION,
-            "max_images_per_message": UPLOAD_MAX_IMAGES_PER_MESSAGE,
-            "max_file_bytes": MAX_UPLOAD_FILE_BYTES,
-            "max_file_bytes_by_extension": get_tabular_upload_limits(),
-            "max_batch_total_bytes": UPLOAD_MAX_BATCH_TOTAL_BYTES,
-            "frontend_async_threshold_bytes": UPLOAD_FRONTEND_ASYNC_THRESHOLD_BYTES,
-        },
-        "features": {
-            "user_story_lane": STORY_LANE_ENABLED,
-            "speech_prompt": True,
-            "speech_provider": "azure_speech" if (AZURE_SPEECH_ENABLED and AZURE_SPEECH_KEY and AZURE_SPEECH_REGION) else "browser_fallback",
-            "speech_prompt_primary": SPEECH_PROMPT_PRIMARY_SPEC,
-            "speech_prompt_fallback": SPEECH_PROMPT_FALLBACK_SPEC,
-            "speech_submit_modes": ["auto", "text"],
-            "provider_governance_mode": PROVIDER_GOVERNANCE_MODE,
-            "provider_external_model_families": list(PROVIDER_EXTERNAL_MODEL_FAMILIES),
-            "provider_external_models_experimental_allowed": PROVIDER_GOVERNANCE_EXPERIMENTAL_ALLOW_EXTERNAL,
-        },
-    }
-
-
-@app.get("/api/admin/info")
-@limiter.limit("60/minute", key_func=_user_or_ip_rate_key)
-async def api_admin_info(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    payload = _build_admin_info_payload()
-    payload["mode"] = "admin"
-    return payload
-
-
-@app.get("/api/admin/tool-metrics")
-async def api_admin_tool_metrics(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    return tool_metrics.snapshot()
-
-
-@app.get("/api/admin/token-quotas")
-async def api_admin_token_quotas(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    mgr = _tq_module.token_quota_manager
-    if not mgr:
-        return {"error": "Token quota manager not initialised"}
-    return await mgr.snapshot()
-
-
-@app.get("/api/admin/user-stories/eval-summary")
-async def api_admin_user_story_eval_summary(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    top: int = 250,
-    user_sub: Optional[str] = None,
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    return await build_user_story_eval_summary(user_sub=str(user_sub or "").strip(), top=top)
-
-
-@app.post("/api/admin/user-stories/promote-candidate")
-async def api_admin_user_story_promote_candidate(
-    payload: UserStoryPromoteRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await promote_user_story_to_curated_corpus(
-            draft_id=payload.draft_id,
-            source_user_sub=payload.user_sub,
-            promoted_by=str(user.get("sub", "") or user.get("username", "") or "admin"),
-            note=str(payload.note or "").strip(),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/review-candidate")
-async def api_admin_user_story_review_candidate(
-    payload: UserStoryCurationReviewRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await review_user_story_curated_candidate(
-            draft_id=payload.draft_id,
-            action=payload.action,
-            reviewed_by=str(user.get("sub", "") or user.get("username", "") or "admin"),
-            note=str(payload.note or "").strip(),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/sync-search-index")
-async def api_admin_user_story_sync_search_index(
-    payload: UserStorySearchSyncRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await sync_user_story_examples_search_index(
-            draft_id=str(payload.draft_id or "").strip(),
-            top=int(payload.top or 200),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/sync-devops-index")
-async def api_admin_user_story_sync_devops_index(
-    payload: UserStoryDevOpsSyncRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await sync_story_devops_index(
-            since_iso=str(payload.since_iso or "").strip(),
-            since_days=int(payload.since_days or 30),
-            top=int(payload.top or 1200),
-            update_cursor=bool(payload.update_cursor),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/sync-knowledge-index")
-async def api_admin_user_story_sync_knowledge_index(
-    payload: UserStoryKnowledgeSyncRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await sync_story_knowledge_index(
-            max_docs=int(payload.max_docs or 1500),
-            batch_size=int(payload.batch_size or 150),
-            update_state=bool(payload.update_state),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.get("/api/admin/user-stories/index-status")
-async def api_admin_user_story_index_status(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    return await get_story_lane_index_status()
-
-
-@app.get("/api/admin/user-stories/knowledge-assets")
-async def api_admin_user_story_list_knowledge_assets(
-    top: int = 100,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    return await list_story_knowledge_assets(top=max(1, min(int(top or 100), 500)))
-
-
-@app.post("/api/admin/user-stories/knowledge-assets/import-upload")
-async def api_admin_user_story_import_knowledge_asset_upload(
-    payload: UserStoryKnowledgeAssetUploadRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await create_story_knowledge_asset_from_upload(
-            conversation_id=payload.conversation_id,
-            file_id=payload.file_id,
-            imported_by=str(user.get("sub", "") or user.get("username", "") or "admin"),
-            title=str(payload.title or "").strip(),
-            domain=str(payload.domain or "").strip(),
-            journey=str(payload.journey or "").strip(),
-            flow=str(payload.flow or "").strip(),
-            team_scope=str(payload.team_scope or "").strip(),
-            note=str(payload.note or "").strip(),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/knowledge-assets/import-text")
-async def api_admin_user_story_import_knowledge_asset_text(
-    payload: UserStoryKnowledgeAssetTextRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await create_story_knowledge_asset_from_text(
-            title=payload.title,
-            content=payload.content,
-            imported_by=str(user.get("sub", "") or user.get("username", "") or "admin"),
-            asset_key=str(payload.asset_key or "").strip(),
-            domain=str(payload.domain or "").strip(),
-            journey=str(payload.journey or "").strip(),
-            flow=str(payload.flow or "").strip(),
-            team_scope=str(payload.team_scope or "").strip(),
-            note=str(payload.note or "").strip(),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/knowledge-assets/import-bundle")
-async def api_admin_user_story_import_knowledge_asset_bundle(
-    payload: UserStoryKnowledgeAssetBundleRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await create_story_knowledge_assets_from_bundle(
-            entries=[item.model_dump() for item in payload.items],
-            imported_by=str(user.get("sub", "") or user.get("username", "") or "admin"),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/admin/user-stories/knowledge-assets/review")
-async def api_admin_user_story_review_knowledge_asset(
-    payload: UserStoryKnowledgeAssetReviewRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-    try:
-        return await review_story_knowledge_asset(
-            asset_id=payload.asset_id,
-            action=payload.action,
-            reviewed_by=str(user.get("sub", "") or user.get("username", "") or "admin"),
-            note=str(payload.note or "").strip(),
-        )
-    except RuntimeError as exc:
-        raise HTTPException(400, str(exc))
-
-
-@app.post("/api/client-error")
-@limiter.limit("10/minute", key_func=_user_or_ip_rate_key)
-async def report_client_error(request: Request, report: ClientErrorReport):
-    """Receive and log frontend errors for observability."""
-    user = None
-    try:
-        user = _auth_payload_from_request(request)
-    except Exception:
-        user = None
-    user_id = str((user or {}).get("sub", "") or "anonymous")
-
-    logger.warning(
-        json.dumps(
-            {
-                "event": "client_error",
-                "user_id": user_id,
-                "error_type": report.error_type,
-                "message": report.message[:500],
-                "component": report.component or "",
-                "url": report.url or "",
-                "timestamp": report.timestamp or "",
-                "has_stack": bool(report.stack),
-            },
-            ensure_ascii=False,
-        )
-    )
-    return {"status": "logged"}
-
-
-@app.get("/api/runtime/check")
-async def runtime_check(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin":
-        raise HTTPException(403, "Apenas admins")
-
-    targets = [
-        BASE_DIR / "app.py",
-        BASE_DIR / "agent.py",
-        BASE_DIR / "tools.py",
-        BASE_DIR / "config.py",
-        BASE_DIR / "static" / "index.html",
-    ]
-    files = {}
-    for p in targets:
-        key = str(p.relative_to(BASE_DIR))
-        try:
-            full_sha = _file_sha256(p) if p.exists() else ""
-            files[key] = {
-                "exists": p.exists(),
-                "sha256": full_sha[:24],
-                "sha256_full": full_sha,
-                "size_bytes": p.stat().st_size if p.exists() else 0,
-            }
-        except Exception as e:
-            files[key] = {"exists": False, "error": str(e)}
-
-    markers = {}
-    try:
-        index_txt = (BASE_DIR / "static" / "index.html").read_text(encoding="utf-8", errors="replace")
-        markers = {
-            "max_files_10": "MAX_FILES_PER_CONVERSATION = 10" in index_txt,
-            "upload_async_frontend": "/upload/async" in index_txt,
-            "upload_status_frontend": "/api/upload/status/" in index_txt,
-        }
-    except Exception as e:
-        markers = {"error": str(e)}
-
-    manifest_result = {}
-    manifest_path = BASE_DIR / "deploy" / "runtime-manifest.json"
-    if manifest_path.exists():
-        try:
-            expected = json.loads(manifest_path.read_text(encoding="utf-8"))
-            expected_files = expected.get("files", {}) if isinstance(expected, dict) else {}
-            drift = {}
-            for rel_path, exp_hash in expected_files.items():
-                actual = (files.get(rel_path) or {}).get("sha256_full", "")
-                drift[rel_path] = {
-                    "expected": str(exp_hash or ""),
-                    "actual": str(actual or ""),
-                    "match": bool(actual) and str(actual) == str(exp_hash),
-                }
-            manifest_result = {
-                "path": str(manifest_path.relative_to(BASE_DIR)),
-                "has_manifest": True,
-                "all_match": all(v.get("match") for v in drift.values()) if drift else False,
-                "files": drift,
-            }
-        except Exception as e:
-            manifest_result = {"path": str(manifest_path.relative_to(BASE_DIR)), "has_manifest": True, "error": str(e)}
-    else:
-        manifest_result = {"path": str(manifest_path.relative_to(BASE_DIR)), "has_manifest": False}
-
-    return {
-        "service": APP_TITLE,
-        "version": APP_VERSION,
-        "runtime_utc": datetime.now(timezone.utc).isoformat(),
-        "files": files,
-        "markers": markers,
-        "manifest_check": manifest_result,
-    }
-
-
-@app.get("/api/debug/upload-jobs")
-async def debug_upload_jobs(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-):
-    """Temporary diagnostic endpoint — shows recent upload job states."""
-    user = get_current_user(credentials, request=request)
-    if user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
-    now = datetime.now(timezone.utc)
-    jobs_local = []
-    for job_id, job in upload_jobs_store.items():
-        jobs_local.append({
-            "job_id": str(job_id)[:12],
-            "status": str(job.get("status", "")),
-            "filename": str(job.get("filename", ""))[:40],
-            "size_mb": round(int(job.get("size_bytes", 0) or 0) / 1024 / 1024, 1),
-            "worker_id": str(job.get("worker_id", ""))[:16],
-            "created_at": str(job.get("created_at", ""))[:25],
-            "updated_at": str(job.get("updated_at", ""))[:25],
-            "error": str(job.get("error", ""))[:100],
-        })
-    # Also check Table Storage
-    storage_jobs = []
-    try:
-        rows = await table_query(
-            "UploadJobs",
-            "PartitionKey eq 'upload'",
-            top=20,
-        )
-        for row in rows:
-            status = str(row.get("Status", ""))
-            if status.lower() in ("completed", "failed"):
-                age = ""
-                try:
-                    updated = datetime.fromisoformat(str(row.get("UpdatedAt", "")))
-                    age = f"{int((now - updated).total_seconds())}s ago"
-                except (ValueError, TypeError):
-                    pass
-                if age and int((now - updated).total_seconds()) > 300:
-                    continue  # skip old completed/failed
-            storage_jobs.append({
-                "job_id": str(row.get("RowKey", ""))[:12],
-                "status": status,
-                "filename": str(row.get("Filename", ""))[:40],
-                "size_mb": round(int(row.get("SizeBytes", 0) or 0) / 1024 / 1024, 1),
-                "worker_id": str(row.get("WorkerId", ""))[:16],
-                "created_at": str(row.get("CreatedAt", ""))[:25],
-                "updated_at": str(row.get("UpdatedAt", ""))[:25],
-            })
-    except Exception as e:
-        storage_jobs = [{"error": str(e)[:200]}]
-    return {
-        "now_utc": now.isoformat(),
-        "worker_instance": WORKER_INSTANCE_ID[:16],
-        "inline_worker_enabled": INLINE_WORKER_ENABLED_EFFECTIVE,
-        "worker_task_alive": _inline_worker_task is not None and not _inline_worker_task.done() if _inline_worker_task else False,
-        "local_jobs": jobs_local,
-        "storage_jobs": storage_jobs,
-    }
-
-
-@app.get("/health")
-@limiter.limit("120/minute", key_func=_login_rate_key)
-async def health(
-    request: Request,
-    deep: bool = False,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-):
-    result = {"status": "healthy", "mode": "basic", "checks": {"app": "ok"}}
-    if not deep:
-        return result
-
-    try:
-        user = get_current_user(credentials)
-    except Exception:
-        return JSONResponse(
-            status_code=401,
-            content={"detail": "Token inválido para deep health check"},
-        )
-    if not _is_admin_user(user):
-        raise HTTPException(403, "Apenas admins")
-
-    result["mode"] = "deep"
-    checks = {}
-
-    # 1) Table Storage
-    try:
-        await table_query("feedback", top=1)
-        checks["table_storage"] = "ok"
-    except Exception as e:
-        checks["table_storage"] = f"error: {str(e)[:100]}"
-
-    # 2) Blob Storage
-    try:
-        probe_blob = "__health_probe__.txt"
-        _ = await blob_download_bytes(UPLOAD_BLOB_CONTAINER_RAW, probe_blob)
-        checks["blob_storage"] = "ok"
-    except Exception as e:
-        checks["blob_storage"] = f"error: {str(e)[:100]}"
-
-    # 3) Azure OpenAI (tier fast)
-    try:
-        _ = await llm_simple("ping", tier="fast", max_tokens=5)
-        checks["llm_fast"] = "ok"
-    except Exception as e:
-        checks["llm_fast"] = f"error: {str(e)[:100]}"
-
-    # 3b) Azure OpenAI (tier vision)
-    try:
-        if VISION_ENABLED:
-            _ = await llm_simple("ping", tier="vision", max_tokens=5)
-            checks["llm_vision"] = "ok"
-        else:
-            checks["llm_vision"] = "disabled"
-    except Exception as e:
-        checks["llm_vision"] = f"error: {str(e)[:100]}"
-
-    # 4) Azure AI Search
-    try:
-        from http_helpers import search_request_with_retry
-        url = f"https://{SEARCH_SERVICE}.search.windows.net/indexes/{DEVOPS_INDEX}/docs/search?api-version={API_VERSION_SEARCH}"
-        headers = {"Content-Type": "application/json", "api-key": SEARCH_KEY}
-        payload = {"search": "*", "top": 1}
-        search_resp = await search_request_with_retry(url=url, headers=headers, json_body=payload, max_retries=2)
-        checks["ai_search"] = "ok" if "error" not in search_resp else f"error: {str(search_resp.get('error', 'unknown'))[:100]}"
-    except Exception as e:
-        checks["ai_search"] = f"error: {str(e)[:100]}"
-
-    # 5) Rerank
-    try:
-        if RERANK_ENABLED:
-            endpoint_configured = bool(str(RERANK_ENDPOINT or "").strip())
-            checks["rerank"] = "configured" if endpoint_configured else "error: missing endpoint"
-        else:
-            checks["rerank"] = "disabled"
-    except Exception as e:
-        checks["rerank"] = f"error: {str(e)[:100]}"
-
-    # 6) Dedicated workers (when enabled)
-    try:
-        upload_worker_enabled = UPLOAD_DEDICATED_WORKER_ENABLED
-        if upload_worker_enabled:
-            pid = _load_pid_from_file(UPLOAD_WORKER_PID_FILE)
-            checks["upload_worker"] = "ok" if _is_process_alive(pid) else "error: worker_not_running"
-        else:
-            checks["upload_worker"] = "disabled"
-    except Exception as e:
-        checks["upload_worker"] = f"error: {str(e)[:100]}"
-
-    try:
-        export_worker_enabled = EXPORT_DEDICATED_WORKER_ENABLED
-        if export_worker_enabled:
-            pid = _load_pid_from_file(EXPORT_WORKER_PID_FILE)
-            checks["export_worker"] = "ok" if _is_process_alive(pid) else "error: worker_not_running"
-        else:
-            checks["export_worker"] = "disabled"
-    except Exception as e:
-        checks["export_worker"] = f"error: {str(e)[:100]}"
-
-    result["checks"] = checks
-    all_ok = all(v == "ok" or v in ("configured", "disabled") for v in checks.values())
-    result["status"] = "healthy" if all_ok else "degraded"
-    return JSONResponse(status_code=200 if all_ok else 503, content=result)
-
-@app.get("/debug/conversations")
-async def debug_conversations(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    user = get_current_user(credentials)
-    if user.get("role") != "admin": raise HTTPException(403)
-    return {cid: {"mode":conversation_meta.get(cid,{}).get("mode"), "msgs":len(msgs), "has_file":cid in uploaded_files_store} for cid,msgs in conversations.items()}
-
+# CHAT PERSISTENCE + PRIVACY endpoints → routes_chat.py
+_chat_state.update({
+    "conversations": conversations,
+    "conversation_meta": conversation_meta,
+    "uploaded_files_store": uploaded_files_store,
+    "purge_upload_artifacts_for_conversation": _purge_upload_artifacts_for_conversation,
+})
+app.include_router(_chat_router)
 # =============================================================================
 # FRONTEND
 # =============================================================================

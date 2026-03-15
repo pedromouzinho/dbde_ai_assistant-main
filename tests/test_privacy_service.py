@@ -1,6 +1,6 @@
 import pytest
 
-import app as app_module
+import routes_chat
 import privacy_service
 from models import PrivacyDeleteRequest
 
@@ -145,7 +145,7 @@ async def test_delete_user_personal_data_deletes_owned_rows_and_anonymizes_globa
 
 @pytest.mark.asyncio
 async def test_privacy_export_endpoint_returns_generated_download(monkeypatch):
-    monkeypatch.setattr(app_module, "get_current_principal", lambda _credentials=None, request=None: type("P", (), {"sub": "pedro"})())
+    monkeypatch.setattr(routes_chat, "get_current_principal", lambda _credentials=None, request=None: type("P", (), {"sub": "pedro"})())
 
     async def _fake_build_user_privacy_export(user_sub):
         return {"summary": {"chat_history": 2}}
@@ -153,15 +153,15 @@ async def test_privacy_export_endpoint_returns_generated_download(monkeypatch):
     async def _fake_store_generated_file(*args, **kwargs):
         return "download-123"
 
-    monkeypatch.setattr(app_module, "build_user_privacy_export", _fake_build_user_privacy_export)
-    monkeypatch.setattr(app_module, "_store_generated_file", _fake_store_generated_file)
+    monkeypatch.setattr(routes_chat, "build_user_privacy_export", _fake_build_user_privacy_export)
+    monkeypatch.setattr(routes_chat, "_store_generated_file", _fake_store_generated_file)
 
     async def _fake_log_audit(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(app_module, "log_audit", _fake_log_audit)
+    monkeypatch.setattr(routes_chat, "log_audit", _fake_log_audit)
 
-    result = await app_module.export_my_data(None, credentials=None)
+    result = await routes_chat.export_my_data(None, credentials=None)
 
     assert result["status"] == "ok"
     assert result["download_id"] == "download-123"
@@ -170,19 +170,32 @@ async def test_privacy_export_endpoint_returns_generated_download(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_privacy_delete_endpoint_requires_confirmation_and_returns_summary(monkeypatch):
-    monkeypatch.setattr(app_module, "get_current_principal", lambda _credentials=None, request=None: type("P", (), {"sub": "pedro"})())
+    monkeypatch.setattr(routes_chat, "get_current_principal", lambda _credentials=None, request=None: type("P", (), {"sub": "pedro"})())
 
     async def _fake_delete_user_personal_data(user_sub, delete_account=False):
         return {"deleted_rows": 10, "anonymized_rows": 2, "deleted_blobs": 3}
 
-    monkeypatch.setattr(app_module, "delete_user_personal_data", _fake_delete_user_personal_data)
+    monkeypatch.setattr(routes_chat, "delete_user_personal_data", _fake_delete_user_personal_data)
 
     async def _fake_log_audit(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(app_module, "log_audit", _fake_log_audit)
+    monkeypatch.setattr(routes_chat, "log_audit", _fake_log_audit)
 
-    result = await app_module.delete_my_data(None, PrivacyDeleteRequest(), credentials=None)
+    async def _fake_persist_user_invalidation(user_sub):
+        return None
+
+    monkeypatch.setattr(routes_chat, "persist_user_invalidation", _fake_persist_user_invalidation)
+
+    # Inject router state so _get_conversations / _get_conversation_meta / _get_uploaded_files_store work
+    routes_chat._router_state.update({
+        "conversations": {},
+        "conversation_meta": {},
+        "uploaded_files_store": {},
+        "purge_upload_artifacts_for_conversation": lambda *a, **kw: None,
+    })
+
+    result = await routes_chat.delete_my_data(None, PrivacyDeleteRequest(), credentials=None)
 
     assert result["status"] == "ok"
     assert result["deleted_rows"] == 10
