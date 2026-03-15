@@ -13,13 +13,13 @@
 | 0 | Infraestrutura P1v3 | ✅ Concluído | `a967512` | — |
 | 1 | Perguntas de Clarificação | ✅ Concluído | `57a5226` | ✅ Pass |
 | 2 | PowerPoint Branded (BCP) | ✅ Concluído | `56f215c` `2fd4d25` `06275ac` `61ffc02` | ✅ 33 testes |
-| 3 | Excel Avançado | ⬜ Não iniciado | — | — |
+| 3 | Excel Avançado | ✅ Concluído | `0b8acd2` | ✅ 56 testes |
 | 4 | Auto-Rule Generation | ⬜ Não iniciado | — | — |
 | 5 | SQL Server Connector | ⬜ Não iniciado | — | — |
 | 6 | Semantic Search v2 | ⬜ Não iniciado | — | — |
-| — | Deploy para produção | ⏳ Bloqueado | — | — |
+| — | Deploy | ✅ Live | — | — |
 
-**Total testes:** 425 (392 existentes + 33 PPTX) · Todos a passar ✅
+**Total testes:** 481 (392 existentes + 33 PPTX + 56 XLSX) · Todos a passar ✅
 
 ---
 
@@ -73,12 +73,30 @@ Arquitetura de 3 camadas:
 | `analyze_feedback` (App) | fast (GPT-4.1) | **standard (Sonnet)** |
 | `classify_emails` (Email) | standard (Sonnet) | standard *(mantido — bom custo/qualidade)* |
 
-### ⬜ Feature 3 — Excel Avançado
-- Multi-sheet workbooks
-- Fórmulas Excel nativas
-- Gráficos embebidos (charts)
-- Formatação condicional
-- **Estado:** Não iniciado
+### ✅ Feature 3 — Excel Avançado
+Arquitetura de 3 camadas (mesma do PPTX):
+
+| Camada | Descrição |
+|--------|-----------|
+| **Opus AI Planner** | Claude Opus 4.6 planeia estrutura do workbook (quantas sheets, gráficos, KPIs) |
+| **Validation Layer** | Max 20 sheets, max 10K rows/sheet (auto-split), max 50 cols, dedup nomes |
+| **Render Engine** | Multi-sheet com tipos nativos, fórmulas, gráficos, formatação condicional |
+
+**Capacidades:**
+- Multi-sheet workbooks com separação inteligente
+- Tipos de dados nativos: números, datas (DD/MM/YYYY), percentagens (0.0%), moeda (€), URLs com hyperlink
+- Fórmulas Excel nativas: SUM, AVERAGE, COUNTA automáticos em colunas numéricas
+- Gráficos embebidos: Bar, Line, Pie (na sheet ou em sheet separada)
+- Formatação condicional (color scale) em colunas numéricas
+- Auto-filter + freeze panes em todas as sheets
+- Sheet de resumo executivo com KPIs (cards com valor grande + label)
+- Branding Millennium BCP (cor, fontes, zebra stripes)
+
+**Nova tool:** `generate_spreadsheet` (vs `generate_file` para exports simples)
+- Modo content (Opus planeia) — preferido
+- Modo sheets (estrutura pré-definida)
+
+**Commit:** `0b8acd2` — 56 testes
 
 ### ⬜ Feature 4 — Auto-Rule Generation
 - Geração automática de PromptRules a partir de padrões de feedback
@@ -97,22 +115,10 @@ Arquitetura de 3 camadas:
 
 ---
 
-## ⏳ Deploy — Bloqueado
+## Deploy
 
-**Razão:** Sessão Azure CLI expirada (AADSTS70043)
-
-**Para desbloquear:**
-```bash
-az login
-```
-
-Depois do login:
-```bash
-cd /Users/pedromousinho/Downloads/dbde_ai_assistant-main
-az webapp up --name millennium-ai-assistant --resource-group rg-MS_Access_Chabot --runtime "PYTHON:3.12"
-```
-
-**Nota:** SCM tem regra DenyAll + apenas IP `176.223.10.28/32` whitelisted. Se o IP mudar, é necessário atualizar a access restriction.
+**Último deploy:** 2026-03-15 10:22 UTC
+**Estado:** ✅ Live em https://dbdeai.pt
 
 ---
 
@@ -125,4 +131,4 @@ az webapp up --name millennium-ai-assistant --resource-group rg-MS_Access_Chabot
 1. **Segurança é #1** — dados confidenciais, zero compromissos
 2. **Opus para qualidade** — operações críticas usam Claude Opus 4.6
 3. **Testes obrigatórios** — cada feature tem test suite completa
-4. **Deploy só após validação** — todos os 425 testes devem passar
+4. **Deploy só após validação** — todos os 481 testes devem passar
