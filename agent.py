@@ -977,6 +977,27 @@ async def _inject_file_context(conv_id: str, messages: List[dict]):
                 ]
             )
 
+        # A5: Cross-file JOIN hint when multiple tabular files exist
+        tabular_count = sum(
+            1 for f in use_files
+            if is_tabular_filename(str(f.get("filename", "")))
+        )
+        if tabular_count >= 2:
+            tabular_names = [
+                str(f.get("filename", "")) for f in use_files
+                if is_tabular_filename(str(f.get("filename", "")))
+            ]
+            ctx_parts.append(
+                "## CROSS-FILE ANALYSIS DISPONÍVEL\n"
+                f"Existem {tabular_count} ficheiros tabulares ({', '.join(tabular_names)}). "
+                "No run_code, o sandbox fornece:\n"
+                "- `DB` — DuckDB connection com todas as tabelas pré-carregadas (nomes derivados dos ficheiros)\n"
+                "- `DUCKDB_TABLES` — dict {nome_tabela: ficheiro_origem}\n"
+                "- Podes fazer JOINs entre tabelas: `DB.execute('SELECT ... FROM t1 JOIN t2 ON ...')`\n"
+                "- Para análises cruzadas entre ficheiros, PREFERE usar DB (DuckDB) em vez de pandas.\n"
+                "- Os ficheiros .parquet e .csv estão ambos disponíveis no sandbox."
+            )
+
         ctx = "\n\n".join(ctx_parts)[:120000]
         messages.append({"role": "system", "content": ctx})
         await _update_conversation_meta(conv_id, file_injected=True)

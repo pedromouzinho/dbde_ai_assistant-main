@@ -2181,6 +2181,12 @@ async def _load_uploaded_files_for_code(
                     mounted_bytes = export_tabular_artifact_as_csv_bytes(artifact_bytes)
                     base_name = safe_name.rsplit(".", 1)[0] if "." in safe_name else safe_name
                     mounted_name = f"{base_name}.csv"
+                    # A5: Also mount Parquet for DuckDB cross-file JOINs
+                    parquet_name = f"{base_name}.parquet"
+                    parquet_size = len(artifact_bytes)
+                    if total + len(mounted_bytes) + parquet_size <= max_total_bytes:
+                        uploaded_files[parquet_name] = artifact_bytes
+                        total += parquet_size
                 except Exception as e:
                     logging.warning("[Tools] run_code failed to hydrate tabular artifact %s: %s", safe_name, e)
                     mounted_bytes = b""

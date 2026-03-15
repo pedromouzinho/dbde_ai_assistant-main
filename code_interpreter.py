@@ -49,6 +49,7 @@ ALLOWED_IMPORTS = {
     "pandas", "numpy", "matplotlib", "matplotlib.pyplot",
     "seaborn", "plotly", "plotly.express", "plotly.graph_objects",
     "openpyxl", "pyxlsb", "xlrd", "xlsxwriter",
+    "duckdb",
     "base64", "copy", "pprint", "typing",
 }
 
@@ -319,11 +320,42 @@ def _runner_script(tmpdir: str, code_b64: str) -> str:
             _n for _n in sorted(os.listdir(TMPDIR))
             if os.path.isfile(os.path.join(TMPDIR, _n)) and not _n.startswith("_")
         ]
+
+        # A5: Bootstrap DuckDB with all uploaded files as tables
+        _duckdb_tables = {{}}
+        _db = None
+        try:
+            import duckdb as _duckdb_mod
+            _db = _duckdb_mod.connect(database=":memory:")
+            for _uf in _uploaded_files:
+                _uf_path = os.path.join(TMPDIR, _uf)
+                _uf_lower = _uf.lower()
+                _tbl_name = _uf.rsplit(".", 1)[0] if "." in _uf else _uf
+                _tbl_name = "".join(c if c.isalnum() or c == "_" else "_" for c in _tbl_name)
+                if not _tbl_name or _tbl_name[0].isdigit():
+                    _tbl_name = "t_" + _tbl_name
+                try:
+                    if _uf_lower.endswith(".parquet"):
+                        _db.execute(f'CREATE TABLE "{{_tbl_name}}" AS SELECT * FROM read_parquet(?)', [_uf_path])
+                    elif _uf_lower.endswith(".csv") or _uf_lower.endswith(".tsv"):
+                        _db.execute(f'CREATE TABLE "{{_tbl_name}}" AS SELECT * FROM read_csv_auto(?)', [_uf_path])
+                    else:
+                        continue
+                    _duckdb_tables[_tbl_name] = _uf
+                except Exception:
+                    pass
+        except ImportError:
+            pass
+        except Exception:
+            pass
+
         glb = {{
             "__name__": "__main__",
             "UPLOADED_FILES": _uploaded_files,
             "DEFAULT_FILE": (_uploaded_files[0] if _uploaded_files else ""),
             "DATA_DIR": os.path.join(TMPDIR, "mnt", "data"),
+            "DB": _db,
+            "DUCKDB_TABLES": _duckdb_tables,
         }}
         loc = {{}}
         with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
@@ -333,6 +365,13 @@ def _runner_script(tmpdir: str, code_b64: str) -> str:
                 success = False
                 error = f"{{exc.__class__.__name__}}: {{exc}}"
                 traceback.print_exc(file=stderr_buf)
+
+        # A5: Close DuckDB connection after user code
+        if _db is not None:
+            try:
+                _db.close()
+            except Exception:
+                pass
 
         after = set(os.listdir(TMPDIR))
         generated = []

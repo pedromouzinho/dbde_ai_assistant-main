@@ -261,8 +261,10 @@ async def test_load_uploaded_files_for_code_falls_back_to_artifact(monkeypatch):
 
     mounted = await tools._load_uploaded_files_for_code("conv-1", user_sub="pedro", filename="sample.xlsx")
 
-    assert list(mounted.keys()) == ["sample.csv"]
+    assert "sample.csv" in mounted
     assert b"Date,Category,Revenue" in mounted["sample.csv"]
+    # A5: Parquet also mounted alongside CSV for DuckDB cross-file JOINs
+    assert "sample.parquet" in mounted
 
 
 @pytest.mark.asyncio
@@ -291,8 +293,10 @@ async def test_load_uploaded_files_for_code_prefers_artifact_over_raw(monkeypatc
 
     mounted = await tools._load_uploaded_files_for_code("conv-1", user_sub="pedro", filename="sample.xlsx")
 
-    assert list(mounted.keys()) == ["sample.csv"]
+    assert "sample.csv" in mounted
     assert b"Date,Category,Revenue" in mounted["sample.csv"]
+    # A5: Parquet also mounted alongside CSV
+    assert "sample.parquet" in mounted
     assert downloads == ["upload-artifacts/sample.parquet"]
 
 
