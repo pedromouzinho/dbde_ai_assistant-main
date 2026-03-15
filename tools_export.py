@@ -511,6 +511,128 @@ async def tool_generate_presentation(
     return result
 
 
+async def tool_generate_spreadsheet(
+    title: str = "Relatório",
+    sheets: list = None,
+    content: str = "",
+    context: str = "",
+    include_summary: bool = True,
+    include_charts: bool = True,
+    conv_id: str = "",
+    user_sub: str = "",
+):
+    """Gera Excel avançado (multi-sheet, fórmulas, gráficos) via xlsx_engine.
+
+    Dois modos:
+    1. Structured: passa 'sheets' com array de sheet specs pré-estruturados
+    2. AI-planned: passa 'content' com texto/dados — Claude Opus planeia
+    """
+    has_sheets = isinstance(sheets, list) and len(sheets) > 0
+    has_content = bool(content and content.strip())
+
+    if not has_sheets and not has_content:
+        return {"error": "Fornece 'sheets' (array de specs) ou 'content' (texto/dados para o Opus planear)."}
+
+    planning_used = False
+    workbook_spec = None
+
+    if has_content:
+        try:
+            from xlsx_engine import plan_workbook_with_opus
+            workbook_spec = await plan_workbook_with_opus(
+                content, title=title, context=context, tier="pro",
+            )
+            if workbook_spec:
+                planning_used = True
+        except Exception as e:
+            logging.warning("[Tools] Opus workbook planning failed: %s", e)
+
+    if not workbook_spec:
+        if has_sheets:
+            # Build spec from provided sheets
+            workbook_spec = {"sheets": sheets, "summary": None, "charts": []}
+        elif has_content:
+            # Fallback: try to parse content as JSON data
+            from xlsx_engine import _fallback_workbook_from_data
+            try:
+                parsed = json.loads(content)
+                if isinstance(parsed, list):
+                    workbook_spec = _fallback_workbook_from_data(parsed, title=title)
+                elif isinstance(parsed, dict) and "items" in parsed:
+                    workbook_spec = _fallback_workbook_from_data(
+                        parsed["items"], title=title,
+                        columns=parsed.get("columns"),
+                    )
+                else:
+                    return {"error": "Content não é JSON válido (array ou {items: [...]})."}
+            except json.JSONDecodeError:
+                return {"error": "Sem dados estruturados. Passa 'sheets' ou 'content' com dados JSON."}
+
+    if not workbook_spec:
+        return {"error": "Não foi possível criar estrutura do workbook."}
+
+    safe_title = "".join(
+        ch if ch.isalnum() or ch in " _-" else "_"
+        for ch in (title or "Relatorio")
+    ).strip()[:50] or "Relatorio"
+
+    try:
+        from xlsx_engine import generate_workbook
+        buf = generate_workbook(workbook_spec)
+    except ImportError:
+        return {"error": "openpyxl não disponível no servidor."}
+    except Exception as e:
+        logging.error("[Tools] tool_generate_spreadsheet failed: %s", e)
+        return {"error": f"Erro ao gerar Excel avançado: {str(e)[:200]}"}
+
+    file_content = buf.getvalue()
+    if not file_content:
+        return {"error": "Excel gerado está vazio"}
+
+    mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    filename = f"{safe_title}.xlsx"
+
+    download_id = await _store_generated_file(
+        file_content,
+        mime_type,
+        filename,
+        "xlsx",
+        user_sub=str(user_sub or "").strip(),
+        conversation_id=str(conv_id or "").strip(),
+        scope="generate_spreadsheet",
+    )
+    if not download_id:
+        return {"error": "Ficheiro demasiado grande para armazenamento temporário"}
+
+    total_sheets = len(workbook_spec.get("sheets", []))
+    total_rows = sum(len(s.get("data", [])) for s in workbook_spec.get("sheets", []))
+
+    result = {
+        "spreadsheet_generated": True,
+        "format": "xlsx",
+        "title": safe_title,
+        "total_sheets": total_sheets,
+        "total_rows": total_rows,
+        "has_summary": workbook_spec.get("summary") is not None,
+        "has_formulas": True,
+        "planning_model": "claude-opus-4.6" if planning_used else "structured_input",
+        "_file_download": {
+            "download_id": download_id,
+            "endpoint": f"/api/download/{download_id}",
+            "filename": filename,
+            "format": "xlsx",
+            "mime_type": mime_type,
+            "size_bytes": len(file_content),
+            "expires_in_seconds": _GENERATED_FILE_TTL_SECONDS,
+            "primary": True,
+            "label": f"📥 Download {filename}",
+        },
+    }
+    if planning_used:
+        result["planning_note"] = "Workbook planeado por Claude Opus 4.6 para máxima qualidade"
+    return result
+
+
 def truncate_tool_result(result_str):
     if len(result_str) <= AGENT_TOOL_RESULT_MAX_SIZE: return result_str
     try:

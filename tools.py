@@ -44,7 +44,7 @@ from tools_devops import (
 )
 from tools_knowledge import tool_search_workitems, tool_search_website, tool_search_web
 from tools_upload import tool_search_uploaded_document
-from tools_export import tool_generate_chart, tool_generate_file, tool_generate_presentation
+from tools_export import tool_generate_chart, tool_generate_file, tool_generate_presentation, tool_generate_spreadsheet
 from tools_email import tool_prepare_outlook_draft, tool_classify_uploaded_emails
 from tools_learning import tool_get_writer_profile, tool_save_writer_profile
 from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
@@ -2773,6 +2773,59 @@ _BUILTIN_TOOL_DEFINITIONS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_spreadsheet",
+            "description": "Gera Excel AVANÇADO (multi-sheet, fórmulas SUM/AVG, gráficos embebidos, tipos nativos, formatação condicional, auto-filter). USA SEMPRE que o utilizador pedir relatório Excel complexo, dashboard, workbook multi-tab, ou análise com gráficos. Para exports simples de tabela única, usa generate_file com format='xlsx'. Dois modos: (1) passa 'content' com texto/dados e o Claude Opus 4.6 planeia a melhor estrutura, ou (2) passa 'sheets' com specs pré-estruturados. PREFERIR modo 'content'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Título do workbook (aparece no cabeçalho de cada sheet)."
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "MODO PREFERIDO: Texto livre ou JSON com dados/análise. O Claude Opus 4.6 planeia automaticamente: quantas sheets, que gráficos, que KPIs, fórmulas, formatação condicional. Inclui toda a informação relevante. Para dados tabulares, pode ser JSON array."
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "Contexto adicional (ex: tipo de relatório, público-alvo, métricas importantes)."
+                    },
+                    "sheets": {
+                        "type": "array",
+                        "description": "MODO ALTERNATIVO: Lista de specs de sheets pré-estruturados.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string", "description": "Nome do tab/sheet (max 31 chars)."},
+                                "title": {"type": "string", "description": "Título display no cabeçalho."},
+                                "columns": {"type": "array", "items": {"type": "string"}, "description": "Ordem das colunas."},
+                                "data": {"type": "array", "items": {"type": "object"}, "description": "Linhas de dados (array de dicts)."},
+                                "formulas": {"type": "boolean", "description": "Adicionar SUM/AVG/COUNT. Default: true."},
+                                "auto_filter": {"type": "boolean", "description": "Auto-filter + freeze panes. Default: true."},
+                                "conditional": {"type": "boolean", "description": "Formatação condicional em colunas numéricas. Default: false."},
+                                "chart": {
+                                    "type": "object",
+                                    "description": "Gráfico a embeber nesta sheet.",
+                                    "properties": {
+                                        "type": {"type": "string", "enum": ["bar", "line", "pie"]},
+                                        "title": {"type": "string"},
+                                        "label_column": {"type": "string"},
+                                        "value_columns": {"type": "array", "items": {"type": "string"}},
+                                        "embed_in_data_sheet": {"type": "boolean", "description": "true = embeber na sheet de dados, false = sheet separada"}
+                                    }
+                                }
+                            },
+                            "required": ["name", "data"]
+                        }
+                    }
+                },
+                "required": ["title"]
+            }
+        }
+    },
 ]
 
 _TOOL_DEFINITION_BY_NAME = {
@@ -2958,6 +3011,16 @@ def _tool_dispatch() -> dict:
             arguments.get("badge_text", "DIGITAL EMPRESAS"),
             arguments.get("content", ""),
             arguments.get("context", ""),
+            arguments.get("conv_id", ""),
+            arguments.get("user_sub", ""),
+        ),
+        "generate_spreadsheet": lambda arguments: tool_generate_spreadsheet(
+            arguments.get("title", "Relatório"),
+            arguments.get("sheets"),
+            arguments.get("content", ""),
+            arguments.get("context", ""),
+            arguments.get("include_summary", True),
+            arguments.get("include_charts", True),
             arguments.get("conv_id", ""),
             arguments.get("user_sub", ""),
         ),
@@ -3240,7 +3303,7 @@ def get_agent_system_prompt():
         "   Exemplos: \"mostra um grafico de bugs por estado\", \"chart de USs por mes\", \"visualiza a distribuicao\"\n"
         "   REGRA: Primeiro obtem os dados (query_workitems/compute_kpi), depois chama generate_chart com os valores extraidos.\n"
         "   REGRA: Podes chamar compute_kpi + generate_chart em sequencia (nao em paralelo - precisas dos dados primeiro).",
-        "11. Para GERAR ou DESCARREGAR ficheiros (Excel/CSV/PDF/DOCX/HTML) com dados -> usa generate_file (OBRIGATORIO)\n"
+        "11. Para GERAR ou DESCARREGAR ficheiros (Excel/CSV/PDF/DOCX/HTML) com dados -> usa generate_file (OBRIGATORIO). Para Excel AVANÇADO (multi-sheet, gráficos, fórmulas, dashboard) -> usa generate_spreadsheet\n"
         "   FORMATOS SUPORTADOS: csv, xlsx, pdf, docx, html.\n"
         "   Exemplos: \"gera um Excel com estes dados\", \"descarrega em CSV\", \"quero PDF da tabela\", \"gera em DOCX\", \"exporta HTML\"\n"
         "   REGRA: So usar quando o utilizador pedir EXPLICITAMENTE geracao/download de ficheiro.",
@@ -3348,6 +3411,7 @@ def get_agent_system_prompt():
         "- \"Mostra grafico de bugs por estado\" -> compute_kpi DEPOIS generate_chart",
         "- \"Visualiza distribuicao de USs\" -> compute_kpi DEPOIS generate_chart",
         "- \"Gera um Excel/CSV/PDF/DOCX/HTML com esta tabela\" -> generate_file",
+        "- \"Cria relatório Excel com dashboard/gráficos/multi-tab\" -> generate_spreadsheet",
         "- \"Calcula correlação entre colunas do CSV\" -> run_code",
         "- \"Transforma estes dados e gera XLSX com múltiplas folhas\" -> run_code",
     ]
@@ -3470,6 +3534,30 @@ MODO ALTERNATIVO — slides (pré-estruturados):
 - Tipos: title, section, content, two_column, kpi, table, agenda, closing
 REGRA: Prefere SEMPRE o modo content. Só usa slides pré-estruturados se o utilizador pediu uma estrutura específica.
 O engine aplica validação automática (split de slides overloaded, truncagem, branding) em AMBOS os modos.
+
+GERAÇÃO DE EXCEL AVANÇADO (generate_spreadsheet):
+Quando o utilizador pedir um relatório Excel complexo, dashboard, workbook multi-tab, análise com gráficos embebidos, ou Excel com fórmulas, usa generate_spreadsheet.
+DIFERENÇA vs generate_file: generate_file gera tabela simples numa sheet. generate_spreadsheet gera workbooks profissionais com:
+- Multi-sheet (separação por categoria, equipa, período)
+- Fórmulas nativas (SUM, AVERAGE, COUNT automáticos em colunas numéricas)
+- Gráficos embebidos (bar, line, pie charts dentro do Excel)
+- Tipos de dados nativos (números, datas, percentagens, moeda, hyperlinks)
+- Formatação condicional (color scale em colunas numéricas)
+- Auto-filter e freeze panes
+- Sheet de resumo com KPIs
+MODO PREFERIDO — content (Opus planeia):
+- Passa 'content' com TODA a informação (dados JSON, análise, métricas) em texto livre
+- O Claude Opus 4.6 planeia automaticamente: quantas sheets, gráficos, KPIs, layout
+- Para dados tabulares, pode ser JSON array stringified
+MODO ALTERNATIVO — sheets (pré-estruturados):
+- Passa 'sheets' array com specs quando já tens a estrutura definida
+REGRA: Prefere SEMPRE o modo content. Só usa sheets pré-estruturados se o utilizador pediu estrutura específica.
+QUANDO USAR generate_spreadsheet vs generate_file:
+- "gera um Excel com esta tabela" → generate_file (simples)
+- "cria um relatório Excel com dashboard" → generate_spreadsheet (avançado)
+- "faz um Excel com gráficos" → generate_spreadsheet (avançado)
+- "quero um workbook com várias tabs" → generate_spreadsheet (avançado)
+- "exporta para xlsx" → generate_file (simples)
 
 NOMES NO AZURE DEVOPS:
 - Os nomes no DevOps são nomes completos (ex: "Jorge Eduardo Rodrigues", não "Jorge Rodrigues")
