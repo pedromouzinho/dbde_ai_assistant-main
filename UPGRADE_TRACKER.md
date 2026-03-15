@@ -23,12 +23,12 @@
 
 | # | Issue | Estado | Severidade | Ficheiros |
 |---|-------|--------|------------|-----------|
-| B1 | Run Code mostra "N/A" e "0 resultados" | TODO | Media | `agent.py` |
-| B2 | Markdown (#, **, etc) aparece em raw | TODO | Alta | `frontend/src/utils/markdown.js` |
-| B3 | Clarification nao bloqueia input | TODO | Media | `QuickReplyBar.jsx`, `App.jsx` |
-| B4 | PII Hardening mascara numeros do utilizador | TODO | Alta | `pii_shield.py` |
-| B5 | PPTX sem bullets formatados / estetica fraca | TODO | Alta | `pptx_engine.py` |
-| B6 | Excel Dashboard sheet sem freeze/autofilter | TODO | Baixa | `xlsx_engine.py` |
+| B1 | Run Code mostra "N/A" e "0 resultados" | DONE `9b4380a` | Media | `agent.py` |
+| B2 | Markdown (#, **, etc) aparece em raw | DONE `9b4380a` | Alta | `frontend/src/utils/markdown.js` |
+| B3 | Clarification nao bloqueia input | DONE `9b4380a` | Media | `ChatComposer.jsx`, `App.jsx` |
+| B4 | PII Hardening mascara numeros do utilizador | DONE `9b4380a` | Alta | `pii_shield.py` |
+| B5 | PPTX sem bullets formatados / estetica fraca | DONE `9b4380a` | Alta | `pptx_engine.py` |
+| B6 | Excel Dashboard sheet sem freeze/autofilter | DONE `9b4380a` | Baixa | `xlsx_engine.py` |
 
 ### Fase 3 — Melhorias Arquiteturais
 
