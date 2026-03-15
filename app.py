@@ -656,6 +656,7 @@ def _build_content_security_policy() -> str:
             [
                 f"https://{region}.stt.speech.microsoft.com",
                 f"wss://{region}.stt.speech.microsoft.com",
+                f"https://{region}.tts.speech.microsoft.com",
                 "https://*.speech.microsoft.com",
                 "wss://*.speech.microsoft.com",
             ]
@@ -4196,6 +4197,65 @@ async def issue_speech_token(
         language=AZURE_SPEECH_LANGUAGE,
         expires_in_seconds=600,
     )
+
+
+@app.post("/api/speech/synthesize")
+@limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
+async def synthesize_speech(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    """Azure TTS — converte texto curto em áudio MP3 (para clarificações em modo voz)."""
+    get_current_user(credentials)
+    if not (AZURE_SPEECH_ENABLED and AZURE_SPEECH_KEY and AZURE_SPEECH_REGION):
+        raise HTTPException(503, "Azure Speech TTS não está configurado.")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "Body JSON inválido.")
+
+    text = str(body.get("text", "") or "").strip()
+    if not text or len(text) > 1000:
+        raise HTTPException(400, "Texto em falta ou demasiado longo (max 1000 chars).")
+
+    voice = str(body.get("voice", "") or "").strip() or "pt-PT-RaquelNeural"
+    language = str(body.get("language", "") or "").strip() or "pt-PT"
+
+    # Validate voice/language against injection (only allow Azure Neural voice format)
+    import re as _re
+    if not _re.fullmatch(r'[a-zA-Z]{2,5}-[A-Z]{2,5}-[A-Za-z]+Neural', voice):
+        voice = "pt-PT-RaquelNeural"
+    if not _re.fullmatch(r'[a-zA-Z]{2,5}-[A-Z]{2,5}', language):
+        language = "pt-PT"
+
+    # Sanitize text for SSML
+    safe_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    ssml = (
+        f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="{language}">'
+        f'<voice name="{voice}">{safe_text}</voice>'
+        f'</speak>'
+    )
+    tts_url = f"https://{AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                tts_url,
+                headers={
+                    "Ocp-Apim-Subscription-Key": AZURE_SPEECH_KEY,
+                    "Content-Type": "application/ssml+xml",
+                    "X-Microsoft-OutputFormat": "audio-16khz-128kbitrate-mono-mp3",
+                },
+                content=ssml.encode("utf-8"),
+            )
+            resp.raise_for_status()
+    except Exception as exc:
+        logger.warning("[App] TTS synthesis failed: %s", exc)
+        raise HTTPException(502, "Falha na síntese de voz.")
+
+    return Response(content=resp.content, media_type="audio/mpeg")
+
 
 # =============================================================================
 # FEEDBACK

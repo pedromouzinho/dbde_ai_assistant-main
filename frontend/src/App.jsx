@@ -64,6 +64,37 @@ import {
     queueUploadJobsBatch,
 } from './utils/uploads.js';
 
+/**
+ * Detect clarification question pattern in agent response.
+ * Pattern: question text followed by 2-4 numbered options at the end.
+ * Returns { options: string[] } or null.
+ */
+function parseClarificationOptions(text) {
+    const trimmed = (text || '').trim();
+    if (!trimmed) return null;
+    const lines = trimmed.split('\n').filter(l => l.trim());
+    if (lines.length < 3) return null;
+    // Find numbered options at the end (must be 2-4 consecutive numbered lines)
+    const numbered = [];
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (/^\d+\.\s+\S/.test(lines[i].trim())) {
+            numbered.unshift(lines[i].trim());
+        } else {
+            break;
+        }
+    }
+    if (numbered.length < 2 || numbered.length > 4) return null;
+    // Must have at least one non-numbered line before (the question)
+    if (numbered.length >= lines.length) return null;
+    // The question line(s) before the options must end with '?' to avoid
+    // false positives on normal numbered lists in informational answers
+    const questionLines = lines.slice(0, lines.length - numbered.length);
+    const lastQuestionLine = (questionLines[questionLines.length - 1] || '').trim();
+    if (!lastQuestionLine.endsWith('?')) return null;
+    const options = numbered.map(l => l.replace(/^\d+\.\s+/, '').trim());
+    return { options };
+}
+
 function App() {
     const [conversations, setConversations] = useState([createConversation("general")]);
     const [activeIdx, setActiveIdx] = useState(0);
@@ -117,6 +148,7 @@ function App() {
     const fileInputRef = useRef(null);
     const imageInputRef = useRef(null);
     const selectorRef = useRef(null);
+    const lastTtsAudioRef = useRef(null);
 
     useEffect(() => { chatEndRef.current && chatEndRef.current.scrollIntoView({ behavior: "smooth" }); }, [conversations, activeIdx, loading, streamingText]);
     useEffect(() => {
@@ -1127,6 +1159,10 @@ function App() {
                                     }
                                 }
                             }
+                            // Detect clarification pattern in response
+                            const clarParsed = parseClarificationOptions(fullText);
+                            const clarificationOptions = clarParsed ? clarParsed.options : undefined;
+
                             setConversations(prev => {
                                 const u = [...prev];
                                 u[activeIdx] = {
@@ -1142,11 +1178,21 @@ function App() {
                                         export_index: streamExportIndex,
                                         model_tier: requestTier,
                                         model_used: modelUsed, total_time_ms: totalTime, tokens_used: tokensUsed,
+                                        clarification_options: clarificationOptions,
                                     }],
                                 };
                                 scheduleSave(u[activeIdx]);
                                 return u;
                             });
+                            // TTS for clarification when in speech mode
+                            if (clarificationOptions && (speechSubmitMode === 'auto' || speechListening)) {
+                                // Speak the question part (everything before the numbered options)
+                                const lines = (fullText || '').trim().split('\n').filter(l => l.trim());
+                                const questionLines = lines.filter(l => !/^\d+\.\s+\S/.test(l.trim()));
+                                if (questionLines.length > 0) {
+                                    speakText(questionLines.join(' '));
+                                }
+                            }
                             streamCompleted = true;
                         }
                     }
@@ -1200,6 +1246,7 @@ function App() {
                             }
                         }
                     }
+                    const syncClarParsed = parseClarificationOptions(data.answer);
                     u[activeIdx] = {
                         ...u[activeIdx],
                         id: data.conversation_id,
@@ -1212,6 +1259,7 @@ function App() {
                             model_used: data.model_used, tokens_used: data.tokens_used, total_time_ms: data.total_time_ms,
                             has_exportable: data.has_exportable_data || false,
                             export_index: data.export_index,
+                            clarification_options: syncClarParsed ? syncClarParsed.options : undefined,
                         }],
                     };
                     scheduleSave(u[activeIdx]);
@@ -1460,6 +1508,28 @@ function App() {
         try {
             await authFetch(API_URL + "/feedback", { method: "POST", headers: authHeaders(), body: JSON.stringify({ conversation_id: convId, message_index: msgIdx, rating, note: note || "" }) });
         } catch (e) { console.warn("Submit feedback failed:", e); }
+    }
+
+    async function speakText(text) {
+        if (!text) return;
+        try {
+            if (lastTtsAudioRef.current) {
+                lastTtsAudioRef.current.pause();
+                lastTtsAudioRef.current = null;
+            }
+            const res = await authFetch(API_URL + '/api/speech/synthesize', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ text, voice: 'pt-PT-RaquelNeural', language: 'pt-PT' }),
+            });
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            lastTtsAudioRef.current = audio;
+            audio.onended = () => { URL.revokeObjectURL(url); lastTtsAudioRef.current = null; };
+            await audio.play();
+        } catch (e) { console.warn('TTS failed:', e); }
     }
 
     function handleKeyDown(e) {
@@ -1884,6 +1954,7 @@ function App() {
                                     onExport={exportMessageData}
                                     onExportBundle={exportMessageBundle}
                                     onFileDownload={downloadGeneratedFile}
+                                    onQuickReply={(opt) => { if (!loading) send(opt); }}
                                 />
                             </ErrorBoundary>
                         ))}
