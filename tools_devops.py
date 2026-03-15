@@ -806,7 +806,7 @@ async def tool_analyze_patterns_with_llm(created_by: Optional[str] = None, topic
         if s.get("acceptance_criteria"): txt += f"Critérios: {s['acceptance_criteria'][:600]}\n"
     prompts = {"template": f"Analisa {raw['samples_returned']} {work_item_type}s e extrai PADRÃO DE ESCRITA.\n\n{txt}\n\nExtrai: 1.Estrutura 2.Linguagem 3.Campos 4.Template 5.Observações\nPT-PT.", "author_style": f"Analisa estilo de '{created_by or 'autor'}' em:\n\n{txt}\n\nDescreve: estilo, estrutura, vocabulário, detalhe, template.\nPT-PT."}
     fallback_prompt = f"Analisa:\n{txt}\nPT-PT."
-    try: analysis = await llm_simple(f"És analista de padrões de escrita.\n\n{prompts.get(analysis_type, fallback_prompt)}", tier="standard", max_tokens=2000)
+    try: analysis = await llm_simple(f"És analista de padrões de escrita.\n\n{prompts.get(analysis_type, fallback_prompt)}", tier="pro", max_tokens=2000)
     except Exception as e:
         logging.error("[Tools] tool_analyze_patterns_with_llm failed: %s", e)
         analysis = f"Erro: {e}"
@@ -1105,7 +1105,7 @@ async def tool_generate_user_stories(topic: str, context: str = "", num_stories:
         "HTML limpo e não escapado."
     )
     try:
-        gen = await llm_simple(f"{sys_msg}\n\n{prompt}", tier="standard", max_tokens=8000)
+        gen = await llm_simple(f"{sys_msg}\n\n{prompt}", tier="pro", max_tokens=8000)
     except Exception as e:
         logging.error("[Tools] tool_generate_user_stories failed: %s", e)
         gen = f"Erro: {e}"
@@ -1561,7 +1561,7 @@ Responde APENAS em JSON válido neste formato:
 }}"""
 
     try:
-        llm_output = await llm_simple(prompt, tier="standard", max_tokens=2600)
+        llm_output = await llm_simple(prompt, tier="pro", max_tokens=2600)
     except Exception as e:
         return {"error": f"Falha LLM ao refinar work item: {str(e)}"}
 

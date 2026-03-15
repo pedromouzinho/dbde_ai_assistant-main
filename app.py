@@ -4852,7 +4852,7 @@ async def analyze_feedback(request: Request, credentials: HTTPAuthorizationCrede
         for f in neg[:10]: summary += f"- Q: {f.get('Question','')[:80]}... Rating: {f.get('Rating')}, Nota: {f.get('Note','')}\n"
     
     try:
-        analysis = await llm_simple(f"Analisa feedback de agente AI e sugere melhorias:\n\n{summary}", tier="fast", max_tokens=1500)
+        analysis = await llm_simple(f"Analisa feedback de agente AI e sugere melhorias:\n\n{summary}", tier="standard", max_tokens=1500)
     except Exception as e:
         logger.warning("[App] analyze_feedback LLM failed, using summary fallback: %s", e)
         analysis = summary

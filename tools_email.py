@@ -816,7 +816,7 @@ async def tool_classify_uploaded_emails(
     decisions: Dict[str, dict] = {}
     for chunk in _chunk_list(normalized_rows, int(batch_size or _EMAIL_CLASSIFICATION_DEFAULT_BATCH)):
         prompt = _build_classification_prompt(safe_instructions, label_actions_norm, fallback, chunk)
-        raw = await llm_simple(prompt, tier="standard", max_tokens=4000, response_format=schema)
+        raw = await llm_simple(prompt, tier="standard", max_tokens=4000, response_format=schema)  # standard (Sonnet) for batch — good balance cost/quality
         parsed = _best_effort_json_loads(raw)
         for entry in parsed.get("decisions", []) if isinstance(parsed, dict) else []:
             row_id = str(entry.get("row_id", "") or "").strip()
