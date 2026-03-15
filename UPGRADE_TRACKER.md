@@ -1,6 +1,6 @@
 # DBDE AI Assistant — Plano de Melhorias v2
 
-> **Ultima atualizacao:** 2026-03-15 **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt` **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU) **Total testes:** 493 (392 base + 33 PPTX + 56 XLSX + 12 write-through) · Todos a passar
+> **Ultima atualizacao:** 2026-03-15 **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt` **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU) · Autoscale 1-3 instancias **Total testes:** 502 (392 base + 33 PPTX + 56 XLSX + 12 write-through + 9 auto-summary) · Todos a passar
 
 ------------------------------------------------------------------------
 
@@ -34,10 +34,10 @@
 | A1 | Persistencia write-through | DONE | ALTA | `agent.py`, `app.py` |
 | A2 | Separar app.py (5506→4975 linhas) | PARTIAL | ALTA | `app.py`, `route_deps.py`, `routes_auth.py` |
 | A3 | Frontend CDN / Azure Front Door | TODO | Media | infra |
-| A4 | Resumo automatico pos-upload | TODO | Media | `app.py`, `agent.py` |
+| A4 | Resumo automatico pos-upload | DONE `471b343` | Media | `app.py`, `frontend/src/App.jsx` |
 | A5 | Multi-file analysis (cross-file joins) | TODO | Media | `tools.py` |
 | A6 | Dashboards persistentes | TODO | Baixa | novo |
-| A7 | Autoscale P1v3 (1-3 instancias) | TODO | Baixa | infra |
+| A7 | Autoscale P1v3 (1-3 instancias) | DONE | Baixa | Azure Monitor autoscale |
 | A8 | Streaming progresso upload (SSE) | TODO | Baixa | `app.py`, frontend |
 | A9 | Versionamento de conhecimento | TODO | Baixa | `app.py` |
 
@@ -86,6 +86,38 @@
 **Resultado:** app.py reduzido de 5506 → 4975 linhas (-531). Pattern de APIRouter estabelecido para futuras extracoes (upload ~2000 linhas, export ~200 linhas, admin ~700 linhas).
 
 **Ficheiros:** `route_deps.py` (novo), `routes_auth.py` (novo), `app.py` (refactored), `tests/test_allowed_origins.py` (updated)
+
+### A4 — Resumo automatico pos-upload
+
+**Problema:** Apos upload, o utilizador recebia uma mensagem generica ("Anexo processado com sucesso") sem informacao util sobre o conteudo do ficheiro.
+
+**Solucao implementada — Template-based auto-summary (zero custo LLM):**
+
+1. **`_build_upload_auto_summary()`** em `app.py`: Gera resumo instantaneo a partir de metadata ja extraida (row_count, col_names, full_col_stats, polymorphic_schema, has_chunks).
+2. **Informacao rica por tipo de ficheiro:**
+   - Tabulares: linhas x colunas, lista de colunas (truncada se >8), metricas top-3 (min-max-avg), detecao de periodo temporal, aviso polimorfico
+   - PDFs/docs: icone contextual, pesquisa semantica disponivel
+   - Generico: fallback graceful com icone
+3. **CTA contextualizado:** "Podes perguntar-me sobre analises, graficos, filtros..." (tabulares) vs "...sobre o conteudo" (docs)
+4. **Frontend atualizado:** `App.jsx` usa `result.auto_summary` do backend quando disponivel, fallback para formato antigo
+
+**Ficheiros:** `app.py` (`_build_upload_auto_summary` + injecao no result_payload), `frontend/src/App.jsx`, `tests/test_upload_auto_summary.py` (9 testes)
+
+### A7 — Autoscale P1v3 (1-3 instancias)
+
+**Problema:** Instancia unica P1v3, sem capacidade de escalar sob carga. Qualquer pico de utilizacao saturava o servidor.
+
+**Solucao implementada:**
+
+1. **Azure Monitor Autoscale** configurado para `plan-dbde-v2`:
+   - Min: 1 instancia, Max: 3 instancias, Default: 1
+   - Scale OUT: CPU >70% avg 5min → +1 instancia (cooldown 5min)
+   - Scale OUT: Memory >80% avg 5min → +1 instancia (cooldown 5min)
+   - Scale IN: CPU <30% avg 10min → -1 instancia (cooldown 10min)
+   - Scale IN: Memory <40% avg 10min → -1 instancia (cooldown 10min)
+2. **Pre-requisito A1 satisfeito:** Write-through persistence garante que conversas nao se perdem quando instancias sao adicionadas/removidas (cada instancia persiste para Azure Table Storage)
+
+**Config:** `az monitor autoscale` — `plan-dbde-v2-autoscale` (4 regras, enabled)
 
 ------------------------------------------------------------------------
 
@@ -290,7 +322,7 @@ Fase 3 (Arquitectura):
 
 ## Deploy
 
-**Ultimo deploy:** 2026-03-15 10:22 UTC **Estado:** LIVE em <https://dbdeai.pt>
+**Ultimo deploy:** 2026-03-15 16:13 UTC **Estado:** LIVE em <https://dbdeai.pt>
 
 ``` bash
 az webapp up --name millennium-ai-assistant --resource-group rg-MS_Access_Chabot --runtime "PYTHON:3.12"
