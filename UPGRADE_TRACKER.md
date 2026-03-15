@@ -32,7 +32,7 @@
 | \# | Melhoria | Estado | Prioridade | Ficheiros |
 |----|----|----|----|----|
 | A1 | Persistencia write-through | DONE | ALTA | `agent.py`, `app.py` |
-| A2 | Separar app.py (5506→4975 linhas) | PARTIAL | ALTA | `app.py`, `route_deps.py`, `routes_auth.py` |
+| A2 | Separar app.py (5506→~3900 linhas, -29%) | DONE `9ebc043` | ALTA | `app.py`, `route_deps.py`, `routes_auth.py`, `routes_digest.py`, `routes_chat.py`, `routes_admin.py` |
 | A3 | Frontend CDN / Azure Front Door | TODO | Media | infra |
 | A4 | Resumo automatico pos-upload | DONE `471b343` | Media | `app.py`, `frontend/src/App.jsx` |
 | A5 | Multi-file analysis (cross-file joins) | DONE `242cceb` | Media | `code_interpreter.py`, `tools.py`, `agent.py` |
@@ -71,7 +71,7 @@
 
 ### B1 — Run Code mostra "N/A resultados" e "0 resultados"
 
-### A2 — Separar app.py (fase 1)
+### A2 — Separar app.py (fase 1 + fase 2)
 
 **Problema:** app.py tinha 5506 linhas — monolito com auth, upload, export, admin, chat tudo misturado. Dificil de navegar, testar, e modificar.
 
@@ -81,11 +81,19 @@
 
 2. **`routes_auth.py`** (357 linhas): Auth + Speech endpoints extraidos para APIRouter. Inclui login, logout, CRUD users, change password, force logout, speech prompt normalize, speech token, TTS synthesize.
 
-3. **app.py** atualizado: Importa de route_deps.py e inclui o auth router via `app.include_router(_auth_router)`.
+**Solucao implementada — fase 2 (extracao completa):**
 
-**Resultado:** app.py reduzido de 5506 → 4975 linhas (-531). Pattern de APIRouter estabelecido para futuras extracoes (upload ~2000 linhas, export ~200 linhas, admin ~700 linhas).
+3. **`routes_digest.py`** (~140 linhas): Daily digest endpoint com DevOps integration.
 
-**Ficheiros:** `route_deps.py` (novo), `routes_auth.py` (novo), `app.py` (refactored), `tests/test_allowed_origins.py` (updated)
+4. **`routes_chat.py`** (~280 linhas): Chat persistence (save, list, get, update title, delete) + privacy export/delete endpoints. Usa `_router_state` pattern para dependency injection de estado partilhado.
+
+5. **`routes_admin.py`** (~750 linhas): Feedback, learning rules, admin info/metrics/quotas, user story admin, debug endpoints, health check. Usa `_router_state` pattern.
+
+6. **app.py** atualizado: Importa todos os routers e injeta estado partilhado via `_router_state.update({...})`.
+
+**Resultado:** app.py reduzido de 5506 → ~3900 linhas (-29%). Upload + export + retention permanecem em app.py (dependencias deep). 5 modulos de rotas independentes.
+
+**Ficheiros:** `route_deps.py`, `routes_auth.py`, `routes_digest.py`, `routes_chat.py`, `routes_admin.py` (novos), `app.py` (refactored), testes atualizados
 
 ### A4 — Resumo automatico pos-upload
 
