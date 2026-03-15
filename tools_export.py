@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 _GENERATED_FILE_TTL_SECONDS = generated_file_ttl_seconds()
 _AUTO_EXPORT_MIN_ROWS = 25
-SUPPORTED_FILE_FORMATS = ("csv", "xlsx", "pdf", "docx", "html")
+SUPPORTED_FILE_FORMATS = ("csv", "xlsx", "pdf", "docx", "html", "pptx")
 
 def _as_dt(value):
     if isinstance(value, datetime):
@@ -398,6 +398,78 @@ async def tool_generate_file(
             "Para ficheiro completo, usar /api/export."
         )
     return result
+
+async def tool_generate_presentation(
+    title: str = "Apresentação",
+    slides: list = None,
+    subtitle: str = "",
+    badge_text: str = "DIGITAL EMPRESAS",
+    conv_id: str = "",
+    user_sub: str = "",
+):
+    """Gera apresentação PPTX branded Millennium BCP e devolve metadados de download."""
+    if not isinstance(slides, list) or len(slides) == 0:
+        return {"error": "Campo 'slides' deve ser array com pelo menos um slide spec."}
+
+    if len(slides) > 50:
+        return {"error": "Máximo 50 slides por apresentação."}
+
+    safe_title = "".join(
+        ch if ch.isalnum() or ch in " _-" else "_"
+        for ch in (title or "Apresentacao")
+    ).strip()[:50] or "Apresentacao"
+
+    try:
+        from pptx_engine import generate_presentation
+        buf = generate_presentation(
+            title,
+            slides,
+            subtitle=subtitle,
+            badge_text=badge_text or "DIGITAL EMPRESAS",
+        )
+    except ImportError:
+        return {"error": "python-pptx não disponível no servidor."}
+    except Exception as e:
+        logging.error("[Tools] tool_generate_presentation failed: %s", e)
+        return {"error": f"Erro ao gerar apresentação: {str(e)[:200]}"}
+
+    content = buf.getvalue()
+    if not content:
+        return {"error": "Apresentação gerada está vazia"}
+
+    mime_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    filename = f"{safe_title}.pptx"
+
+    download_id = await _store_generated_file(
+        content,
+        mime_type,
+        filename,
+        "pptx",
+        user_sub=str(user_sub or "").strip(),
+        conversation_id=str(conv_id or "").strip(),
+        scope="generate_presentation",
+    )
+    if not download_id:
+        return {"error": "Ficheiro demasiado grande para armazenamento temporário"}
+
+    return {
+        "presentation_generated": True,
+        "format": "pptx",
+        "title": safe_title,
+        "total_slides": len(slides) + 2,  # +title +closing auto-added
+        "_file_download": {
+            "download_id": download_id,
+            "endpoint": f"/api/download/{download_id}",
+            "filename": filename,
+            "format": "pptx",
+            "mime_type": mime_type,
+            "size_bytes": len(content),
+            "expires_in_seconds": _GENERATED_FILE_TTL_SECONDS,
+            "primary": True,
+            "label": f"📥 Download {filename}",
+        },
+    }
+
 
 def truncate_tool_result(result_str):
     if len(result_str) <= AGENT_TOOL_RESULT_MAX_SIZE: return result_str

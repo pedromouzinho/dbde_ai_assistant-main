@@ -44,7 +44,7 @@ from tools_devops import (
 )
 from tools_knowledge import tool_search_workitems, tool_search_website, tool_search_web
 from tools_upload import tool_search_uploaded_document
-from tools_export import tool_generate_chart, tool_generate_file
+from tools_export import tool_generate_chart, tool_generate_file, tool_generate_presentation
 from tools_email import tool_prepare_outlook_draft, tool_classify_uploaded_emails
 from tools_learning import tool_get_writer_profile, tool_save_writer_profile
 from structured_schemas import SCREENSHOT_USER_STORIES_SCHEMA
@@ -2703,6 +2703,77 @@ _BUILTIN_TOOL_DEFINITIONS = [
         },
     },
     {"type":"function","function":{"name":"generate_file","description":"Gera ficheiro para download (CSV, XLSX, PDF, DOCX, HTML) quando o utilizador pedir explicitamente para gerar/descarregar ficheiro com dados.","parameters":{"type":"object","properties":{"format":{"type":"string","enum":["csv","xlsx","pdf","docx","html"],"description":"Formato do ficheiro a gerar."},"title":{"type":"string","description":"Título/nome base do ficheiro."},"data":{"type":"array","items":{"type":"object"},"description":"Linhas de dados (array de objetos)."},"columns":{"type":"array","items":{"type":"string"},"description":"Headers/ordem das colunas no ficheiro."}},"required":["format","title","data","columns"]}}},
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_presentation",
+            "description": "Gera apresentação PowerPoint (PPTX) branded Millennium BCP / Digital Empresas. USA SEMPRE que o utilizador pedir uma apresentação, PowerPoint, slides ou PPTX. Gera slides profissionais com branding corporativo (Montserrat, #D1005D, badges, KPIs, tabelas).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Título da apresentação (aparece no slide de capa)."
+                    },
+                    "subtitle": {
+                        "type": "string",
+                        "description": "Subtítulo opcional para o slide de capa."
+                    },
+                    "badge_text": {
+                        "type": "string",
+                        "description": "Texto do badge em cada slide. Default: 'DIGITAL EMPRESAS'. Pode ser nome da equipa/projeto."
+                    },
+                    "slides": {
+                        "type": "array",
+                        "description": "Lista de specs de slides. Cada slide é um objeto com 'type' e conteúdo específico.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": ["title", "section", "content", "two_column", "kpi", "table", "agenda", "closing"],
+                                    "description": "Tipo de slide: title (capa), section (divisor 01/02...), content (bullets), two_column, kpi (métricas grandes), table (tabela dados), agenda (índice), closing (obrigado)."
+                                },
+                                "title": {"type": "string", "description": "Título do slide."},
+                                "subtitle": {"type": "string", "description": "Subtítulo (para title/closing)."},
+                                "bullets": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "Lista de bullet points (para content). Prefixar com '- ' para sub-bullets."
+                                },
+                                "left": {"type": "array", "items": {"type": "string"}, "description": "Coluna esquerda (para two_column)."},
+                                "right": {"type": "array", "items": {"type": "string"}, "description": "Coluna direita (para two_column)."},
+                                "kpis": {
+                                    "type": "array",
+                                    "description": "Lista de KPIs (para kpi). Max 4.",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "value": {"type": "string", "description": "Valor grande (ex: '125', '98%', '€1.2M')."},
+                                            "label": {"type": "string", "description": "Label curta (ex: 'User Stories')."},
+                                            "description": {"type": "string", "description": "Descrição adicional opcional."}
+                                        },
+                                        "required": ["value", "label"]
+                                    }
+                                },
+                                "headers": {"type": "array", "items": {"type": "string"}, "description": "Cabeçalhos da tabela (para table)."},
+                                "rows": {
+                                    "type": "array",
+                                    "description": "Linhas da tabela (para table). Max 15 por slide.",
+                                    "items": {"type": "array", "items": {"type": "string"}}
+                                },
+                                "items": {"type": "array", "items": {"type": "string"}, "description": "Items da agenda (para agenda). Max 12."},
+                                "section_number": {"type": "integer", "description": "Número da secção (para section). Auto-incrementado se omitido."},
+                                "text": {"type": "string", "description": "Texto principal (para closing)."}
+                            },
+                            "required": ["type"]
+                        }
+                    }
+                },
+                "required": ["title", "slides"]
+            }
+        }
+    },
 ]
 
 _TOOL_DEFINITION_BY_NAME = {
@@ -2878,6 +2949,14 @@ def _tool_dispatch() -> dict:
             arguments.get("title", "Export"),
             arguments.get("data"),
             arguments.get("columns"),
+            arguments.get("conv_id", ""),
+            arguments.get("user_sub", ""),
+        ),
+        "generate_presentation": lambda arguments: tool_generate_presentation(
+            arguments.get("title", "Apresentação"),
+            arguments.get("slides"),
+            arguments.get("subtitle", ""),
+            arguments.get("badge_text", "DIGITAL EMPRESAS"),
             arguments.get("conv_id", ""),
             arguments.get("user_sub", ""),
         ),
@@ -3376,6 +3455,26 @@ QUANDO NÃO USAR (maioria dos casos — executa directamente):
 - NUNCA duas clarificações seguidas na mesma conversa — se já perguntaste, responde directamente
 
 PRINCÍPIO: Age como o Claude — pergunta raramente, só quando genuinamente precisas do input do utilizador para produzir algo útil. Na dúvida, executa com a interpretação mais provável.
+
+GERAÇÃO DE APRESENTAÇÕES POWERPOINT (generate_presentation):
+Quando o utilizador pedir uma apresentação, PowerPoint, slides ou PPTX, usa a ferramenta generate_presentation.
+Tipos de slide disponíveis:
+- title: Capa com título grande e subtítulo
+- section: Divisor de secção com número grande (01, 02...) — auto-numerado
+- content: Slide com título e bullet points
+- two_column: Duas colunas de conteúdo lado a lado
+- kpi: Métricas/números grandes (max 4 por slide) — usar para destacar KPIs, totais, percentagens
+- table: Tabela de dados com headers e rows (max 15 rows por slide)
+- agenda: Slide de índice com items numerados
+- closing: Slide final "Obrigado"
+Regras:
+- Cria 5-15 slides por apresentação (nem muito curta nem demasiado longa)
+- Usa section dividers para separar temas (gera números 01, 02... automáticos)
+- Máximo 6-7 bullets por content slide — sê conciso
+- Para dados quantitativos, prefere kpi slides (impacto visual) ou table slides
+- badge_text por defeito é "DIGITAL EMPRESAS" — ajustar se for outro projeto/equipa
+- O título e subtítulo da capa devem ser informativos e profissionais
+- Todos os slides seguem branding Millennium BCP (Montserrat, #D1005D, widescreen 16:9)
 
 NOMES NO AZURE DEVOPS:
 - Os nomes no DevOps são nomes completos (ex: "Jorge Eduardo Rodrigues", não "Jorge Rodrigues")
