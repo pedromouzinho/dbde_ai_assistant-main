@@ -1,6 +1,6 @@
 # DBDE AI Assistant — Plano de Melhorias v2
 
-> **Ultima atualizacao:** 2026-03-15 **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt` **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU) · Autoscale 1-3 instancias **Total testes:** 502 (392 base + 33 PPTX + 56 XLSX + 12 write-through + 9 auto-summary) · Todos a passar
+> **Ultima atualizacao:** 2026-03-15 **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt` **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU) · Autoscale 1-3 instancias **Total testes:** 512 (392 base + 33 PPTX + 56 XLSX + 12 write-through + 9 auto-summary + 10 cross-file) · Todos a passar
 
 ------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@
 | A2 | Separar app.py (5506→4975 linhas) | PARTIAL | ALTA | `app.py`, `route_deps.py`, `routes_auth.py` |
 | A3 | Frontend CDN / Azure Front Door | TODO | Media | infra |
 | A4 | Resumo automatico pos-upload | DONE `471b343` | Media | `app.py`, `frontend/src/App.jsx` |
-| A5 | Multi-file analysis (cross-file joins) | TODO | Media | `tools.py` |
+| A5 | Multi-file analysis (cross-file joins) | DONE `242cceb` | Media | `code_interpreter.py`, `tools.py`, `agent.py` |
 | A6 | Dashboards persistentes | TODO | Baixa | novo |
 | A7 | Autoscale P1v3 (1-3 instancias) | DONE | Baixa | Azure Monitor autoscale |
 | A8 | Streaming progresso upload (SSE) | TODO | Baixa | `app.py`, frontend |
@@ -118,6 +118,28 @@
 2. **Pre-requisito A1 satisfeito:** Write-through persistence garante que conversas nao se perdem quando instancias sao adicionadas/removidas (cada instancia persiste para Azure Table Storage)
 
 **Config:** `az monitor autoscale` — `plan-dbde-v2-autoscale` (4 regras, enabled)
+
+### A5 — Multi-file analysis (cross-file DuckDB JOINs)
+
+**Problema:** O pipeline processava ficheiros individualmente. Sem capacidade de cruzar dados entre ficheiros (JOINs, correlacoes, comparacoes).
+
+**Solucao implementada — DuckDB sandbox bootstrap:**
+
+1. **DuckDB em ALLOWED_IMPORTS:** `code_interpreter.py` agora permite `import duckdb` no sandbox.
+2. **Parquet + CSV montados:** `_load_uploaded_files_for_code` monta tanto o CSV (para pandas) como o Parquet original (para DuckDB nativo, mais performante).
+3. **DuckDB bootstrap automatico:** O runner script cria `DB` (DuckDB connection in-memory) com todas as tabelas pre-registadas a partir dos ficheiros .parquet e .csv. Nomes de tabela derivados dos nomes dos ficheiros.
+4. **Globals disponíveis no sandbox:**
+   - `DB` — DuckDB connection com tabelas carregadas
+   - `DUCKDB_TABLES` — dict {nome_tabela: ficheiro_origem}
+   - `UPLOADED_FILES` — lista de ficheiros (existente)
+5. **Contexto LLM:** Quando existem 2+ ficheiros tabulares, o contexto injecta secao "CROSS-FILE ANALYSIS DISPONIVEL" com instrucoes para usar DB.execute() com JOINs.
+6. **Cleanup:** Conexao DuckDB fechada apos execucao do user code.
+
+**Ficheiros:** `code_interpreter.py` (ALLOWED_IMPORTS + runner bootstrap + cleanup), `tools.py` (parquet mounting), `agent.py` (cross-file hint), `tests/test_crossfile_duckdb.py` (10 testes), `tests/test_tabular_artifacts.py` (updated)
+
+**Exemplo de uso pelo utilizador:**
+> "Cruza os dados de vendas.xlsx com clientes.csv e mostra o total por região"
+O LLM gera: `DB.execute("SELECT c.regiao, SUM(v.valor) FROM vendas JOIN clientes c ON v.cliente_id = c.id GROUP BY c.regiao").df()`
 
 ------------------------------------------------------------------------
 
@@ -322,7 +344,7 @@ Fase 3 (Arquitectura):
 
 ## Deploy
 
-**Ultimo deploy:** 2026-03-15 16:13 UTC **Estado:** LIVE em <https://dbdeai.pt>
+**Ultimo deploy:** 2026-03-15 16:29 UTC **Estado:** LIVE em <https://dbdeai.pt>
 
 ``` bash
 az webapp up --name millennium-ai-assistant --resource-group rg-MS_Access_Chabot --runtime "PYTHON:3.12"
