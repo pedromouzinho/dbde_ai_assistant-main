@@ -167,6 +167,169 @@ def _coerce_list(value: Any, max_items: int = 8) -> list[str]:
     return [_clip(item, 500) for item in items[:max_items] if str(item or "").strip()]
 
 
+def _format_generation_source_line(source: dict) -> str:
+    if not isinstance(source, dict):
+        return ""
+    key = _clip(str(source.get("key", "") or ""), 80)
+    title = _clip(str(source.get("title", "") or "Fonte"), 140)
+    snippet = _clip(str(source.get("snippet", "") or ""), 220)
+    source_type = _clip(str(source.get("type", "") or source.get("origin", "") or ""), 40)
+    parts = [part for part in [key, source_type] if part]
+    prefix = f"- {title}"
+    if parts:
+        prefix += f" [{', '.join(parts)}]"
+    if snippet:
+        prefix += f": {snippet}"
+    return prefix
+
+
+def _format_generation_example_line(example: dict) -> str:
+    if not isinstance(example, dict):
+        return ""
+    title = _clip(str(example.get("title", "") or "Exemplo curado"), 160)
+    title_pattern = _clip(str(example.get("title_pattern", "") or ""), 120)
+    provenance = _clip(str(example.get("provenance_excerpt", "") or ""), 180)
+    behavior = _clip(str(example.get("behavior_excerpt", "") or ""), 180)
+    domain = _clip(str(example.get("domain", "") or ""), 60)
+    author = _clip(str(example.get("author", "") or ""), 60)
+    descriptor = " · ".join(part for part in [domain, author] if part)
+    notes = " | ".join(part for part in [title_pattern, provenance, behavior] if part)
+    line = f"- {title}"
+    if descriptor:
+        line += f" [{descriptor}]"
+    if notes:
+        line += f": {notes}"
+    return line
+
+
+def _format_design_flow_line(item: dict) -> str:
+    if not isinstance(item, dict):
+        return ""
+    title = _clip(str(item.get("title", "") or item.get("name", "") or "Frame"), 160)
+    ui_components = ", ".join(_coerce_list(item.get("ui_components", []), max_items=5))
+    snippet = _clip(str(item.get("snippet", "") or ""), 180)
+    domain = _clip(str(item.get("domain", "") or ""), 60)
+    parts = [part for part in [domain, ui_components] if part]
+    line = f"- {title}"
+    if parts:
+        line += f" [{'; '.join(parts)}]"
+    if snippet:
+        line += f": {snippet}"
+    return line
+
+
+def _format_feature_story_line(item: dict) -> str:
+    if not isinstance(item, dict):
+        return ""
+    title = _clip(str(item.get("title", "") or ""), 160)
+    snippet = _clip(str(item.get("snippet", "") or item.get("description", "") or ""), 180)
+    line = f"- {title or 'Story relacionada'}"
+    if snippet:
+        line += f": {snippet}"
+    return line
+
+
+def _build_generation_brief(context_pack: dict, *, lean: bool = False) -> str:
+    intake = context_pack.get("intake", {}) if isinstance(context_pack, dict) else {}
+    placement = context_pack.get("placement", {}) if isinstance(context_pack, dict) else {}
+    policy_pack = context_pack.get("policy_pack", {}) if isinstance(context_pack, dict) else {}
+    story_policy_pack = context_pack.get("story_policy_pack", {}) if isinstance(context_pack, dict) else {}
+    domain_profile = context_pack.get("domain_profile", {}) if isinstance(context_pack, dict) else {}
+    design_flow = context_pack.get("design_flow", {}) if isinstance(context_pack, dict) else {}
+    feature_pack = context_pack.get("feature_pack", {}) if isinstance(context_pack, dict) else {}
+
+    selected_epic = placement.get("selected_epic", {}) if isinstance(placement.get("selected_epic"), dict) else {}
+    selected_feature = placement.get("selected_feature", {}) if isinstance(placement.get("selected_feature"), dict) else {}
+    placement_reasoning = _coerce_list(placement.get("reasoning", []), max_items=3)
+    missing_fields = _coerce_list(context_pack.get("missing_fields", []), max_items=3)
+    clarification_questions = _coerce_list(context_pack.get("clarification_questions", []), max_items=2)
+    style_hint = _clip(str(policy_pack.get("writer_profile_summary", "") or ""), 700)
+
+    sources = [
+        line
+        for line in (
+            _format_generation_source_line(source)
+            for source in list(context_pack.get("sources", []) or [])[: (5 if lean else 8)]
+        )
+        if line
+    ]
+    curated_examples = [
+        line
+        for line in (
+            _format_generation_example_line(example)
+            for example in list(context_pack.get("curated_examples", []) or [])[: (2 if lean else 3)]
+        )
+        if line
+    ]
+    design_lines = [
+        line
+        for line in (
+            _format_design_flow_line(item)
+            for item in list((design_flow.get("matches", []) if isinstance(design_flow, dict) else []) or [])[: (2 if lean else 3)]
+        )
+        if line
+    ]
+    sibling_lines = [
+        line
+        for line in (
+            _format_feature_story_line(item)
+            for item in list(context_pack.get("feature_siblings", []) or [])[:2]
+        )
+        if line
+    ]
+
+    sections = [
+        "Pedido do Product Owner",
+        f"- Objetivo: {_clip(str(intake.get('objective', '') or ''), 260) or 'n/a'}",
+        f"- Área/equipa: {_clip(str(intake.get('team_scope', '') or ''), 160) or 'n/a'}",
+        f"- Feature/épico fornecido: {_clip(str(intake.get('epic_or_feature', '') or ''), 180) or 'n/a'}",
+        f"- Contexto extra: {_clip(str(intake.get('context', '') or ''), 320) or 'n/a'}",
+        "",
+        "Encaixe provável da jornada",
+        f"- Epic: {_clip(str(selected_epic.get('title', '') or ''), 180) or 'n/a'}",
+        f"- Feature: {_clip(str(selected_feature.get('title', '') or ''), 180) or 'n/a'}",
+        f"- Area path resolvida: {_clip(str(placement.get('resolved_area_path', '') or intake.get('canonical_area_path', '') or ''), 180) or 'n/a'}",
+    ]
+    if placement_reasoning:
+        sections.extend(placement_reasoning)
+    if domain_profile.get("domain") or story_policy_pack.get("domain"):
+        sections.extend(
+            [
+                "",
+                "House style e domínio",
+                f"- Domínio dominante: {_clip(str(domain_profile.get('domain', '') or story_policy_pack.get('domain', '') or ''), 120) or 'n/a'}",
+                f"- Título canónico: {_clip(str(story_policy_pack.get('canonical_title_pattern', '') or ''), 180) or 'n/a'}",
+                f"- Léxico preferido: {', '.join(_coerce_list(policy_pack.get('preferred_lexicon', []), max_items=8)) or 'n/a'}",
+            ]
+        )
+    if curated_examples:
+        sections.extend(["", "Exemplos curados mais próximos", *curated_examples])
+    if design_lines:
+        sections.extend(["", "Frames e passos observáveis", *design_lines])
+    if sibling_lines:
+        sections.extend(["", "Stories irmãs da mesma feature", *sibling_lines])
+    if sources:
+        sections.extend(["", "Evidência observável e fontes", *sources])
+    feature_notes = _coerce_list(feature_pack.get("notes", []), max_items=3)
+    if feature_notes:
+        sections.extend(["", "Notas do pack da feature", *feature_notes])
+    if missing_fields or clarification_questions:
+        sections.extend(["", "Lacunas a gerir sem bloquear"])
+        if missing_fields:
+            sections.extend([f"- Missing field: {item}" for item in missing_fields])
+        if clarification_questions:
+            sections.extend([f"- Clarificação opcional: {item}" for item in clarification_questions])
+    if style_hint and not lean:
+        sections.extend(
+            [
+                "",
+                "Writer profile opcional",
+                f"- Usa só se não colidir com a evidência: {style_hint}",
+            ]
+        )
+    return "\n".join(part for part in sections if part is not None)
+
+
 def _normalize_scalar(value: Any) -> str:
     return _normalize_story_text(str(value or ""))
 
@@ -1768,76 +1931,38 @@ def validate_user_story_draft(draft: dict, context_pack: Optional[dict] = None) 
 
 
 def _build_generation_prompt(context_pack: dict) -> list[dict]:
-    intake = context_pack.get("intake", {})
-    policy_pack = context_pack.get("policy_pack", {})
-    sources = context_pack.get("sources", [])
-    previous_examples = context_pack.get("previous_examples", [])
-    missing_fields = context_pack.get("missing_fields", [])
-    feature_context = context_pack.get("feature_context", {})
-    design_map = context_pack.get("design_map", {})
-    domain_profile = context_pack.get("domain_profile", {})
-    story_policy_pack = context_pack.get("story_policy_pack", {})
-    design_flow = context_pack.get("design_flow", {})
-    curated_examples = context_pack.get("curated_examples", [])
-    curated_corpus = context_pack.get("curated_corpus", {})
-    placement = context_pack.get("placement", {})
-    feature_siblings = context_pack.get("feature_siblings", [])
-    feature_pack = context_pack.get("feature_pack", {})
-    curated_workitem_refs = context_pack.get("curated_workitem_refs", [])
-
-    sources_summary = [
-        {
-            "key": source.get("key", ""),
-            "type": source.get("type", ""),
-            "title": source.get("title", ""),
-            "snippet": source.get("snippet", ""),
-        }
-        for source in sources[:6]
+    available_source_keys = [
+        _clip(str(source.get("key", "") or ""), 80)
+        for source in list(context_pack.get("sources", []) or [])
+        if str(source.get("key", "") or "").strip()
     ]
-    prompt = {
-        "objective": intake.get("objective", ""),
-        "team_scope": intake.get("team_scope", ""),
-        "canonical_area_path": intake.get("canonical_area_path", ""),
-        "epic_or_feature": intake.get("epic_or_feature", ""),
-        "extra_context": intake.get("context", ""),
-        "feature_context": feature_context,
-        "policy_pack": policy_pack,
-        "sources": sources_summary,
-        "design_map": design_map,
-        "domain_profile": domain_profile,
-        "story_policy_pack": story_policy_pack,
-        "design_flow": design_flow,
-        "feature_siblings": feature_siblings[:4],
-        "feature_pack": feature_pack,
-        "curated_workitem_refs": curated_workitem_refs[:4],
-        "curated_corpus": curated_corpus,
-        "curated_examples": curated_examples[:3],
-        "placement": placement,
-        "previous_examples": previous_examples,
-        "missing_fields": missing_fields[: max(1, STORY_MAX_CLARIFICATIONS)],
-    }
-    style_hint = policy_pack.get("writer_profile_summary", "")
-
+    generation_brief = _build_generation_brief(context_pack, lean=False)
     system = (
         "És um Product Owner sénior do Millennium. "
         "Gera exatamente uma user story pronta para Azure DevOps com grounding forte nas evidências. "
-        "Usa PT-PT, vocabulário de UI/UX bancário e output estruturado. "
-        "Se usares termos visuais, prefere CTA, Primary CTA, Card, Dropdown, Input, Bloco, Modal, Toast. "
-        "Não inventes APIs, integrações ou regras de negócio sem base nas fontes. "
-        "O título deve começar por 'MSE |' e a história deve encaixar claramente na proveniência do fluxo."
+        "Usa PT-PT, linguagem observável e o estilo das user stories atuais do MSE: proveniência clara, condições reais, "
+        "composição do ecrã/fluxo, comportamento verificável e cenários de teste úteis. "
+        "Não inventes APIs, integrações, dados de backend ou regras de negócio sem base nas fontes. "
+        "Prefere jornadas simples, com step/estado explícito quando a evidência indicar Step 1/2/3, OK/NOK/Pendente, resumo, autorização ou conclusão. "
+        "No schema, usa 'rules_constraints' para descrever composição visível, labels, CTAs, blocos, validações e regras observáveis do fluxo. "
+        "Usa 'acceptance_criteria' para comportamento verificável e resultado esperado. "
+        "Nunca exponhas policy packs, scores, corpus interno, reasoning técnico nem learning internals no texto final. "
+        "O título deve começar por 'MSE |' e soar a história humana escrita por um PO, não a dump técnico."
     )
     user = (
-        "Context pack para gerar a user story:\n"
-        f"{json.dumps(prompt, ensure_ascii=False, indent=2)}\n\n"
-        f"Writer profile fraco (usar apenas se não colidir com evidência): {style_hint[:1200] if style_hint else 'n/a'}\n\n"
+        "Contexto resumido para gerar a user story:\n"
+        f"{generation_brief}\n\n"
         "Regras obrigatórias:\n"
         "- Produzir um draft único, específico e publicável.\n"
+        "- Aproxima a estrutura às stories existentes: Proveniência -> Condições -> Composição/Regras -> Comportamento -> Testes.\n"
         "- Quando faltarem dados, não bloquear; regista no máximo 2 clarification_questions e baixa confidence.\n"
-        "- Provenance deve explicar onde este fluxo encaixa no site/app e porquê.\n"
-        "- Conditions e rules_constraints devem refletir restrições observáveis, não generalidades vagas.\n"
-        "- Acceptance criteria devem ser mensuráveis e testáveis.\n"
-        "- Test scenarios devem usar Dado/Quando/Então coerentes com os critérios.\n"
-        "- source_keys devem apontar apenas para keys existentes nas fontes fornecidas.\n"
+        "- Provenance deve explicar a entrada na jornada, o step anterior ou o ponto do fluxo onde esta story encaixa.\n"
+        "- Conditions deve listar apenas pré-condições reais, gating rules ou estados necessários para entrar neste passo.\n"
+        "- Rules_constraints deve listar composição visível, conteúdos, CTAs, labels, estados, stepper, blocos e regras observáveis do fluxo.\n"
+        "- Acceptance criteria devem ser mensuráveis, testáveis e refletir o comportamento esperado da interface/fluxo.\n"
+        "- Test scenarios devem usar Dado/Quando/Então coerentes com os critérios e com o estado da jornada.\n"
+        f"- source_keys devem apontar apenas para keys existentes nas fontes fornecidas: {available_source_keys[:10] if available_source_keys else ['n/a']}.\n"
+        "- Reutiliza o léxico e o estilo dos melhores exemplos quando estiverem suportados pela evidência.\n"
     )
     return [
         {"role": "system", "content": system},
@@ -1968,17 +2093,27 @@ async def generate_user_story(request_payload: dict, *, user_sub: str) -> dict:
     context_pack = preview.get("context_pack", {})
     stages = list(preview.get("stages", []))
 
-    prompt_messages = _build_generation_prompt(context_pack)
     draft_start = datetime.now(timezone.utc)
-    llm_result = await llm_with_fallback(
-        messages=prompt_messages,
-        tier="standard",
-        max_tokens=3500,
-        response_format=USER_STORY_LANE_DRAFT_SCHEMA,
-    )
+    draft = {}
+    for attempt_idx, lean in enumerate((False, True), start=1):
+        prompt_messages = _build_generation_prompt(context_pack if not lean else {
+            **context_pack,
+            "sources": list(context_pack.get("sources", []) or [])[:5],
+            "curated_examples": list(context_pack.get("curated_examples", []) or [])[:2],
+            "feature_siblings": list(context_pack.get("feature_siblings", []) or [])[:2],
+        })
+        llm_result = await llm_with_fallback(
+            messages=prompt_messages,
+            tier="standard",
+            max_tokens=3000 if lean else 3500,
+            response_format=USER_STORY_LANE_DRAFT_SCHEMA,
+        )
+        raw_content = getattr(llm_result, "content", "") if llm_result is not None else ""
+        draft = _safe_json_load(raw_content)
+        if draft:
+            break
+        logger.warning("[UserStoryLane] empty structured draft on attempt %s (lean=%s)", attempt_idx, lean)
     draft_duration_ms = int((datetime.now(timezone.utc) - draft_start).total_seconds() * 1000)
-    raw_content = getattr(llm_result, "content", "") if llm_result is not None else ""
-    draft = _safe_json_load(raw_content)
     if not draft:
         raise RuntimeError("Falha a gerar draft estruturado de user story.")
 

@@ -50,6 +50,48 @@ function listFromLines(text) {
     return String(text || '').split('\n').map(line => line.trim()).filter(Boolean);
 }
 
+function pickPreviewEvidence(contextPreview) {
+    if (!contextPreview || typeof contextPreview !== 'object') return [];
+    const items = [
+        ...(Array.isArray(contextPreview.curated_examples) ? contextPreview.curated_examples.map(item => ({
+            title: item.title || 'Exemplo curado',
+            meta: [item.domain, item.author].filter(Boolean).join(' · '),
+            snippet: item.provenance_excerpt || item.behavior_excerpt || item.title_pattern || '',
+        })) : []),
+        ...(Array.isArray(contextPreview.design_flow) ? contextPreview.design_flow.map(item => ({
+            title: item.title || 'Frame',
+            meta: [item.domain, Array.isArray(item.ui_components) ? item.ui_components.slice(0, 3).join(', ') : ''].filter(Boolean).join(' · '),
+            snippet: item.snippet || '',
+        })) : []),
+        ...(Array.isArray(contextPreview.sources) ? contextPreview.sources.map(item => ({
+            title: item.title || item.key || 'Fonte',
+            meta: item.type || item.origin || '',
+            snippet: item.snippet || '',
+        })) : []),
+    ];
+    const seen = new Set();
+    return items.filter(item => {
+        const key = `${item.title}|${item.meta}`.toLowerCase();
+        if (!item.title || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    }).slice(0, 4);
+}
+
+function summarizePlacement(placement) {
+    const data = placement && typeof placement === 'object' ? placement : {};
+    const feature = data.selected_feature && typeof data.selected_feature === 'object' ? data.selected_feature : {};
+    const epic = data.selected_epic && typeof data.selected_epic === 'object' ? data.selected_epic : {};
+    return feature.title || epic.title || data.resolved_area_path || 'Ainda sem placement claro';
+}
+
+function summarizeOpenQuestions(contextPreview) {
+    if (!contextPreview || typeof contextPreview !== 'object') return [];
+    const missing = Array.isArray(contextPreview.missing_fields) ? contextPreview.missing_fields : [];
+    const questions = Array.isArray(contextPreview.clarification_questions) ? contextPreview.clarification_questions : [];
+    return [...missing.map(item => `Falta: ${item}`), ...questions].slice(0, 4);
+}
+
 function acceptanceCriteriaToText(items) {
     return (Array.isArray(items) ? items : []).map(item => {
         if (item && typeof item === 'object') {
@@ -83,6 +125,8 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
     const [publishResult, setPublishResult] = useState(null);
     const [feedbackOutcome, setFeedbackOutcome] = useState('');
     const [feedbackNote, setFeedbackNote] = useState('');
+    const [showAdvancedInputs, setShowAdvancedInputs] = useState(false);
+    const [showDiagnostics, setShowDiagnostics] = useState(false);
 
     const conversationId = (conversation && conversation.id) ? conversation.id : '';
     const confidenceMeta = useMemo(
@@ -93,6 +137,13 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
         () => editableDraft || (draftPayload && draftPayload.draft) || null,
         [editableDraft, draftPayload]
     );
+    const previewEvidence = useMemo(() => pickPreviewEvidence(contextPreview), [contextPreview]);
+    const previewPlacement = useMemo(() => summarizePlacement(contextPreview && contextPreview.placement), [contextPreview]);
+    const previewOpenQuestions = useMemo(() => summarizeOpenQuestions(contextPreview), [contextPreview]);
+    const uploadedFileNames = useMemo(
+        () => (Array.isArray(uploadedFiles) ? uploadedFiles.map(item => String(item && item.filename ? item.filename : '')).filter(Boolean) : []),
+        [uploadedFiles]
+    );
 
     useEffect(() => {
         setContextPreview(null);
@@ -102,6 +153,8 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
         setPublishResult(null);
         setFeedbackOutcome('');
         setFeedbackNote('');
+        setShowAdvancedInputs(false);
+        setShowDiagnostics(false);
     }, [conversationId]);
 
     async function postJson(path, body) {
@@ -267,7 +320,6 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
             animation: 'fadeUp 0.25s ease',
         }
     },
-        user && user.role === 'admin' && React.createElement(UserStoryEvalPanel, { user, conversationId }),
         React.createElement('div', {
             style: {
                 display: 'flex',
@@ -285,7 +337,7 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                 React.createElement('div', {
                     style: { fontSize: 12, color: '#777', maxWidth: 760, lineHeight: 1.6 }
                 },
-                    'Dá-me o mínimo: objetivo, equipa/área e opcionalmente épico/feature, screenshots ou docs. O pipeline monta contexto, procura exemplos, gera draft estruturado e só publica no Azure DevOps por ação explícita.'
+                    'Dá-me a jornada, a área e os anexos certos. A lane tenta encaixar a story na feature certa, usa exemplos parecidos e devolve um rascunho mais próximo das stories atuais. O diagnóstico técnico fica escondido por defeito.'
                 )
             ),
             React.createElement('div', {
@@ -299,7 +351,7 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
             },
                 React.createElement('div', { style: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.6, opacity: 0.7, marginBottom: 4 } }, 'Inputs ideais'),
                 React.createElement('div', { style: { fontSize: 12, lineHeight: 1.7, opacity: 0.95 } },
-                    'CSV de user stories boas, mapa do site/fluxos, glossário UX/UI e screenshots são os artefactos que mais melhoram o grounding.'
+                    'CSV de user stories boas, sitemap, mockups e SVG anexados melhoram muito o grounding. Para SVG grande, anexa o ficheiro; não vale a pena colar o XML no texto.'
                 )
             )
         ),
@@ -310,12 +362,12 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
             React.createElement('div', null,
                 React.createElement('label', {
                     style: { display: 'block', fontSize: 11, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }
-                }, 'Objetivo / resultado pretendido'),
+                }, 'Jornada / objetivo pretendido'),
                 React.createElement('textarea', {
                     value: form.objective,
                     onChange: e => setForm(prev => ({ ...prev, objective: e.target.value })),
                     rows: 4,
-                    placeholder: 'Ex: permitir ao cliente simular e confirmar uma transferência recorrente dentro do fluxo de pagamentos.',
+                    placeholder: 'Ex: o utilizador entra em Cartões > Via Verde, escolhe ativar o contrato, preenche os dados e chega ao Step 2 de resumo e autorização.',
                     style: textareaStyle(),
                 })
             ),
@@ -352,23 +404,13 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                     value: form.context,
                     onChange: e => setForm(prev => ({ ...prev, context: e.target.value })),
                     rows: 4,
-                    placeholder: 'Inclui termos do site, journey, regras de negócio, sitemap, linguagem de UX e o porquê desta história encaixar neste fluxo.',
+                    placeholder: 'Inclui entrypoint da jornada, step/estado, regras de negócio, CTA, labels, sitemap, referência a story anterior ou observações do mockup.',
                     style: textareaStyle(),
                 })
             ),
             React.createElement('div', null,
-                React.createElement('label', {
-                    style: { display: 'block', fontSize: 11, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }
-                }, 'Autor de referência (opcional)'),
-                React.createElement('input', {
-                    value: form.reference_author,
-                    onChange: e => setForm(prev => ({ ...prev, reference_author: e.target.value })),
-                    placeholder: 'Ex: Pedro Mousinho',
-                    style: inputStyle(),
-                }),
                 React.createElement('div', {
                     style: {
-                        marginTop: 12,
                         borderRadius: 14,
                         background: '#FAF7F2',
                         border: '1px solid rgba(0,0,0,0.06)',
@@ -379,10 +421,47 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                         style: { fontSize: 11, fontWeight: 700, color: '#8b6a45', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }
                     }, 'Contexto já anexado'),
                     React.createElement('div', { style: { fontSize: 12, color: '#6b5a45', lineHeight: 1.6 } },
-                        uploadedFiles.length > 0
-                            ? `${uploadedFiles.length} ficheiro(s) disponíveis nesta conversa para grounding adicional.`
+                        uploadedFileNames.length > 0
+                            ? `${uploadedFileNames.length} ficheiro(s) disponíveis nesta conversa: ${uploadedFileNames.slice(0, 3).join(', ')}${uploadedFileNames.length > 3 ? '…' : ''}.`
                             : 'Sem ficheiros anexados nesta conversa. Se quiseres reforçar o grounding, anexa CSVs, docs, sitemap ou mockups.'
                     )
+                ),
+                React.createElement('button', {
+                    type: 'button',
+                    onClick: () => setShowAdvancedInputs(prev => !prev),
+                    style: {
+                        marginTop: 10,
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        background: '#fff',
+                        color: '#444',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                    }
+                }, showAdvancedInputs ? 'Esconder opções avançadas' : 'Mostrar opções avançadas'),
+                showAdvancedInputs && React.createElement('div', {
+                    style: {
+                        marginTop: 10,
+                        borderRadius: 14,
+                        background: '#FBFBFB',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        padding: '12px 14px',
+                    }
+                },
+                    React.createElement('label', {
+                        style: { display: 'block', fontSize: 11, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }
+                    }, 'Autor de referência (opcional)'),
+                    React.createElement('input', {
+                        value: form.reference_author,
+                        onChange: e => setForm(prev => ({ ...prev, reference_author: e.target.value })),
+                        placeholder: 'Ex: Pedro Mousinho',
+                        style: inputStyle(),
+                    }),
+                    React.createElement('div', {
+                        style: { marginTop: 8, fontSize: 12, color: '#777', lineHeight: 1.6 }
+                    }, 'Isto só serve para afinar estilo de escrita quando fizer mesmo sentido. Não é preciso para a lane funcionar.')
                 )
             )
         ),
@@ -394,12 +473,12 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                 onClick: handlePreview,
                 disabled: !!busyAction,
                 style: actionButtonStyle('#ffffff', '#1a1a1a', '1.5px solid rgba(0,0,0,0.08)'),
-            }, busyAction === 'preview' ? 'A montar contexto...' : 'Pré-visualizar contexto'),
+            }, busyAction === 'preview' ? 'A analisar contexto...' : 'Analisar contexto'),
             React.createElement('button', {
                 onClick: handleGenerate,
                 disabled: !!busyAction,
                 style: actionButtonStyle('#1A1A1A', 'white', '1px solid #1A1A1A'),
-            }, busyAction === 'generate' ? 'A gerar draft...' : 'Gerar draft estruturado'),
+            }, busyAction === 'generate' ? 'A gerar rascunho...' : 'Gerar rascunho'),
             draftPayload && React.createElement('button', {
                 onClick: handleValidate,
                 disabled: !!busyAction,
@@ -416,6 +495,54 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
         ),
 
         contextPreview && React.createElement('div', {
+            style: {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: 14,
+                marginBottom: 16,
+            }
+        },
+            React.createElement('div', { style: panelStyle() },
+                React.createElement('div', { style: panelTitleStyle() }, 'Onde isto encaixa'),
+                React.createElement('div', { style: { fontSize: 14, fontWeight: 700, color: '#222', lineHeight: 1.5, marginBottom: 8 } }, previewPlacement),
+                React.createElement('div', { style: { fontSize: 12, color: '#666', lineHeight: 1.6 } }, `Confiança ${Number((contextPreview.placement && contextPreview.placement.confidence) || 0).toFixed(2)}`)
+            ),
+            React.createElement('div', { style: panelStyle() },
+                React.createElement('div', { style: panelTitleStyle() }, 'Evidência principal'),
+                React.createElement('div', { style: { fontSize: 12, color: '#444', lineHeight: 1.7 } },
+                    listOrFallback(previewEvidence, { title: 'Sem evidência destacada', meta: '', snippet: 'Anexa CSV, sitemap, docs ou mockups para reforçar o grounding.' }).map((item, idx) =>
+                        React.createElement('div', { key: `evidence-${idx}`, style: { marginBottom: idx === previewEvidence.length - 1 ? 0 : 8 } },
+                            React.createElement('div', { style: { fontWeight: 700, color: '#222' } }, item.title),
+                            item.meta && React.createElement('div', { style: { color: '#777' } }, item.meta),
+                            item.snippet && React.createElement('div', { style: { color: '#555' } }, item.snippet)
+                        )
+                    )
+                )
+            ),
+            React.createElement('div', { style: panelStyle() },
+                React.createElement('div', { style: panelTitleStyle() }, 'O que falta confirmar'),
+                React.createElement('div', { style: { fontSize: 12, color: '#444', lineHeight: 1.7 } },
+                    listOrFallback(previewOpenQuestions, 'Sem gaps críticos detetados.').map(item =>
+                        React.createElement('div', { key: `open-${item}` }, `• ${item}`)
+                    )
+                )
+            )
+        ),
+
+        contextPreview && React.createElement('div', {
+            style: { marginBottom: 16, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }
+        },
+            React.createElement('div', { style: { fontSize: 12, color: '#666', lineHeight: 1.6 } },
+                'O detalhe técnico continua disponível, mas fica escondido por defeito para não poluir o fluxo.'
+            ),
+            React.createElement('button', {
+                type: 'button',
+                onClick: () => setShowDiagnostics(prev => !prev),
+                style: actionButtonStyle('#ffffff', '#1a1a1a', '1.5px solid rgba(0,0,0,0.08)'),
+            }, showDiagnostics ? 'Esconder diagnóstico' : 'Mostrar diagnóstico')
+        ),
+
+        contextPreview && showDiagnostics && React.createElement('div', {
             style: {
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
@@ -480,28 +607,28 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Placement provável'),
                 renderPlacement(contextPreview.placement)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Policy pack ativo'),
                 renderPolicyPack(contextPreview.story_policy_pack)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Perfil de domínio'),
                 renderDomainProfile(contextPreview.domain_profile)
             )
         ),
 
-        contextPreview && React.createElement('div', {
+        contextPreview && showDiagnostics && React.createElement('div', {
             style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }
         },
             React.createElement('div', { style: panelStyle() },
@@ -514,45 +641,55 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Figma / fluxo provável'),
                 renderSources(contextPreview.design_sources)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Frames / steps prováveis'),
                 renderDesignFlow(contextPreview.design_flow)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Histórias irmãs da feature'),
                 renderSources(contextPreview.feature_siblings)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Pack da feature'),
                 renderFeaturePack(contextPreview.feature_pack)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Refs DevOps de proveniência'),
                 renderSources(contextPreview.curated_workitem_refs)
             )
         ),
 
-        contextPreview && React.createElement('div', { style: { marginBottom: 16 } },
+        contextPreview && showDiagnostics && React.createElement('div', { style: { marginBottom: 16 } },
             React.createElement('div', { style: panelStyle() },
                 React.createElement('div', { style: panelTitleStyle() }, 'Corpus curado'),
                 renderCuratedExamples(contextPreview.curated_examples)
+            )
+        ),
+
+        contextPreview && showDiagnostics && user && user.role === 'admin' && React.createElement('div', { style: { marginBottom: 16 } },
+            React.createElement('div', { style: panelStyle('#FFFDFC') },
+                React.createElement('div', { style: panelTitleStyle() }, 'Admin / learning'),
+                React.createElement('div', { style: { fontSize: 12, color: '#666', lineHeight: 1.6, marginBottom: 12 } },
+                    'Este painel é só para avaliação/admin. Fica escondido por defeito para não interferir com o fluxo normal.'
+                ),
+                React.createElement(UserStoryEvalPanel, { user, conversationId })
             )
         ),
 
@@ -666,7 +803,14 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                             rows: 4,
                             style: textareaStyle(),
                         }),
-                        React.createElement('label', { style: { ...editorLabelStyle(), marginTop: 10 } }, 'Rules / constraints'),
+                        React.createElement('label', { style: { ...editorLabelStyle(), marginTop: 10 } }, 'Condições'),
+                        React.createElement('textarea', {
+                            value: linesFromList(activeDraft.conditions),
+                            onChange: e => setEditableDraft(prev => ({ ...(prev || {}), conditions: listFromLines(e.target.value) })),
+                            rows: 4,
+                            style: textareaStyle(),
+                        }),
+                        React.createElement('label', { style: { ...editorLabelStyle(), marginTop: 10 } }, 'Composição e regras'),
                         React.createElement('textarea', {
                             value: linesFromList(activeDraft.rules_constraints),
                             onChange: e => setEditableDraft(prev => ({ ...(prev || {}), rules_constraints: listFromLines(e.target.value) })),
@@ -679,6 +823,13 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                             onChange: e => setEditableDraft(prev => ({ ...(prev || {}), acceptance_criteria: acceptanceCriteriaFromText(e.target.value) })),
                             rows: 6,
                             style: textareaStyle(),
+                        }),
+                        React.createElement('label', { style: { ...editorLabelStyle(), marginTop: 10 } }, 'Observações'),
+                        React.createElement('textarea', {
+                            value: linesFromList(activeDraft.observations),
+                            onChange: e => setEditableDraft(prev => ({ ...(prev || {}), observations: listFromLines(e.target.value) })),
+                            rows: 4,
+                            style: textareaStyle(),
                         })
                     )
                 )
@@ -688,8 +839,13 @@ export default function UserStoryWorkspace({ conversation, uploadedFiles = [], o
                 style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }
             },
                 React.createElement('div', { style: panelStyle('#fff') },
-                    React.createElement('div', { style: panelTitleStyle() }, 'Rules, constraints e dependências'),
+                    React.createElement('div', { style: panelTitleStyle() }, 'Condições, composição e dependências'),
                     React.createElement('div', { style: sectionTextStyle() },
+                        React.createElement('div', { style: { marginBottom: 12, fontWeight: 700, color: '#333' } }, 'Condições'),
+                        listOrFallback(activeDraft.conditions, 'Sem condições explícitas.').map(item =>
+                            React.createElement('div', { key: `condition-${item}` }, `• ${item}`)
+                        ),
+                        React.createElement('div', { style: { marginTop: 12, fontWeight: 700, color: '#333' } }, 'Composição e regras'),
                         listOrFallback(activeDraft.rules_constraints, 'Sem constraints explícitas.').map(item =>
                             React.createElement('div', { key: `rule-${item}` }, `• ${item}`)
                         ),
