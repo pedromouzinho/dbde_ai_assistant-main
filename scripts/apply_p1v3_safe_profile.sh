@@ -83,14 +83,8 @@ az appservice plan update \
   --number-of-workers 2 \
   >/dev/null
 
-echo "Stopping worker app until dedicated-worker cutover is validated..."
-az webapp stop \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$WORKER_APP" \
-  >/dev/null
-
 echo
 echo "Applied:"
 echo "- Main app uses story indexes and keeps inline async workers enabled."
 echo "- App Service Plan autoscale is 2/2/3 with 2 warm workers."
-echo "- Worker app is provisioned and configured, but left stopped by default."
+echo "- Worker app is provisioned, running, and exposing /health."

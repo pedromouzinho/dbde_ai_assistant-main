@@ -20,11 +20,11 @@ State applied in Azure on 2026-03-16 for `millennium-ai-assistant`:
   - `WORKER_MODE=both`
   - `STARTUP_FAIL_FAST=false`
   - `UPLOAD_INLINE_WORKER_RUNTIME_ENABLED=false`
-  - current operational state: `Stopped` until dedicated-worker cutover is validated end to end
+  - health endpoint: `/health`
 
 Rationale:
 
 - Keep two warm instances to reduce cold-start and restart blast radius.
 - Point production to the populated story indexes instead of relying on runtime fallback.
 - Avoid full app unavailability when a startup dependency is transiently unhealthy.
-- Prepare a clean worker-app split without risking a regression in live async upload/export flows.
+- Run dedicated async upload/export workers behind a deterministic shell wrapper plus Python supervisor.

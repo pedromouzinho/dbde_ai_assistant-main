@@ -32,10 +32,14 @@ class _Handler(BaseHTTPRequestHandler):
         return
 
 
-def main() -> None:
-    port = int(os.getenv("PORT") or os.getenv("WEBSITES_PORT") or "8000")
+def serve(*, port: int) -> None:
     with ThreadingHTTPServer(("0.0.0.0", port), _Handler) as server:
         server.serve_forever()
+
+
+def main() -> None:
+    port = int(os.getenv("PORT") or os.getenv("WEBSITES_PORT") or "8000")
+    serve(port=port)
 
 
 if __name__ == "__main__":
