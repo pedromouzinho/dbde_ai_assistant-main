@@ -273,6 +273,9 @@ app = FastAPI(
     version=APP_VERSION,
     description=APP_DESCRIPTION,
     lifespan=lifespan,
+    docs_url="/docs" if not IS_PRODUCTION else None,
+    redoc_url="/redoc" if not IS_PRODUCTION else None,
+    openapi_url="/openapi.json" if not IS_PRODUCTION else None,
 )
 app.state.limiter = limiter
 _static_dir = Path(__file__).resolve().parent / "static"
@@ -1423,6 +1426,66 @@ async def _read_upload_with_limit(upload: UploadFile, max_bytes: int) -> bytes:
 
 def _max_upload_bytes_for_file(filename: str) -> int:
     return int(get_tabular_upload_limit_bytes(filename, MAX_UPLOAD_FILE_BYTES))
+
+
+def _validate_file_content(filename: str, content: bytes) -> tuple[bool, str]:
+    """
+    Validate file content using magic bytes to detect actual file type.
+    Returns (is_valid, error_message or mime_type).
+    """
+    if not content or len(content) < 4:
+        return False, "Ficheiro vazio ou demasiado pequeno"
+
+    ext = filename.lower().rsplit('.', 1)[-1] if '.' in filename else ''
+
+    # Define allowed file types with their magic bytes signatures
+    ALLOWED_TYPES = {
+        'png': [(b'\x89PNG\r\n\x1a\n', 'image/png')],
+        'jpg': [(b'\xff\xd8\xff', 'image/jpeg')],
+        'jpeg': [(b'\xff\xd8\xff', 'image/jpeg')],
+        'gif': [(b'GIF87a', 'image/gif'), (b'GIF89a', 'image/gif')],
+        'pdf': [(b'%PDF', 'application/pdf')],
+        'csv': [(None, 'text/csv')],  # Text-based, no magic bytes
+        'tsv': [(None, 'text/tab-separated-values')],  # Text-based, no magic bytes
+        'txt': [(None, 'text/plain')],  # Text-based, no magic bytes
+        'xlsx': [(b'PK\x03\x04', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
+        'xlsb': [(b'PK\x03\x04', 'application/vnd.ms-excel.sheet.binary.macroenabled.12')],
+        'xls': [(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1', 'application/vnd.ms-excel')],
+        'docx': [(b'PK\x03\x04', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')],
+        'pptx': [(b'PK\x03\x04', 'application/vnd.openxmlformats-officedocument.presentationml.presentation')],
+        'zip': [(b'PK\x03\x04', 'application/zip')],
+    }
+
+    if ext not in ALLOWED_TYPES:
+        return False, f"Tipo de ficheiro .{ext} não permitido"
+
+    expected_signatures = ALLOWED_TYPES[ext]
+
+    # For text-based files (CSV, TSV, TXT), skip magic byte validation
+    if expected_signatures[0][0] is None:
+        # Basic text validation: check if content is mostly printable ASCII/UTF-8
+        try:
+            sample = content[:2048].decode('utf-8', errors='strict')
+            # Check if it contains reasonable text characters
+            if len(sample) > 0:
+                return True, expected_signatures[0][1]
+        except UnicodeDecodeError:
+            pass
+        # Allow if it decodes as latin-1 (common for CSV files)
+        try:
+            content[:2048].decode('latin-1', errors='strict')
+            return True, expected_signatures[0][1]
+        except UnicodeDecodeError:
+            return False, f"Ficheiro .{ext} não parece ser texto válido"
+
+    # Check magic bytes for binary files
+    for magic_bytes, mime_type in expected_signatures:
+        if content.startswith(magic_bytes):
+            return True, mime_type
+
+    # Build error message
+    expected_desc = " ou ".join(sig[1] for sig in expected_signatures if sig[0] is not None)
+    return False, f"Conteúdo do ficheiro não corresponde à extensão .{ext} (esperado: {expected_desc})"
 
 
 def _normalize_uploaded_conv_entry(conv_id: str) -> dict:
@@ -2945,6 +3008,12 @@ async def upload_file(request: Request, file: UploadFile = File(...), conversati
     filename = file.filename or "unknown"
     max_bytes = _max_upload_bytes_for_file(filename)
     content = await _read_upload_with_limit(file, max_bytes)
+
+    # Validate file content matches extension
+    is_valid, result_msg = _validate_file_content(filename, content)
+    if not is_valid:
+        raise HTTPException(400, result_msg)
+
     user_sub = str(user.get("sub", "") or "")
     reserved_slots = await _count_reserved_slots_for_conversation(conv_id, user_sub=user_sub)
     if reserved_slots >= MAX_FILES_PER_CONVERSATION:
