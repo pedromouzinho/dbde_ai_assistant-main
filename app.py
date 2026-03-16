@@ -1469,9 +1469,19 @@ def _append_uploaded_entry(conv_id: str, store_entry: dict) -> list:
             400,
             f"Limite de {MAX_FILES_PER_CONVERSATION} ficheiros por conversa atingido. Remove alguns anexos e tenta novamente.",
         )
-    files.append(store_entry)
-    if len(files) > MAX_FILES_PER_CONVERSATION:
-        files = files[-MAX_FILES_PER_CONVERSATION:]
+    # Deduplicate: replace existing entry with same filename
+    new_filename = store_entry.get("filename", "")
+    replaced = False
+    if new_filename:
+        for idx, existing in enumerate(files):
+            if existing.get("filename") == new_filename:
+                files[idx] = store_entry
+                replaced = True
+                break
+    if not replaced:
+        files.append(store_entry)
+        if len(files) > MAX_FILES_PER_CONVERSATION:
+            files = files[-MAX_FILES_PER_CONVERSATION:]
     conv_entry["files"] = files
     conv_entry["updated_at"] = datetime.now(timezone.utc).isoformat()
     uploaded_files_store[conv_id] = conv_entry
@@ -1999,12 +2009,17 @@ async def _persist_upload_job(job: dict) -> None:
             return
         result_json = json.dumps(job.get("result") or {}, ensure_ascii=False, default=str)
         if len(result_json) > 20000:
+            full_result = job.get("result") or {}
             result_json = json.dumps(
                 {
                     "_truncated": True,
-                    "status": str(job.get("status", "")),
-                    "filename": str(job.get("filename", "")),
-                    "conversation_id": str(job.get("conversation_id", "")),
+                    "status": str(full_result.get("status", job.get("status", ""))),
+                    "filename": str(full_result.get("filename", job.get("filename", ""))),
+                    "conversation_id": str(full_result.get("conversation_id", job.get("conversation_id", ""))),
+                    "rows": full_result.get("rows"),
+                    "columns": full_result.get("columns"),
+                    "all_files": full_result.get("all_files"),
+                    "auto_summary": full_result.get("auto_summary", ""),
                 },
                 ensure_ascii=False,
                 default=str,

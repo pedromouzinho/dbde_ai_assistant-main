@@ -1110,18 +1110,13 @@ function App() {
                                             streamedText = fullText;
                                             setStreamingText(fullText);
                                             setStreamingTrace(prev => applyStreamingTraceEvent(prev, "token", evt));
+                                            // Render all committed text as single unit to preserve
+                                            // cross-block markdown (tables, headings adjacent to hr, etc.)
                                             const lastBlockBoundary = fullText.lastIndexOf("\n\n");
                                             if (lastBlockBoundary >= committedUntil) {
-                                                const nextCommittedUntil = lastBlockBoundary + 2;
-                                                const newlyCommitted = fullText.slice(committedUntil, nextCommittedUntil);
-                                                const newBlocks = newlyCommitted
-                                                    .split(/\n\n+/)
-                                                    .filter(s => s && s.replace(/\s/g, "").length > 0);
-                                                if (newBlocks.length > 0) {
-                                                    const renderedNewBlocks = newBlocks.map(block => renderMarkdown(block));
-                                                    setStreamingRenderedBlocks(prev => prev.concat(renderedNewBlocks));
-                                                }
-                                                committedUntil = nextCommittedUntil;
+                                                committedUntil = lastBlockBoundary + 2;
+                                                const committedText = fullText.slice(0, committedUntil);
+                                                setStreamingRenderedBlocks([renderMarkdown(committedText)]);
                                             }
                                             setStreamingActiveBlock(fullText.slice(committedUntil));
                                             setStreamingStatus("");
@@ -1174,7 +1169,7 @@ function App() {
                                     id: convId,
                                     updatedAt: new Date().toISOString(),
                                     messages: [...u[activeIdx].messages, {
-                                        role: "assistant", content: fullText || "O modelo não conseguiu gerar resposta. Tenta novamente ou muda para o modo Fast.",
+                                        role: "assistant", content: fullText || `O modelo (${tierLabels[requestTier] || requestTier}) não conseguiu gerar resposta. Possíveis causas: timeout, limite de tokens, ou indisponibilidade temporária. Tenta novamente ou experimenta outro tier.`,
                                         tools_used: toolsUsed.length > 0 ? [...new Set(toolsUsed)] : undefined,
                                         tool_details: toolDetails.length > 0 ? toolDetails : undefined,
                                         tool_results: toolResults.length > 0 ? toolResults : undefined,
