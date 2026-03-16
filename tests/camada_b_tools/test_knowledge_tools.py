@@ -72,6 +72,86 @@ class TestKnowledgeTools:
         assert result["total_results"] == 0
         assert result["items"] == []
 
+    async def test_search_workitems_falls_back_to_story_index_when_legacy_index_is_missing(self, monkeypatch):
+        import story_devops_index
+        import tools_knowledge
+
+        async def _fake_embedding(_text):
+            return [0.1, 0.2, 0.3]
+
+        async def _missing_legacy_search(**kwargs):
+            _ = kwargs
+            return {"error": "Search 404: index not found"}
+
+        async def _story_search(**kwargs):
+            _ = kwargs
+            return {
+                "items": [
+                    {
+                        "id": 994513,
+                        "title": "REVAMPFEE MVP2 | Jornada exemplo",
+                        "content": "Story semelhante do índice dedicado.",
+                        "url": "https://dev.azure.com/mock/_workitems/edit/994513",
+                        "type": "Feature",
+                        "state": "Active",
+                        "area": r"IT.DIT\DIT\ADMChannels\DBKS\AM24\MSE",
+                        "score": 0.91,
+                        "origin": "azure_ai_search_story_devops",
+                    }
+                ],
+                "total_results": 1,
+                "source": "azure_ai_search_story_devops",
+            }
+
+        monkeypatch.setattr(tools_knowledge, "get_embedding", _fake_embedding)
+        monkeypatch.setattr(tools_knowledge, "search_request_with_retry", _missing_legacy_search)
+        monkeypatch.setattr(tools_knowledge, "_LEGACY_INDEX_AVAILABILITY", {"devops": None, "omni": None})
+        monkeypatch.setattr(story_devops_index, "search_story_devops_index", _story_search)
+
+        result = await tools_knowledge.tool_search_workitems("revamp fee", top=5)
+        assert result["total_results"] == 1
+        assert result["items"][0]["id"] == 994513
+        assert result["_fallback"]["source"] == "azure_ai_search_story_devops"
+
+    async def test_search_website_falls_back_to_story_index_when_legacy_index_is_missing(self, monkeypatch):
+        import story_knowledge_index
+        import tools_knowledge
+
+        async def _fake_embedding(_text):
+            return [0.1, 0.2, 0.3]
+
+        async def _missing_legacy_search(**kwargs):
+            _ = kwargs
+            return {"error": "Search 404: index not found"}
+
+        async def _story_search(**kwargs):
+            _ = kwargs
+            return {
+                "items": [
+                    {
+                        "id": "doc-1",
+                        "title": "Fluxo Revamp Fee",
+                        "content": "Resumo funcional do fluxo.",
+                        "url": "https://example.com/revamp-fee",
+                        "tag": "Mapa funcional",
+                        "score": 0.84,
+                        "origin": "azure_ai_search_story_knowledge",
+                    }
+                ],
+                "total_results": 1,
+                "source": "azure_ai_search_story_knowledge",
+            }
+
+        monkeypatch.setattr(tools_knowledge, "get_embedding", _fake_embedding)
+        monkeypatch.setattr(tools_knowledge, "search_request_with_retry", _missing_legacy_search)
+        monkeypatch.setattr(tools_knowledge, "_LEGACY_INDEX_AVAILABILITY", {"devops": None, "omni": None})
+        monkeypatch.setattr(story_knowledge_index, "search_story_knowledge_index", _story_search)
+
+        result = await tools_knowledge.tool_search_website("revamp fee", top=5)
+        assert result["total_results"] == 1
+        assert result["items"][0]["id"] == "doc-1"
+        assert result["_fallback"]["source"] == "azure_ai_search_story_knowledge"
+
     async def test_search_uploaded_document_topk_ordering(self, monkeypatch):
         import tools_upload
 

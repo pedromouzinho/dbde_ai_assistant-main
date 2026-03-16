@@ -40,6 +40,7 @@ from pii_shield import PIIMaskingContext, _regex_pre_mask
 logger = logging.getLogger(__name__)
 
 _http_client: Optional[httpx.AsyncClient] = None
+_LEGACY_INDEX_AVAILABILITY = {"devops": None, "omni": None}
 
 if RERANK_ENABLED:
     logger.info("[RAG] Reranking enabled: model=%s, top_n=%s", RERANK_MODEL, RERANK_TOP_N)
@@ -69,6 +70,87 @@ def _build_rerank_headers() -> dict:
         elif mode == "api-key":
             headers["api-key"] = token
     return headers
+
+
+def _mark_legacy_index_availability(index_key: str, *, available: bool) -> None:
+    if index_key in _LEGACY_INDEX_AVAILABILITY:
+        _LEGACY_INDEX_AVAILABILITY[index_key] = bool(available)
+
+
+def _legacy_index_known_unavailable(index_key: str) -> bool:
+    return _LEGACY_INDEX_AVAILABILITY.get(index_key) is False
+
+
+def _looks_like_missing_index(error_message: str) -> bool:
+    text = str(error_message or "").strip().lower()
+    if not text:
+        return False
+    return "404" in text or "not found" in text or "no such index" in text
+
+
+async def _fallback_story_devops_search(query: str, top: int, *, reason: str, filter_expr: str | None = None) -> Optional[dict]:
+    try:
+        from story_devops_index import search_story_devops_index
+
+        result = await search_story_devops_index(query_text=query, top=top)
+    except Exception as exc:
+        logger.warning("[Tools] story devops fallback failed: %s", exc)
+        return None
+
+    items = []
+    for item in list(result.get("items", []) or [])[: max(1, int(top or 30))]:
+        items.append(
+            {
+                "id": item.get("id", ""),
+                "title": item.get("title", ""),
+                "content": item.get("content", "")[:500],
+                "status": item.get("state", ""),
+                "url": item.get("url", ""),
+                "score": round(float(item.get("score", 0.0) or 0.0), 4),
+                "type": item.get("type", ""),
+                "area": item.get("area", ""),
+                "origin": item.get("origin", "azure_ai_search_story_devops"),
+            }
+        )
+
+    if not items:
+        return None
+
+    fallback_meta = {
+        "reason": reason,
+        "source": result.get("source", "azure_ai_search_story_devops"),
+    }
+    if filter_expr:
+        fallback_meta["filter_expr_ignored"] = True
+
+    return {
+        "total_results": int(result.get("total_results", len(items)) or len(items)),
+        "items": items,
+        "_fallback": fallback_meta,
+    }
+
+
+async def _fallback_story_knowledge_search(query: str, top: int, *, reason: str) -> Optional[dict]:
+    try:
+        from story_knowledge_index import search_story_knowledge_index
+
+        result = await search_story_knowledge_index(query_text=query, top=top)
+    except Exception as exc:
+        logger.warning("[Tools] story knowledge fallback failed: %s", exc)
+        return None
+
+    items = list(result.get("items", []) or [])[: max(1, int(top or 10))]
+    if not items:
+        return None
+
+    return {
+        "total_results": int(result.get("total_results", len(items)) or len(items)),
+        "items": items,
+        "_fallback": {
+            "reason": reason,
+            "source": result.get("source", "azure_ai_search_story_knowledge"),
+        },
+    }
 
 def _rerank_document_from_item(item: dict) -> str:
     parts = []
@@ -186,6 +268,15 @@ def _cosine_similarity(vec_a, vec_b):
 async def tool_search_workitems(query, top=30, filter_expr=None):
     emb = await get_embedding(query)
     if not emb: return {"error": "Falha embedding"}
+    if _legacy_index_known_unavailable("devops"):
+        fallback = await _fallback_story_devops_search(
+            query,
+            top,
+            reason=f"legacy_index_unavailable:{DEVOPS_INDEX}",
+            filter_expr=filter_expr,
+        )
+        if fallback:
+            return fallback
     body = {"vectorQueries":[{"kind":"vector","vector":emb,"fields":"content_vector","k":top}],"select":"id,content,url,tag,status","top":top}
     if filter_expr: body["filter"] = filter_expr
     url = f"https://{SEARCH_SERVICE}.search.windows.net/indexes/{DEVOPS_INDEX}/docs/search?api-version={API_VERSION_SEARCH}"
@@ -196,7 +287,18 @@ async def tool_search_workitems(query, top=30, filter_expr=None):
         max_retries=3,
     )
     if "error" in data:
+        if _looks_like_missing_index(data.get("error")):
+            _mark_legacy_index_availability("devops", available=False)
+            fallback = await _fallback_story_devops_search(
+                query,
+                top,
+                reason=f"missing_legacy_index:{DEVOPS_INDEX}",
+                filter_expr=filter_expr,
+            )
+            if fallback:
+                return fallback
         return {"error": data["error"]}
+    _mark_legacy_index_availability("devops", available=True)
     items = []
     for d in data.get("value",[]):
         ct = d.get("content","")
@@ -210,6 +312,14 @@ async def tool_search_workitems(query, top=30, filter_expr=None):
 async def tool_search_website(query, top=10):
     emb = await get_embedding(query)
     if not emb: return {"error": "Falha embedding"}
+    if _legacy_index_known_unavailable("omni"):
+        fallback = await _fallback_story_knowledge_search(
+            query,
+            top,
+            reason=f"legacy_index_unavailable:{OMNI_INDEX}",
+        )
+        if fallback:
+            return fallback
     body = {"vectorQueries":[{"kind":"vector","vector":emb,"fields":"content_vector","k":top}],"select":"id,content,url,tag","top":top}
     url = f"https://{SEARCH_SERVICE}.search.windows.net/indexes/{OMNI_INDEX}/docs/search?api-version={API_VERSION_SEARCH}"
     data = await search_request_with_retry(
@@ -219,7 +329,17 @@ async def tool_search_website(query, top=10):
         max_retries=3,
     )
     if "error" in data:
+        if _looks_like_missing_index(data.get("error")):
+            _mark_legacy_index_availability("omni", available=False)
+            fallback = await _fallback_story_knowledge_search(
+                query,
+                top,
+                reason=f"missing_legacy_index:{OMNI_INDEX}",
+            )
+            if fallback:
+                return fallback
         return {"error": data["error"]}
+    _mark_legacy_index_availability("omni", available=True)
     items = [
         {
             "id": d.get("id", ""),
