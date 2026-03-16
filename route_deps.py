@@ -19,7 +19,7 @@ from urllib.parse import urlsplit
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from config import AUTH_COOKIE_NAME, ALLOWED_ORIGINS
+from config import AUTH_COOKIE_NAME, ALLOWED_ORIGINS, IS_PRODUCTION
 from auth import jwt_decode, principal_is_admin
 from agent import conversation_meta
 from storage import table_query, table_insert
@@ -39,7 +39,9 @@ security = HTTPBearer(auto_error=False)
 # ---------------------------------------------------------------------------
 _allowed_origins = [o.strip().rstrip("/") for o in ALLOWED_ORIGINS.split(",") if o.strip()]
 _allowed_origins_set = set(_allowed_origins)
-_AUTH_EXEMPT_PATHS = {"/health", "/api/info", "/api/client-error", "/docs", "/openapi.json", "/redoc"}
+_AUTH_EXEMPT_PATHS = {"/health", "/api/info", "/api/client-error"}
+if not IS_PRODUCTION:
+    _AUTH_EXEMPT_PATHS.update({"/docs", "/openapi.json", "/redoc"})
 
 # ---------------------------------------------------------------------------
 # Client IP

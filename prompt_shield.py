@@ -8,7 +8,12 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from config import CONTENT_SAFETY_ENDPOINT, CONTENT_SAFETY_KEY, PROMPT_SHIELD_ENABLED
+from config import (
+    CONTENT_SAFETY_ENDPOINT,
+    CONTENT_SAFETY_KEY,
+    PROMPT_SHIELD_ENABLED,
+    PROMPT_SHIELD_FAIL_MODE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +80,13 @@ async def check_prompt_shield(
 
         return PromptShieldResult(is_blocked=False)
     except Exception as e:
-        # Fail-open por desenho: em erro do serviço não bloqueamos o utilizador.
-        logger.warning("Prompt Shield falhou (passthrough): %s", e)
+        logger.warning("Prompt Shield falhou (fail-%s): %s", PROMPT_SHIELD_FAIL_MODE, e)
+        if PROMPT_SHIELD_FAIL_MODE == "closed":
+            return PromptShieldResult(
+                is_blocked=True,
+                attack_type="service_unavailable",
+                details="Verificação de segurança indisponível. Tenta novamente.",
+            )
         return PromptShieldResult(is_blocked=False)
 
 
@@ -108,4 +118,3 @@ async def check_messages(messages: List[dict]) -> PromptShieldResult:
     if not last_user_text:
         return PromptShieldResult(is_blocked=False)
     return await check_prompt_shield(last_user_text)
-
