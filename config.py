@@ -295,10 +295,6 @@ GENERATED_FILE_TTL_SECONDS = int(_get_env("GENERATED_FILE_TTL_SECONDS", "1800"))
 APP_ENV = _get_env("APP_ENV", "").lower()
 RUNNING_IN_AZURE_APP_SERVICE = bool(_get_env("WEBSITE_SITE_NAME", ""))
 IS_PRODUCTION = APP_ENV in ("prod", "production") or RUNNING_IN_AZURE_APP_SERVICE
-PROMPT_SHIELD_FAIL_MODE = _get_env(
-    "PROMPT_SHIELD_FAIL_MODE",
-    "closed" if IS_PRODUCTION else "open",
-).strip().lower()
 JWT_REQUIRE_EXPLICIT = _get_env(
     "JWT_REQUIRE_EXPLICIT",
     "true" if IS_PRODUCTION else "false",

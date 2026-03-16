@@ -32,7 +32,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse, Response, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
-from upload_validation import validate_upload_content
 
 
 class JSONFormatter(logging.Formatter):
@@ -274,9 +273,6 @@ app = FastAPI(
     version=APP_VERSION,
     description=APP_DESCRIPTION,
     lifespan=lifespan,
-    docs_url=None if IS_PRODUCTION else "/docs",
-    redoc_url=None if IS_PRODUCTION else "/redoc",
-    openapi_url=None if IS_PRODUCTION else "/openapi.json",
 )
 app.state.limiter = limiter
 _static_dir = Path(__file__).resolve().parent / "static"
@@ -2132,7 +2128,26 @@ async def _extract_upload_entry(
             f"Extensão '{ext}' não permitida. Aceites: {', '.join(sorted(allowed_extensions))}",
         )
 
-    validate_upload_content(filename, content)
+    magic_signatures = {
+        ".xlsx": (b"PK\x03\x04",),
+        ".xlsb": (b"PK\x03\x04",),
+        ".xls": (b"\xd0\xcf\x11\xe0",),
+        ".pdf": (b"%PDF",),
+        ".png": (b"\x89PNG",),
+        ".jpg": (b"\xff\xd8\xff",),
+        ".jpeg": (b"\xff\xd8\xff",),
+        ".gif": (b"GIF87a", b"GIF89a"),
+        ".webp": (b"RIFF",),
+        ".bmp": (b"BM",),
+        ".pptx": (b"PK\x03\x04",),
+    }
+    if ext in magic_signatures:
+        prefix = content[:8]
+        if not any(prefix.startswith(sig) for sig in magic_signatures[ext]):
+            raise HTTPException(
+                400,
+                f"Conteúdo do ficheiro não corresponde à extensão '{ext}'. Verifica o ficheiro e tenta novamente.",
+            )
 
     if is_tabular_filename(filename_lower):
         # ── Fast path: if we already built a Parquet artifact, derive
@@ -2930,7 +2945,6 @@ async def upload_file(request: Request, file: UploadFile = File(...), conversati
     filename = file.filename or "unknown"
     max_bytes = _max_upload_bytes_for_file(filename)
     content = await _read_upload_with_limit(file, max_bytes)
-    validate_upload_content(filename, content)
     user_sub = str(user.get("sub", "") or "")
     reserved_slots = await _count_reserved_slots_for_conversation(conv_id, user_sub=user_sub)
     if reserved_slots >= MAX_FILES_PER_CONVERSATION:
@@ -2999,7 +3013,6 @@ async def upload_file_async(
     filename = file.filename or "unknown"
     max_bytes = _max_upload_bytes_for_file(filename)
     content = await _read_upload_with_limit(file, max_bytes)
-    validate_upload_content(filename, content)
 
     user_sub = str(user.get("sub", "") or "")
     reserved_slots = await _count_reserved_slots_for_conversation(conv_id, user_sub=user_sub)
