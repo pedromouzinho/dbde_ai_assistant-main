@@ -3250,7 +3250,7 @@ async def upload_job_status(
         raise HTTPException(404, "Upload job não encontrado")
 
     owner_sub = str(job.get("user_sub", "") or "")
-    if user.get("role") != "admin" and owner_sub and owner_sub != user.get("sub"):
+    if not _is_admin_user(user) and owner_sub and owner_sub != user.get("sub"):
         raise HTTPException(403, "Sem permissão para este upload job")
     if _is_job_stale(job):
         stale_msg = "Upload interrompido por timeout/stale (possível restart do servidor). Reenvia o ficheiro."
@@ -3290,7 +3290,7 @@ async def upload_jobs_status_batch(
             continue
 
         owner_sub = str(job.get("user_sub", "") or "")
-        if user.get("role") != "admin" and owner_sub and owner_sub != user.get("sub"):
+        if not _is_admin_user(user) and owner_sub and owner_sub != user.get("sub"):
             items.append({"job_id": job_id, "status": "forbidden", "error": "Sem permissão para este upload job"})
             continue
 
@@ -3314,7 +3314,7 @@ async def list_upload_jobs(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     user = get_current_user(credentials)
-    if user.get("role") != "admin":
+    if not _is_admin_user(user):
         raise HTTPException(403, "Apenas admins")
 
     _cleanup_upload_jobs()
@@ -3376,7 +3376,7 @@ async def upload_worker_run_once(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     user = get_current_user(credentials)
-    if user.get("role") != "admin":
+    if not _is_admin_user(user):
         raise HTTPException(403, "Apenas admins")
     result = await process_upload_jobs_once(max_jobs=max_jobs)
     return {
@@ -3409,7 +3409,7 @@ async def upload_pending_for_conversation(
         for job in list(upload_jobs_store.values()):
             if str(job.get("conversation_id", "")) == conversation_id and _is_job_stale(job):
                 await _mark_job_failed(job, stale_msg)
-    include_all_users = user.get("role") == "admin"
+    include_all_users = _is_admin_user(user)
     pending = await _count_pending_jobs_for_conversation(
         conv_id=conversation_id,
         user_sub=str(user.get("sub", "") or ""),
@@ -3431,7 +3431,7 @@ async def upload_index_for_conversation(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     user = get_current_user(credentials)
-    include_all = user.get("role") == "admin"
+    include_all = _is_admin_user(user)
     rows = await _list_upload_index(
         conversation_id,
         user_sub="" if include_all else str(user.get("sub", "") or ""),
@@ -3600,7 +3600,7 @@ async def export_chat(request: Request, credentials: HTTPAuthorizationCredential
 async def export_job_status(request: Request, job_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
     user = get_current_user(credentials)
     user_sub = str(user.get("sub", "") or "")
-    is_admin = user.get("role") == "admin"
+    is_admin = _is_admin_user(user)
 
     _cleanup_export_jobs()
     job = await export_jobs_store.get_or_fetch(job_id)
@@ -3616,7 +3616,7 @@ async def export_job_status(request: Request, job_id: str, credentials: HTTPAuth
 @limiter.limit("20/minute", key_func=_user_or_ip_rate_key)
 async def export_worker_run_once(request: Request, credentials: HTTPAuthorizationCredentials = Depends(security)):
     user = get_current_user(credentials)
-    if user.get("role") != "admin":
+    if not _is_admin_user(user):
         raise HTTPException(403, "Apenas admins")
     result = await process_export_jobs_once(max_jobs=EXPORT_WORKER_BATCH_SIZE)
     return {"status": "ok", "worker_id": EXPORT_WORKER_INSTANCE_ID, **result}

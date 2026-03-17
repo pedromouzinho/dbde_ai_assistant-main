@@ -185,6 +185,14 @@ PII_ENABLED = _get_env("PII_ENABLED", "true").lower() == "true"
 CONTENT_SAFETY_ENDPOINT = _get_env("CONTENT_SAFETY_ENDPOINT", "")
 CONTENT_SAFETY_KEY = _get_env("CONTENT_SAFETY_KEY", "")
 PROMPT_SHIELD_ENABLED = _get_env("PROMPT_SHIELD_ENABLED", "true").lower() == "true"
+# Comportamento quando o serviço Content Safety não responde:
+#   "closed" — bloqueia o pedido (fail-safe; recomendado em produção)
+#   "open"   — deixa o pedido passar (fail-permissive; apenas para dev/testes)
+# Por omissão: "closed" em produção, "open" nos restantes ambientes.
+_ps_is_prod_env = _get_env("APP_ENV", "").lower() in ("prod", "production")
+_ps_is_azure_app_service = bool(_get_env("WEBSITE_SITE_NAME", ""))
+_PROMPT_SHIELD_FAIL_MODE_DEFAULT = "closed" if (_ps_is_prod_env or _ps_is_azure_app_service) else "open"
+PROMPT_SHIELD_FAIL_MODE: str = _get_env("PROMPT_SHIELD_FAIL_MODE", _PROMPT_SHIELD_FAIL_MODE_DEFAULT).strip().lower() or _PROMPT_SHIELD_FAIL_MODE_DEFAULT
 
 # Document Intelligence (Azure AI Document Intelligence / Form Recognizer)
 DOC_INTEL_ENDPOINT = _get_env("DOC_INTEL_ENDPOINT", "")

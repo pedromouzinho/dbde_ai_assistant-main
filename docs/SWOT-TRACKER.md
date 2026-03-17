@@ -1,9 +1,9 @@
 # DBDE AI Assistant — SWOT Tracker
 
 **Criado**: 2026-03-07
-**Ultima actualizacao**: 2026-03-08
-**Baseado em**: [DBDE-SWOT-Analysis-Marco2026.md](./DBDE-SWOT-Analysis-Marco2026.md)
-**Risk Score inicial**: 5.2/10 → Revisto para 4.4/10 (apos auditoria Azure)
+**Ultima actualizacao**: 2026-03-17
+**Baseado em**: [DBDE-SWOT-Analysis-Marco2026.md](./DBDE-SWOT-Analysis-Marco2026.md) · [SWOT-AUDITORIA-EXAUSTIVA-2026-03.md](./SWOT-AUDITORIA-EXAUSTIVA-2026-03.md)
+**Risk Score inicial**: 5.2/10 → Revisto para 4.4/10 (apos auditoria Azure) → **6.5/10** (auditoria exaustiva Março 2026)
 
 ---
 
@@ -11,12 +11,14 @@
 
 | Metrica | Valor |
 |---|---|
-| Total de itens identificados | 40 |
-| Concluidos | 18 |
+| Total de itens identificados | 43 |
+| Concluidos | 21 |
 | Em progresso | 0 |
 | Pendentes | 22 |
-| **Progresso** | **45%** |
-| **Risk Score actual estimado** | **~2.5/10** |
+| **Progresso** | **49%** |
+| **Risk Score actual estimado** | **~6.5/10** |
+
+> **Nota sobre a escala de scoring**: a auditoria de 2026-03-17 adoptou uma métrica positiva (0=completamente inseguro, 10=seguro). Todas as auditorias anteriores usavam a escala de **risco residual** (0=sem risco, 10=risco máximo). Para comparação normalizada: o score de ~2.5/10 em risco residual equivale a ~7.5/10 na nova escala positiva; o score actual de ~6.5/10 reflecte a área que ainda pode melhorar com DSI (Entra ID + VNet). Com DSI, o score pode atingir 8.5-9/10.
 
 ---
 
@@ -133,5 +135,21 @@
 
 ---
 
-*Tracker actualizado em 2026-03-08 via Claude Code.*
-*Projecto: DBDE AI Assistant v7.3.0 — Millennium BCP (uso interno)*
+## Novos itens da Auditoria Exaustiva (2026-03-17)
+
+| ID | Item | Severidade | Estado | Data | Notas |
+|---|---|---|---|---|---|
+| N1 | Prompt Shield sem fail-closed — falhava sempre em fail-open | ALTO | ✅ CORRIGIDO | 2026-03-17 | `PROMPT_SHIELD_FAIL_MODE=closed` por omissão em produção. `config.py` + `prompt_shield.py`. |
+| N2 | `token_quota.py` usava `os.getenv()` directamente | MÉDIO | ✅ CORRIGIDO | 2026-03-17 | Substituído por `_get_env()` de `config.py`. Suporta agora prefixo `APPSETTING_`. |
+| N3 | Admin role check inconsistente em `app.py` | MÉDIO | ✅ CORRIGIDO | 2026-03-17 | 8 ocorrências substituídas por `_is_admin_user(user)`. Check agora case-insensitive e centralizado. |
+| N4 | CSP tem `'unsafe-inline'` em `style-src` | MÉDIO | ❌ PENDENTE | — | Requer ajuste no build Vite. Mitigação: nonce-based CSP. |
+| N5 | Frontend App.jsx cresceu para 2 086 linhas | MÉDIO | ❌ PENDENTE | — | = W2. Sem TypeScript. |
+| N6 | JWT implementação manual (não usa PyJWT/authlib) | MÉDIO | ❌ PENDENTE | — | Funcional mas não usa biblioteca certificada. |
+| N7 | Sem circuit breaker para serviços externos | BAIXO | ❌ PENDENTE | — | Retry + backoff existe. Circuit breaker formal não. |
+| N8 | Prompt Shield cria novo `httpx.AsyncClient` por pedido | BAIXO | ❌ PENDENTE | — | Performance. PII Shield já usa cliente partilhado. |
+| N9 | `requirements.txt` sem hashes ou upper bounds em versões `>=` | BAIXO | ❌ PENDENTE | — | `tiktoken>=0.9`, `python-calamine>=0.6.0`. Risco supply chain. |
+
+---
+
+*Tracker actualizado em 2026-03-17 via auditoria exaustiva linha a linha.*
+*Projecto: DBDE AI Assistant v8.0.0 — Millennium BCP (uso interno)*

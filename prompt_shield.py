@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from config import CONTENT_SAFETY_ENDPOINT, CONTENT_SAFETY_KEY, PROMPT_SHIELD_ENABLED
+from config import CONTENT_SAFETY_ENDPOINT, CONTENT_SAFETY_KEY, PROMPT_SHIELD_ENABLED, PROMPT_SHIELD_FAIL_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +75,17 @@ async def check_prompt_shield(
 
         return PromptShieldResult(is_blocked=False)
     except Exception as e:
-        # Fail-open por desenho: em erro do serviço não bloqueamos o utilizador.
-        logger.warning("Prompt Shield falhou (passthrough): %s", e)
+        fail_closed = PROMPT_SHIELD_FAIL_MODE == "closed"
+        if fail_closed:
+            logger.warning(
+                "Prompt Shield falhou (fail-closed — pedido bloqueado por precaução): %s", e
+            )
+            return PromptShieldResult(
+                is_blocked=True,
+                attack_type="service_unavailable",
+                details="O serviço de segurança está temporariamente indisponível. O pedido foi bloqueado por precaução.",
+            )
+        logger.warning("Prompt Shield falhou (fail-open — passthrough): %s", e)
         return PromptShieldResult(is_blocked=False)
 
 

@@ -7,14 +7,15 @@ import os
 import time
 from typing import Any
 
+from config import _get_env
 from storage import table_delete, table_insert, table_merge, table_query
 from utils import odata_escape
 
 TOKEN_QUOTA_TABLE = "TokenQuota"
 _INSTANCE_ID = (
     str(
-        os.getenv("WEBSITE_INSTANCE_ID")
-        or os.getenv("HOSTNAME")
+        _get_env("WEBSITE_INSTANCE_ID", "")
+        or _get_env("HOSTNAME", "")
         or f"pid-{os.getpid()}"
     )
     .strip()
