@@ -17,6 +17,10 @@ venv/
 # Build / dependencies
 node_modules/
 .tmp_wheels/
+tmp/
+tmp-logs/
+tmp_figma_thumbs/
+output/video_frames/
 
 # Claude Code
 .claude/
