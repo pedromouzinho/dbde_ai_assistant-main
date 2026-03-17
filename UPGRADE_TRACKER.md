@@ -1,6 +1,6 @@
 # DBDE AI Assistant — Plano de Melhorias v2
 
-> **Ultima atualizacao:** 2026-03-15 **Ambiente:** Azure Web App `millennium-ai-assistant` · `https://dbdeai.pt` **App Service Plan:** P1v3 PREMIUMV3 (8 GB RAM, 2 vCPU) · Autoscale 1-3 instancias **Total testes:** 512 (392 base + 33 PPTX + 56 XLSX + 12 write-through + 9 auto-summary + 10 cross-file) · Todos a passar
+> **Nota:** este ficheiro é histórico e de planeamento. Não deve ser usado como source of truth para versão atual, deploy live ou configuração operacional. Para verdade operacional usar `docs/`, `config.py`, `startup.sh`, `startup_worker.sh`, `worker_entrypoint.py`, `scripts/` e `.github/workflows/ci.yml`.
 
 ------------------------------------------------------------------------
 
@@ -352,7 +352,8 @@ Fase 3 (Arquitectura):
 
 ## Deploy
 
-**Ultimo deploy:** 2026-03-15 16:29 UTC **Estado:** LIVE em <https://dbdeai.pt>
+Esta secção é histórica e não verificada contra o ambiente live atual.
+Usar `docs/DEPLOY_CHECKLIST.md`, `scripts/smoke_test.py`, `scripts/deploy_swap.sh`, `scripts/rollback.sh` e a configuração do Azure como fonte de verdade.
 
 ``` bash
 az webapp up --name millennium-ai-assistant --resource-group rg-MS_Access_Chabot --runtime "PYTHON:3.12"

@@ -1,45 +1,85 @@
 # DBDE AI Assistant — Checklist de Deploy
-## Versao: 7.3.0
+## Versão: 8.0.0 | Atualizado: 2026-03-17
 
-## Pre-Deploy
-- [ ] Todos os testes passam localmente (`python -m pytest tests/ -x`)
-- [ ] Frontend build sem erros (`npm run build`)
-- [ ] Sem secrets hardcoded no codigo
-- [ ] Mudancas documentadas em commit/PR
-- [ ] Branch atualizada com main
-- [ ] PR aprovado (quando aplicavel)
+## Fonte de verdade
+Checklist alinhado com:
+- `.github/workflows/ci.yml`
+- `package.json`
+- `startup.sh`
+- `startup_worker.sh`
+- `scripts/smoke_test.py`
+- `scripts/deploy_swap.sh`
+- `scripts/rollback.sh`
+- `routes_admin.py`
 
-## Deploy com Slot (quando existir `staging`)
+## 1. Pré-deploy local
+- [ ] `python -m pytest tests/ -x --tb=short -q`
+- [ ] `npm ci`
+- [ ] `npm run build`
+- [ ] Confirmar que existem `static/index.html` e `static/dist/assets/`
+- [ ] Confirmar que não há secrets hardcoded nem `.env` acidentais no commit
+- [ ] Confirmar que o commit/PR descreve a mudança
+- [ ] Confirmar que a branch está atualizada com `main`
+
+## 2. Preparação de runtime
+- [ ] Rever App Settings críticas: `JWT_SECRET`, `AZURE_OPENAI_*`, `SEARCH_*`, `STORAGE_*`, `DEVOPS_PAT`
+- [ ] Rever flags de workers: `UPLOAD_DEDICATED_WORKER_ENABLED`, `EXPORT_DEDICATED_WORKER_ENABLED`
+- [ ] Rever `ALLOWED_ORIGINS`
+- [ ] Rever se existe worker app dedicada e qual o `WORKER_MODE`
+
+## 3. Deploy com slot `staging` quando existir
 - [ ] Confirmar que o slot `staging` existe no App Service
-- [ ] Deploy no slot staging
-- [ ] Aguardar startup completo
-- [ ] Smoke test no staging (`python scripts/smoke_test.py <staging_url>`)
-- [ ] Verificar `/health?deep=true` no staging com autenticação admin
-- [ ] Verificar logs no Log Stream
+- [ ] Fazer deploy para o slot `staging`
+- [ ] Aguardar startup completo do web app
+- [ ] Se existir worker app dedicada, aguardar startup dessa app também
+- [ ] Correr `python3 scripts/smoke_test.py <staging_url>`
+- [ ] Se houver credenciais de smoke, definir `SMOKE_USER` e `SMOKE_PASS` para cobrir `/health?deep=true`
+- [ ] Verificar logs do App Service e dos workers
 
-## Swap Staging → Production
-- [ ] Smoke test staging PASSED
+## 4. Swap staging -> production
+- [ ] Confirmar smoke test de staging sem falhas
 - [ ] Executar `bash scripts/deploy_swap.sh`
-- [ ] Smoke test production PASSED
-- [ ] Workers vivos no deep health com autenticação admin
-- [ ] Monitorizar erros 5 min
+- [ ] Confirmar smoke test de production sem falhas
+- [ ] Confirmar `GET /health?deep=true` com admin
+- [ ] Confirmar `upload_worker` e `export_worker` como `ok` ou `disabled`, nunca em erro
+- [ ] Monitorizar logs e erros durante pelo menos 5 minutos
 
-## Deploy In-Place (estado atual se não houver slot)
-- [ ] Confirmar que não existe slot `staging`
-- [ ] Fazer deploy diretamente em production
-- [ ] Executar smoke test em `https://millennium-ai-assistant.azurewebsites.net`
-- [ ] Verificar `/health?deep=true` com autenticação admin
+## 5. Deploy in-place quando não existe slot
+- [ ] Confirmar explicitamente que não existe slot `staging`
+- [ ] Fazer deploy direto para production
+- [ ] Correr `python3 scripts/smoke_test.py <production_url>`
+- [ ] Se houver credenciais de smoke, repetir com `SMOKE_USER` e `SMOKE_PASS`
+- [ ] Verificar `GET /health?deep=true` com admin
+- [ ] Verificar logs e workers
 - [ ] Preparar rollback por redeploy da versão anterior, não por swap
 
-## Pos-Deploy
-- [ ] Testar chat basico e upload
-- [ ] Confirmar segredos/PAT validos
-- [ ] Confirmar alertas Azure Monitor
-- [ ] Atualizar plano/status de release
+## 6. Pós-deploy
+- [ ] `GET /health`
+- [ ] `GET /api/info`
+- [ ] `GET /`
+- [ ] Login com utilizador válido
+- [ ] Chat básico
+- [ ] Upload simples
+- [ ] Se export estiver no âmbito da release, validar um export
+- [ ] Confirmar cookie auth, CORS e frontend bundle corretos
 
-## Rollback
-- [ ] Executar `bash scripts/rollback.sh` apenas se existir slot `staging`
-- [ ] Sem slot: fazer redeploy da versão anterior
-- [ ] Verificar health em production
-- [ ] Registar razao de rollback
-- [ ] Abrir task de correcao
+## 7. Rollback
+### Com slot
+- [ ] Executar `bash scripts/rollback.sh`
+- [ ] Confirmar `/health`
+- [ ] Confirmar `/health?deep=true`
+- [ ] Repetir smoke test
+
+### Sem slot
+- [ ] Redeploy da versão anterior
+- [ ] Confirmar `/health`
+- [ ] Confirmar `/api/info`
+- [ ] Repetir smoke test
+- [ ] Registar motivo do rollback
+
+## 8. Evidência mínima a guardar
+- [ ] SHA/commit deployado
+- [ ] URL alvo
+- [ ] Resultado do smoke test
+- [ ] Resultado do deep health
+- [ ] Janela temporal de monitorização
