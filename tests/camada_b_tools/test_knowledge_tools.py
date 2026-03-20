@@ -400,6 +400,109 @@ class TestKnowledgeTools:
         assert result["items"][0]["id"] == "story-spin"
         assert result["_fallback"]["reason"] == "legacy_search_error"
 
+    async def test_search_website_builds_business_first_cta_guidance(self, monkeypatch):
+        import tools_knowledge
+
+        async def _no_embedding(_text):
+            return None
+
+        async def _fake_search(**kwargs):
+            _ = kwargs
+            return {"value": []}
+
+        async def _identity_rerank(query, items):
+            _ = query
+            return items, {"applied": False}
+
+        monkeypatch.setattr(tools_knowledge, "get_embedding", _no_embedding)
+        monkeypatch.setattr(tools_knowledge, "search_request_with_retry", _fake_search)
+        monkeypatch.setattr(tools_knowledge, "_rerank_items_post_retrieval", _identity_rerank)
+        monkeypatch.setattr(
+            tools_knowledge,
+            "_serialize_local_story_context",
+            lambda query, top: {
+                "dominant_domain": "Transferências",
+                "sources": ["flow_map", "domain_profile"],
+                "ux_terms": ["CTA", "Primary CTA", "Card", "Stepper"],
+                "notes": ["Fluxo específico de transferências do canal empresas."],
+                "items": [
+                    {
+                        "id": "story-spin-transfer",
+                        "title": "spinTransfers · Transferências",
+                        "content": "Fluxo de transferências SPIN com resumo e confirmação.",
+                        "url": "",
+                        "tag": "Story flow map",
+                        "score": 0.74,
+                        "origin": "local_story_context",
+                        "domain": "Transferências",
+                        "journey": "Transferências",
+                        "flow": "spinTransfers",
+                        "site_placement": "Fluxos de transferências do canal empresas.",
+                        "ui_components": ["CTA", "Primary CTA", "Card", "Stepper"],
+                        "ux_terms": ["spinTransfers", "CTA", "Primary CTA"],
+                    }
+                ],
+            },
+        )
+
+        result = await tools_knowledge.tool_search_website("Que CTA devo usar para esta ação de transferência SPIN?", top=5)
+        assert result["_product_brief"]["response_mode"] == "business_first"
+        assert "cta_guidance" in result["_product_brief"]["intents"]
+        assert result["_product_brief"]["cta_guidance"]
+        assert "spinTransfers" not in result["items"][0]["business_title"]
+        assert "SPIN" in result["items"][0]["business_title"]
+
+    async def test_search_website_builds_dashboard_placement_guidance(self, monkeypatch):
+        import tools_knowledge
+
+        async def _no_embedding(_text):
+            return None
+
+        async def _fake_search(**kwargs):
+            _ = kwargs
+            return {"value": []}
+
+        async def _identity_rerank(query, items):
+            _ = query
+            return items, {"applied": False}
+
+        monkeypatch.setattr(tools_knowledge, "get_embedding", _no_embedding)
+        monkeypatch.setattr(tools_knowledge, "search_request_with_retry", _fake_search)
+        monkeypatch.setattr(tools_knowledge, "_rerank_items_post_retrieval", _identity_rerank)
+        monkeypatch.setattr(
+            tools_knowledge,
+            "_serialize_local_story_context",
+            lambda query, top: {
+                "dominant_domain": "Dashboard",
+                "sources": ["design_map", "flow_map"],
+                "ux_terms": ["CTA", "Card", "Header", "Tab"],
+                "notes": ["Fluxos de Dashboard mais recentes do canal empresas."],
+                "items": [
+                    {
+                        "id": "story-dashboard",
+                        "title": "dashboard · Dashboard",
+                        "content": "Resumo operacional com agenda e atalhos.",
+                        "url": "",
+                        "tag": "Figma handoff",
+                        "score": 0.77,
+                        "origin": "local_story_context",
+                        "domain": "Dashboard",
+                        "journey": "dashboard",
+                        "flow": "dashboard",
+                        "site_placement": "Fluxos de Dashboard mais recentes do canal empresas.",
+                        "ui_components": ["CTA", "Card", "Header", "Tab"],
+                        "ux_terms": ["dashboard", "CTA", "Card"],
+                    }
+                ],
+            },
+        )
+
+        result = await tools_knowledge.tool_search_website("Nesta página do dashboard onde encaixa esta ação?", top=5)
+        assert "placement_guidance" in result["_product_brief"]["intents"]
+        assert result["_product_brief"]["placement_guidance"]
+        assert any("dashboard" in item.lower() or "próxima melhor ação" in item.lower() for item in result["_product_brief"]["placement_guidance"])
+        assert result["items"][0]["business_summary"]
+
     async def test_local_story_context_prefers_flow_domain_over_design_domain(self, monkeypatch):
         import tools_knowledge
 

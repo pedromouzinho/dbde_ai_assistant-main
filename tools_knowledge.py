@@ -104,9 +104,196 @@ def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", folded).strip()
 
 
+def _expand_identifier_text(value: str) -> str:
+    text = str(value or "").strip()
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
+    text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def _tokenize(value: str) -> set[str]:
-    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(value))
+    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(_expand_identifier_text(value)))
     return {token for token in normalized.split() if len(token) >= 3}
+
+
+_PRODUCT_COMPONENT_LABELS = {
+    "cta": "call to action principal",
+    "primary cta": "call to action principal",
+    "card": "bloco resumo",
+    "input": "campo de preenchimento",
+    "dropdown": "lista de seleção",
+    "stepper": "progressão por passos",
+    "modal": "janela de confirmação",
+    "tab": "separador",
+    "header": "cabeçalho",
+    "toast": "mensagem breve de sucesso ou erro",
+    "sidebar": "navegação lateral",
+    "bloco": "bloco de conteúdo",
+}
+
+_BUSINESS_LABEL_OVERRIDES = {
+    "accounts": "contas",
+    "beneficiary confirmation": "confirmação de beneficiário",
+    "change credentials": "alteração de credenciais",
+    "charges": "cobranças",
+    "day to day": "dia a dia",
+    "digital documents": "documentos digitais",
+    "digital documents list": "lista de documentos digitais",
+    "digital signature authorized operation": "assinatura digital da operação",
+    "digital signature confirmation": "confirmação da assinatura digital",
+    "digital signature confirmation page": "confirmação da assinatura digital",
+    "digital signature documents": "documentos para assinatura digital",
+    "digital signature documents page": "documentos para assinatura digital",
+    "digital signature error page": "erro na assinatura digital",
+    "digital signature landing page": "entrada da assinatura digital",
+    "digital signature register operation": "registo da operação para assinatura",
+    "digital signature register operation page": "registo da operação para assinatura",
+    "documents": "documentos",
+    "european funds": "fundos europeus",
+    "file consult": "consulta de ficheiros",
+    "file upload": "carregamento de documentos",
+    "flow decision": "decisão do fluxo",
+    "global position": "posição global",
+    "integrated solutions authorized operation": "operação autorizada",
+    "integrated solutions pending ops": "operações pendentes",
+    "integrated solutions pending ops landing page": "entrada de operações pendentes",
+    "integrated solutions register operation": "registo de operação pendente",
+    "login": "entrada",
+    "mobis pending ops": "operações pendentes",
+    "movements": "movimentos",
+    "on boarding": "onboarding",
+    "pay salary": "pagamento salarial",
+    "pay supplier": "pagamento a fornecedor",
+    "receivables": "recebíveis",
+    "register sibs confirm user data page": "confirmação de dados de adesão",
+    "register sibs error page": "erro no processo de adesão",
+    "register sibs finish process page": "conclusão do processo de adesão",
+    "register sibs landing page": "entrada do processo de adesão",
+    "register sibs missing requirements page": "requisitos em falta para adesão",
+    "register sibs user data selection page": "seleção de dados do utilizador",
+    "salary": "salários",
+    "spin": "serviço SPIN",
+    "spin cancellation": "cancelamento do serviço SPIN",
+    "spin management": "gestão do serviço SPIN",
+    "spin subscription": "adesão ao serviço SPIN",
+    "spin transfer": "transferência SPIN",
+    "spin transfers": "transferências SPIN",
+    "state payments": "pagamentos ao Estado",
+    "state transfers": "transferências ao Estado",
+    "supplier": "fornecedores",
+    "transfers": "transferências",
+    "your enterprise": "empresa",
+}
+
+_BUSINESS_WORD_MAP = {
+    "accounts": "contas",
+    "authorized": "autorizada",
+    "beneficiary": "beneficiário",
+    "beneficiaries": "beneficiários",
+    "cancellation": "cancelamento",
+    "change": "alteração",
+    "charges": "cobranças",
+    "confirmation": "confirmação",
+    "credentials": "credenciais",
+    "day": "dia",
+    "decision": "decisão",
+    "digital": "digital",
+    "documents": "documentos",
+    "document": "documento",
+    "enterprise": "empresa",
+    "european": "europeus",
+    "error": "erro",
+    "file": "ficheiro",
+    "finish": "conclusão",
+    "flow": "fluxo",
+    "funds": "fundos",
+    "global": "global",
+    "integrated": "integradas",
+    "landing": "entrada",
+    "login": "entrada",
+    "management": "gestão",
+    "missing": "em falta",
+    "movements": "movimentos",
+    "onboarding": "onboarding",
+    "operation": "operação",
+    "operations": "operações",
+    "ops": "operações",
+    "page": "",
+    "payments": "pagamentos",
+    "pending": "pendentes",
+    "position": "posição",
+    "receivables": "recebíveis",
+    "register": "adesão",
+    "requirements": "requisitos",
+    "salary": "salário",
+    "selection": "seleção",
+    "service": "serviço",
+    "signature": "assinatura",
+    "sibs": "",
+    "spin": "SPIN",
+    "state": "estado",
+    "subscription": "adesão",
+    "supplier": "fornecedor",
+    "transfers": "transferências",
+    "transfer": "transferência",
+    "upload": "carregamento",
+    "user": "utilizador",
+}
+
+_CTA_QUERY_MARKERS = (
+    "cta",
+    "call to action",
+    "botao",
+    "botão",
+    "texto do botao",
+    "texto do botão",
+    "acao principal",
+    "ação principal",
+)
+_PLACEMENT_QUERY_MARKERS = (
+    "dashboard",
+    "pagina",
+    "página",
+    "home",
+    "overview",
+    "encaixa",
+    "encaixar",
+    "posicionar",
+    "posicionamento",
+    "placement",
+    "onde colocar",
+    "onde meto",
+    "widget",
+    "card",
+    "bloco",
+)
+_GROWTH_QUERY_MARKERS = (
+    "crescer",
+    "crescimento",
+    "adocao",
+    "adoção",
+    "conversao",
+    "conversão",
+    "melhorar",
+    "melhoria",
+    "oportunidade",
+    "oportunidades",
+    "engagement",
+    "retencao",
+    "retenção",
+    "valor",
+)
+_FLOW_QUERY_MARKERS = (
+    "como faço",
+    "como funciona",
+    "como e que",
+    "como é que",
+    "explica",
+    "percurso",
+    "fluxo",
+    "jornada",
+    "passos",
+)
 
 
 def _website_item_signature(item: dict) -> str:
@@ -130,13 +317,319 @@ def _website_item_search_text(item: dict) -> str:
         for part in [
             str(item.get("title", "") or ""),
             str(item.get("content", "") or ""),
+            str(item.get("business_title", "") or ""),
+            str(item.get("business_summary", "") or ""),
             str(item.get("tag", "") or ""),
             str(item.get("domain", "") or ""),
             str(item.get("journey", "") or ""),
             str(item.get("flow", "") or ""),
+            str(item.get("site_placement", "") or ""),
+            str(item.get("routing_note", "") or ""),
+            " ".join(str(item) for item in item.get("ui_components", []) or [] if item),
+            " ".join(str(item) for item in item.get("ux_terms", []) or [] if item),
         ]
         if part
     )
+
+
+def _businessize_label(value: str, *, domain: str = "") -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return str(domain or "").strip()
+    expanded = _expand_identifier_text(raw)
+    normalized = _normalize_text(expanded)
+    if normalized in _BUSINESS_LABEL_OVERRIDES:
+        return _BUSINESS_LABEL_OVERRIDES[normalized]
+    for key, label in sorted(_BUSINESS_LABEL_OVERRIDES.items(), key=lambda item: len(item[0]), reverse=True):
+        if key and key in normalized:
+            return label
+    tokens = [token for token in re.split(r"[^A-Za-z0-9]+", expanded) if token]
+    translated: list[str] = []
+    for token in tokens:
+        normalized_token = _normalize_text(token)
+        mapped = _BUSINESS_WORD_MAP.get(normalized_token, token)
+        if mapped:
+            translated.append(mapped)
+    if not translated:
+        translated = [expanded]
+    text = " ".join(translated)
+    text = re.sub(r"\s+", " ", text).strip(" -|")
+    if not text:
+        text = expanded
+    if text.upper() == text:
+        return text
+    return text[:1].upper() + text[1:]
+
+
+def _businessize_components(components: list[str] | tuple[str, ...] | None) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for raw in components or []:
+        normalized = _normalize_text(raw)
+        label = _PRODUCT_COMPONENT_LABELS.get(normalized, _businessize_label(str(raw or "")))
+        clean = str(label or "").strip()
+        if not clean:
+            continue
+        signature = _normalize_text(clean)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        result.append(clean)
+    return result[:6]
+
+
+def _businessize_surface(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    cleaned = text.replace("MSE/", "").replace("MSE\\", "").replace("MSE,", "")
+    if cleaned == text and "/" not in text and ">" not in text and "," not in text:
+        return text
+    segments = [segment.strip(" .") for segment in re.split(r"[>/,]", cleaned) if segment.strip(" .")]
+    if not segments:
+        return text
+    translated = [_businessize_label(segment) for segment in segments if segment]
+    if len(translated) == 1:
+        return f"área de {translated[0]} do portal"
+    return " > ".join(translated)
+
+
+def _detect_product_query_intents(query: str) -> list[str]:
+    normalized = _normalize_text(query)
+    intents: list[str] = []
+    if any(marker in normalized for marker in _CTA_QUERY_MARKERS):
+        intents.append("cta_guidance")
+    if any(marker in normalized for marker in _PLACEMENT_QUERY_MARKERS):
+        intents.append("placement_guidance")
+    if any(marker in normalized for marker in _GROWTH_QUERY_MARKERS):
+        intents.append("growth_opportunity")
+    if any(marker in normalized for marker in _FLOW_QUERY_MARKERS):
+        intents.append("business_flow")
+    if not intents:
+        intents.append("business_flow")
+    return intents
+
+
+def _suggest_primary_cta(query: str, *, domain: str = "", flow: str = "") -> list[str]:
+    normalized_query = _normalize_text(query)
+    normalized_domain = _normalize_text(domain)
+    normalized_flow = _normalize_text(_expand_identifier_text(flow))
+    suggestions: list[str] = []
+
+    if "cancel" in normalized_query or "cancel" in normalized_flow:
+        suggestions.append("Cancelar serviço")
+    if any(token in normalized_query for token in ("assinatura", "autorizar", "autorizacao", "autorização")) or "signature" in normalized_flow:
+        suggestions.extend(["Autorizar operação", "Assinar e confirmar"])
+    if any(token in normalized_query for token in ("upload", "documento", "documentos", "ficheiro", "ficheiros")) or normalized_domain == "documentos":
+        suggestions.extend(["Carregar documento", "Submeter documento"])
+    if any(token in normalized_query for token in ("login", "acesso", "credenciais", "autenticacao", "autenticação")) or normalized_domain == "autenticacao":
+        suggestions.extend(["Entrar", "Continuar"])
+    if any(token in normalized_query for token in ("onboarding", "adesao", "adesão", "contas", "fundos europeus")) or normalized_domain == "onboarding":
+        suggestions.extend(["Continuar adesão", "Concluir adesão"])
+    if "spin" in normalized_query and normalized_domain == "recebiveis":
+        suggestions.extend(["Gerir serviço", "Aderir ao serviço"])
+    if "spin" in normalized_query and normalized_domain == "transferencias":
+        suggestions.extend(["Continuar transferência", "Confirmar transferência"])
+    if any(token in normalized_query for token in ("transferencia", "transferências", "transferencia", "pagamento", "pagamentos")) or normalized_domain in {"transferencias", "pagamentos"}:
+        suggestions.extend(["Continuar", "Confirmar"])
+
+    if not suggestions:
+        suggestions = ["Continuar", "Confirmar"]
+    return merge_sources(suggestions)[:3]
+
+
+def _domain_growth_opportunities(domain: str, query: str) -> list[str]:
+    normalized_domain = _normalize_text(domain)
+    normalized_query = _normalize_text(query)
+    suggestions = [
+        "Mede o impacto com clique no CTA principal, taxa de início e taxa de conclusão.",
+        "Expõe pré-requisitos e estado atual antes da ação para reduzir abandono.",
+    ]
+    if "dashboard" in normalized_query or normalized_domain == "dashboard":
+        suggestions.insert(0, "Promove a ação como próxima melhor ação no dashboard, com contexto e benefício imediato.")
+    elif normalized_domain in {"transferencias", "pagamentos"}:
+        suggestions.insert(0, "Cria uma entrada rápida a partir da home ou do dashboard para a ação mais recorrente.")
+    elif normalized_domain == "documentos":
+        suggestions.insert(0, "Torna visível o estado dos documentos e o que falta fazer antes de pedir nova ação.")
+    elif normalized_domain == "operacoes":
+        suggestions.insert(0, "Dá prioridade a operações pendentes com urgência, prazo ou impacto visível.")
+    elif normalized_domain == "recebiveis":
+        suggestions.insert(0, "Explica claramente o estado do serviço e oferece a ação certa para adesão, gestão ou cancelamento.")
+    elif normalized_domain == "onboarding":
+        suggestions.insert(0, "Mostra progresso e próximos passos para reduzir desistência a meio da jornada.")
+    return merge_sources(suggestions)[:3]
+
+
+def _sanitize_business_note(note: str) -> str:
+    text = str(note or "").strip()
+    normalized = _normalize_text(text)
+    if not text:
+        return ""
+    if "github main" in normalized or "source of truth" in normalized or "repo atlas" in normalized:
+        return ""
+    if normalized.startswith("preferir este handoff"):
+        return "Há evidência mais forte para este contexto funcional do que para alternativas genéricas."
+    return text
+
+
+def _build_business_title(item: dict) -> str:
+    domain = str(item.get("domain", "") or "").strip()
+    flow = str(item.get("flow", "") or "").strip()
+    journey = str(item.get("journey", "") or "").strip()
+    seed = flow or journey or str(item.get("title", "") or "").strip()
+    label = _businessize_label(seed, domain=domain)
+    if domain and _normalize_text(label) != _normalize_text(domain):
+        return f"{label} | {domain}"
+    return label or domain or str(item.get("title", "") or "").strip()
+
+
+def _build_business_summary(item: dict) -> str:
+    domain = str(item.get("domain", "") or "").strip()
+    flow_label = _businessize_label(str(item.get("flow", "") or item.get("journey", "") or ""), domain=domain)
+    placement = _businessize_surface(str(item.get("site_placement", "") or "")).rstrip(". ")
+    components = _businessize_components(item.get("ui_components", []) or item.get("ux_terms", []) or [])
+    note = _sanitize_business_note(str(item.get("routing_note", "") or ""))
+    parts = []
+    if domain:
+        parts.append(f"Aponta para a área de {domain.lower()} do portal.")
+    if flow_label and _normalize_text(flow_label) != _normalize_text(domain):
+        parts.append(f"O indício mais forte é um percurso ligado a {flow_label.lower()}.")
+    if placement:
+        parts.append(f"Este tema surge associado a {placement}.")
+    if components:
+        parts.append(f"Os padrões de interface mais recorrentes aqui são {', '.join(components[:4])}.")
+    if note:
+        parts.append(note)
+    return " ".join(part for part in parts if part).strip()
+
+
+def _build_product_brief(query: str, items: list[dict], local_story: Optional[dict] = None) -> dict:
+    intents = _detect_product_query_intents(query)
+    dominant_domain = str(
+        (local_story or {}).get("dominant_domain", "")
+        or ((items[0] if items else {}).get("domain", "") if items else "")
+        or ""
+    ).strip()
+    lead_item = items[0] if items else {}
+    lead_flow_item = next(
+        (
+            item
+            for item in items
+            if str(item.get("flow", "") or "").strip()
+            and (
+                not dominant_domain
+                or _normalize_text(str(item.get("domain", "") or "")) == _normalize_text(dominant_domain)
+            )
+        ),
+        lead_item,
+    )
+    placement = _businessize_surface(str(lead_item.get("site_placement", "") or "")).rstrip(". ")
+    profile_components = list((((local_story or {}).get("profile", {}) or {}).get("preferred_lexicon", []) or []))
+    ui_patterns = merge_sources(
+        _businessize_components((lead_item.get("ui_components", []) or []))
+        + _businessize_components(profile_components)
+    )[:6]
+    flow_label = _businessize_label(
+        str(lead_flow_item.get("flow", "") or lead_flow_item.get("journey", "") or ""),
+        domain=dominant_domain,
+    )
+    summary_parts = []
+    if dominant_domain:
+        summary_parts.append(f"A pergunta cai sobretudo em {dominant_domain}.")
+    if flow_label and _normalize_text(flow_label) != _normalize_text(dominant_domain):
+        summary_parts.append(f"A melhor evidência aponta para um percurso de {flow_label.lower()}.")
+    if placement:
+        summary_parts.append(f"Este tipo de ação aparece associado a {placement}.")
+    response_shape = [
+        "Responder em linguagem de negócio.",
+        "Evitar nomes de repos, camelCase e labels técnicas.",
+    ]
+    if "cta_guidance" in intents:
+        response_shape.append("Propor CTA claro, orientado ao resultado e coerente com o momento da jornada.")
+    if "placement_guidance" in intents:
+        response_shape.append("Explicar onde a ação encaixa na página e porquê.")
+    if "growth_opportunity" in intents:
+        response_shape.append("Sugerir oportunidades de crescimento, adoção ou descoberta.")
+
+    cta_guidance: list[str] = []
+    if "cta_guidance" in intents:
+        suggestions = _suggest_primary_cta(query, domain=dominant_domain, flow=str(lead_flow_item.get("flow", "") or ""))
+        if suggestions:
+            cta_guidance.append(f"Usa um CTA principal orientado ao resultado, por exemplo: {', '.join(suggestions[:2])}.")
+        cta_guidance.append("Reserva 'Confirmar' para o momento de compromisso final; nos passos intermédios prefere 'Continuar'.")
+        cta_guidance.append("Mantém o CTA principal no mesmo bloco onde o utilizador revê os dados ou pré-requisitos.")
+
+    placement_guidance: list[str] = []
+    if "placement_guidance" in intents:
+        if "dashboard" in _normalize_text(query):
+            placement_guidance.append("No dashboard, trata isto como próxima melhor ação: um card acionável com contexto, estado e benefício imediato.")
+            placement_guidance.append("Coloca-o acima da dobra ou na zona de resumo operacional quando a ação for frequente ou urgente.")
+        else:
+            placement_guidance.append("Coloca a ação no ponto da jornada em que o utilizador toma a decisão, não escondida em navegação secundária.")
+        placement_guidance.append("Se houver pré-requisitos, mostra estado, pendências e CTA no mesmo módulo para reduzir fricção.")
+        placement_guidance.append("Em páginas longas, repete o CTA no fecho apenas se o utilizador tiver de percorrer muito conteúdo.")
+
+    growth_opportunities: list[str] = []
+    if "growth_opportunity" in intents or "placement_guidance" in intents or "cta_guidance" in intents:
+        growth_opportunities = _domain_growth_opportunities(dominant_domain, query)
+
+    domains_seen = merge_sources([str(item.get("domain", "") or "") for item in items if item.get("domain")])
+    ambiguity_note = ""
+    if "spin" in _normalize_text(query) and len(domains_seen) > 1:
+        ambiguity_note = "SPIN surge em mais do que um contexto de negócio; convém distinguir entre envio de dinheiro e gestão do serviço antes de fechar a recomendação."
+
+    evidence = merge_sources(
+        [
+            str(lead_item.get("business_summary", "") or ""),
+            _sanitize_business_note(str(lead_item.get("routing_note", "") or "")),
+            _sanitize_business_note(
+                str((local_story or {}).get("notes", [""])[0] or "") if isinstance((local_story or {}).get("notes"), list) else ""
+            ),
+        ]
+    )[:3]
+
+    return {
+        "audience": "product_management",
+        "response_mode": "business_first",
+        "dominant_domain": dominant_domain,
+        "intents": intents,
+        "business_summary": " ".join(part for part in summary_parts if part).strip(),
+        "ui_patterns": ui_patterns,
+        "cta_guidance": cta_guidance[:3],
+        "placement_guidance": placement_guidance[:3],
+        "growth_opportunities": growth_opportunities[:3],
+        "ambiguity_note": ambiguity_note,
+        "response_shape": response_shape,
+        "evidence": evidence,
+    }
+
+
+def _enrich_website_item_for_business(item: dict) -> dict:
+    enriched = dict(item or {})
+    business_title = _build_business_title(enriched)
+    business_summary = _build_business_summary(enriched)
+    if business_title:
+        enriched["business_title"] = business_title
+    if business_summary:
+        enriched["business_summary"] = business_summary
+    site_placement = str(enriched.get("site_placement", "") or "").strip()
+    if site_placement:
+        enriched["site_placement_business"] = _businessize_surface(site_placement)
+    ui_patterns = _businessize_components(enriched.get("ui_components", []) or enriched.get("ux_terms", []) or [])
+    if ui_patterns:
+        enriched["ui_patterns"] = ui_patterns
+    return enriched
+
+
+def _with_business_website_context(query: str, payload: dict, local_story: Optional[dict] = None) -> dict:
+    if not isinstance(payload, dict):
+        return payload
+    items = list(payload.get("items", []) or [])
+    enriched_items = [_enrich_website_item_for_business(item) for item in items]
+    result = dict(payload)
+    result["items"] = enriched_items
+    result["_product_brief"] = _build_product_brief(query, enriched_items, local_story=local_story)
+    return result
 
 
 def _rank_website_items(query: str, items: list[dict]) -> list[dict]:
@@ -186,13 +679,15 @@ def _profile_to_website_item(profile: dict) -> dict:
     domain = str(profile.get("domain", "") or "").strip()
     journeys = [str(item) for item in profile.get("top_journeys", []) if item]
     flows = [str(item) for item in profile.get("top_flows", []) if item]
+    routing_notes = [str(item) for item in profile.get("routing_notes", []) if item]
+    preferred_lexicon = [str(item) for item in profile.get("preferred_lexicon", []) if item]
     content = " ".join(
         part
         for part in [
             f"Domínio {domain}." if domain else "",
             f"Journeys: {', '.join(journeys[:4])}." if journeys else "",
             f"Flows: {', '.join(flows[:6])}." if flows else "",
-            " ".join(str(item) for item in profile.get("routing_notes", [])[:3] if item),
+            " ".join(routing_notes[:3]),
         ]
         if part
     ).strip()
@@ -210,7 +705,10 @@ def _profile_to_website_item(profile: dict) -> dict:
         "origin": "local_story_context",
         "domain": domain,
         "journey": journeys[0] if journeys else "",
-        "flow": flows[0] if flows else "",
+        "flow": "",
+        "routing_note": routing_notes[0] if routing_notes else "",
+        "ui_components": preferred_lexicon[:6],
+        "ux_terms": preferred_lexicon[:6],
     }
 
 
@@ -259,8 +757,17 @@ def _serialize_local_story_context(query: str, top: int) -> dict:
         dominant_domain = str(design_result.get("dominant_domain", "") or "").strip()
 
     items: list[dict] = []
+    collected_ui_terms: list[str] = []
+    collected_notes: list[str] = []
     for entry in flow_result.get("matches", [])[: max(1, min(int(top or 3), 4))]:
         serialized = serialize_story_flow_match(entry)
+        site_placement = str(entry.get("site_placement", "") or "")
+        ui_components = list(serialized.get("ui_components", []) or entry.get("ui_components", []) or [])
+        ux_terms = list(entry.get("ux_terms", []) or [])
+        routing_note = str(entry.get("routing_note", "") or "")
+        collected_ui_terms.extend(str(term) for term in ux_terms if term)
+        if routing_note:
+            collected_notes.append(routing_note)
         items.append(
             {
                 "id": str(serialized.get("key", "") or entry.get("id", "") or ""),
@@ -273,11 +780,22 @@ def _serialize_local_story_context(query: str, top: int) -> dict:
                 "domain": str(serialized.get("domain", "") or entry.get("domain", "") or ""),
                 "journey": str(serialized.get("page_name", "") or entry.get("journey", "") or ""),
                 "flow": str(serialized.get("frame_name", "") or entry.get("flow", "") or ""),
+                "site_placement": site_placement,
+                "routing_note": routing_note,
+                "ui_components": ui_components[:6],
+                "ux_terms": ux_terms[:8],
             }
         )
 
     for entry in design_result.get("matches", [])[:2]:
         serialized = serialize_design_match(entry)
+        journeys = list(entry.get("journeys", []) or [])
+        ux_terms = list(entry.get("ux_terms", []) or [])
+        routing_note = str(entry.get("routing_note", "") or "")
+        site_placement = str(entry.get("site_placement", "") or "")
+        collected_ui_terms.extend(str(term) for term in ux_terms if term)
+        if routing_note:
+            collected_notes.append(routing_note)
         items.append(
             {
                 "id": str(serialized.get("key", "") or entry.get("file_key", "") or ""),
@@ -288,12 +806,18 @@ def _serialize_local_story_context(query: str, top: int) -> dict:
                 "score": round(float(serialized.get("score", entry.get("score", 0.0)) or 0.0), 4),
                 "origin": "local_story_context",
                 "domain": str(serialized.get("domain", "") or entry.get("domain", "") or ""),
-                "journey": str((entry.get("journeys", []) or [""])[0] or ""),
-                "flow": str((entry.get("journeys", []) or [""])[-1] or ""),
+                "journey": str((journeys or [""])[0] or ""),
+                "flow": str((journeys or [""])[-1] or ""),
+                "site_placement": site_placement,
+                "routing_note": routing_note,
+                "ui_components": ux_terms[:6],
+                "ux_terms": ux_terms[:8],
             }
         )
 
     if profile:
+        collected_ui_terms.extend(str(term) for term in profile.get("preferred_lexicon", []) or [] if term)
+        collected_notes.extend(str(note) for note in profile.get("routing_notes", []) or [] if note)
         items.append(_profile_to_website_item(profile))
 
     deduped = _dedupe_website_items(_rank_website_items(query, items))
@@ -308,6 +832,10 @@ def _serialize_local_story_context(query: str, top: int) -> dict:
         "items": deduped[: max(1, min(int(top or 3), 4))],
         "dominant_domain": dominant_domain,
         "sources": merge_sources(["design_map" if design_result.get("matches") else "", "flow_map" if flow_result.get("matches") else "", "domain_profile" if profile else "", "policy_pack" if pack else ""]),
+        "ux_terms": merge_sources(collected_ui_terms),
+        "notes": merge_sources(collected_notes + list(flow_result.get("notes", []) or []) + list(design_result.get("notes", []) or [])),
+        "profile": profile if isinstance(profile, dict) else {},
+        "policy_pack": pack if isinstance(pack, dict) else {},
     }
 
 
@@ -338,6 +866,12 @@ def _expanded_story_query_context(query: str) -> str:
         hints.append("Fluxo de onboarding com contas, dia a dia, posição global e fundos europeus.")
     if any(token in normalized for token in ("beneficiario", "beneficiários", "beneficiarios")):
         hints.append("Fluxo de beneficiários com criação, edição e importação.")
+    if any(token in normalized for token in _CTA_QUERY_MARKERS):
+        hints.append("Intenção de UX: copy do CTA principal, hierarquia de ação, próxima melhor ação e momento de confirmação.")
+    if any(token in normalized for token in _PLACEMENT_QUERY_MARKERS):
+        hints.append("Intenção de produto/UX: placement em página, dashboard, card, bloco resumo, entrada rápida e priorização visual.")
+    if any(token in normalized for token in _GROWTH_QUERY_MARKERS):
+        hints.append("Intenção de crescimento: adoção, conversão, descoberta, engagement e oportunidades de melhoria da jornada.")
     if not hints:
         return query
     return " | ".join([str(query or "").strip()] + hints)
@@ -659,10 +1193,10 @@ async def tool_search_website(query, top=10):
             local_story=local_story,
         )
         if fallback:
-            return fallback
+            return _with_business_website_context(query, fallback, local_story=local_story)
         local_items = list(local_story.get("items", []) or [])[: max(1, int(top or 10))]
         if local_items:
-            return {
+            return _with_business_website_context(query, {
                 "total_results": len(local_items),
                 "items": local_items,
                 "_fallback": {
@@ -670,7 +1204,7 @@ async def tool_search_website(query, top=10):
                     "source": "local_story_context",
                     "dominant_domain": dominant_domain,
                 },
-            }
+            }, local_story=local_story)
     body = {"select":"id,content,url,tag","top":top, "search": str(query or "").strip() or "*"}
     if emb:
         body["vectorQueries"] = [{"kind":"vector","vector":emb,"fields":"content_vector","k":top}]
@@ -692,10 +1226,10 @@ async def tool_search_website(query, top=10):
                 local_story=local_story,
             )
             if fallback:
-                return fallback
+                return _with_business_website_context(query, fallback, local_story=local_story)
             local_items = list(local_story.get("items", []) or [])[: max(1, int(top or 10))]
             if local_items:
-                return {
+                return _with_business_website_context(query, {
                     "total_results": len(local_items),
                     "items": local_items,
                     "_fallback": {
@@ -703,7 +1237,7 @@ async def tool_search_website(query, top=10):
                         "source": "local_story_context",
                     "dominant_domain": dominant_domain,
                     },
-                }
+                }, local_story=local_story)
         fallback = await _fallback_story_knowledge_search_with_local(
             query,
             top,
@@ -714,10 +1248,10 @@ async def tool_search_website(query, top=10):
         if fallback:
             fallback.setdefault("_fallback", {})
             fallback["_fallback"]["legacy_error"] = data["error"]
-            return fallback
+            return _with_business_website_context(query, fallback, local_story=local_story)
         local_items = list(local_story.get("items", []) or [])[: max(1, int(top or 10))]
         if local_items:
-            return {
+            return _with_business_website_context(query, {
                 "total_results": len(local_items),
                 "items": local_items,
                 "_fallback": {
@@ -726,7 +1260,7 @@ async def tool_search_website(query, top=10):
                     "dominant_domain": dominant_domain,
                     "legacy_error": data["error"],
                 },
-            }
+            }, local_story=local_story)
         return {"error": data["error"]}
     _mark_legacy_index_availability("omni", available=True)
     legacy_items = [
@@ -778,7 +1312,7 @@ async def tool_search_website(query, top=10):
                 "dominant_domain": dominant_domain,
             }
         )
-    return result
+    return _with_business_website_context(query, result, local_story=local_story)
 
 
 async def tool_search_web(query: str, top: int = 5) -> dict:

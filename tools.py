@@ -2587,7 +2587,7 @@ async def tool_screenshot_to_us(
 _BUILTIN_TOOL_DEFINITIONS = [
     {"type":"function","function":{"name":"query_workitems","description":"Query Azure DevOps via WIQL para contagens, listagens, filtros. Dados em TEMPO REAL.","parameters":{"type":"object","properties":{"wiql_where":{"type":"string","description":"WHERE WIQL. Ex: [System.WorkItemType]='User Story' AND [System.State]='Active'"},"fields":{"type":"array","items":{"type":"string"},"description":"Campos extra a retornar. Default: Id,Title,State,Type,AssignedTo,CreatedBy,AreaPath,CreatedDate. Adicionar 'System.Description' e 'Microsoft.VSTS.Common.AcceptanceCriteria' quando o user pedir detalhes/descrição/AC."},"top":{"type":"integer","description":"Max resultados. 0=só contagem."}},"required":["wiql_where"]}}},
     {"type":"function","function":{"name":"search_workitems","description":"Pesquisa semântica em work items indexados. Retorna AMOSTRA dos mais relevantes.","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Texto. Ex: 'transferências SPIN'"},"top":{"type":"integer","description":"Nº resultados. Default: 30."},"filter":{"type":"string","description":"Filtro OData."}},"required":["query"]}}},
-    {"type":"function","function":{"name":"search_website","description":"Pesquisa no site MSE. Usa para navegação, funcionalidades, operações.","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Texto. Ex: 'transferência SEPA'"},"top":{"type":"integer","description":"Default: 10"}},"required":["query"]}}},
+    {"type":"function","function":{"name":"search_website","description":"Pesquisa no site MSE. Usa para navegação, funcionalidades, operações, CTA, placement em página, dashboard e recomendações de produto/UX.","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Texto. Ex: 'transferência SEPA'"},"top":{"type":"integer","description":"Default: 10"}},"required":["query"]}}},
     {"type":"function","function":{"name":"search_web","description":"Pesquisa na web via Brave Search. Usar para informação atual, dados externos, ou contexto que não está nos documentos internos. Só usar quando o utilizador pedir pesquisa web ou quando a informação não existir nas fontes internas.","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Termos de pesquisa (max 200 chars)."},"top":{"type":"integer","description":"Número de resultados (max 5, default 5)."}},"required":["query"]}}},
     {"type":"function","function":{"name":"search_uploaded_document","description":"Pesquisa semântica no documento carregado pelo utilizador. Usar quando o utilizador perguntar sobre conteúdos específicos de um documento que fez upload e o documento é grande.","parameters":{"type":"object","properties":{"query":{"type":"string","description":"Texto a pesquisar semanticamente no documento carregado."},"conv_id":{"type":"string","description":"ID da conversa. Opcional; se vazio, tenta inferir automaticamente."}},"required":["query"]}}},
     {
@@ -3285,7 +3285,9 @@ def get_agent_system_prompt():
         "2. Para PESQUISA SEMANTICA por topico/similaridade -> usa search_workitems (busca vetorial)\n"
         "   Exemplos: \"USs sobre transferencias SPIN\", \"bugs relacionados com timeout\"\n"
         "   NOTA: Retorna os mais RELEVANTES, nao TODOS. Diz sempre \"resultados mais relevantes\".",
-        "3. Para perguntas sobre o SITE/APP MSE -> usa search_website (busca no conteudo web)",
+        "3. Para perguntas sobre o SITE/APP MSE, jornadas, funcionalidades, CTA, placement em página, dashboard, crescimento do site ou recomendações de produto/UX -> usa search_website (busca no conteudo web)\n"
+        "   Exemplos: \"que CTA devo usar?\", \"como encaixa isto no dashboard?\", \"como faria crescer esta jornada?\"\n"
+        "   REGRA: Responder em linguagem de negócio, sem expor nomes de repos ou labels técnicas, salvo pedido explícito.",
         "4. Para ANALISE DE PADROES de escrita -> usa analyze_patterns (busca exemplos + analise LLM)",
         "5. Para GERAR NOVOS WORK ITEMS -> usa generate_user_stories (busca exemplos + gera no mesmo padrao)",
         "6. Para HIERARQUIAS (Epic->Feature->US->Task) -> usa query_hierarchy (OBRIGATORIO)\n"
@@ -3420,6 +3422,9 @@ def get_agent_system_prompt():
         "- \"Cria relatório Excel com dashboard/gráficos/multi-tab\" -> generate_spreadsheet",
         "- \"Calcula correlação entre colunas do CSV\" -> run_code",
         "- \"Transforma estes dados e gera XLSX com múltiplas folhas\" -> run_code",
+        "- \"Que CTA devo usar para esta ação?\" -> search_website",
+        "- \"Como encaixa isto no dashboard?\" -> search_website",
+        "- \"Que oportunidade de crescimento vês nesta jornada?\" -> search_website",
     ]
     if uploaded_doc_enabled:
         usage_examples.extend(
@@ -3596,6 +3601,13 @@ ROUTING SIMULTÂNEO (IMPORTANTE):
 
 REGRAS DE ROUTING (decide qual ferramenta usar):
 {routing_rules_text}
+
+MODO NEGÓCIO PARA O SITE/APP MSE (CRÍTICO):
+- Quando a pergunta for sobre funcionalidades do portal, jornadas, CTA, placement, dashboard, crescimento, adoção, conversão ou melhoria da experiência, age como parceiro de produto/UX.
+- Usa search_website para recolher evidência, mas responde primeiro em linguagem de negócio para POs, gestores e direção.
+- Não exponhas nomes de repos, ficheiros, labels internas, camelCase ou flows técnicos a menos que o utilizador peça explicitamente detalhe técnico.
+- Traduz a evidência para: objetivo do utilizador, momento da jornada, recomendação prática, impacto esperado, riscos/assunções e forma de validar.
+- Se houver ambiguidade funcional, explica a distinção em termos de negócio antes de descer ao detalhe.
 
 QUANDO USAR query_workitems vs search_workitems vs compute_kpi (IMPORTANTE):
 {usage_examples_text}
