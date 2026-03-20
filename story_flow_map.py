@@ -18,8 +18,15 @@ def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", folded).strip()
 
 
+def _expand_identifier_text(value: str) -> str:
+    text = str(value or "").strip()
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
+    text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+    return text
+
+
 def _tokenize(value: str) -> set[str]:
-    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(value))
+    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(_expand_identifier_text(value)))
     return {token for token in normalized.split() if len(token) >= 3}
 
 

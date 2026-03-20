@@ -1,61 +1,13 @@
 {
-  "version": 1,
-  "generated_at": "2026-03-10T23:12:38.527244+00:00",
-  "source": "figma_story_map + curated_story_examples",
+  "version": 3,
+  "generated_at": "2026-03-19T21:44:28+00:00",
+  "source": "current_story_flow_map + phase2_candidates",
+  "motto": "seguranca de dados confidenciais sempre",
   "metadata": {
-    "entry_count": 134,
-    "domains": [
-      [
-        "cartoes",
-        71
-      ],
-      [
-        "dashboard",
-        32
-      ],
-      [
-        "menu",
-        16
-      ],
-      [
-        "pagamentos",
-        8
-      ],
-      [
-        "apoio ao cliente",
-        2
-      ],
-      [
-        "credito",
-        1
-      ],
-      [
-        "investimentos",
-        1
-      ],
-      [
-        "open banking",
-        1
-      ],
-      [
-        "mdse",
-        1
-      ],
-      [
-        "transferencias",
-        1
-      ]
-    ],
-    "source_kinds": [
-      [
-        "curated_story",
-        115
-      ],
-      [
-        "design_journey",
-        19
-      ]
-    ]
+    "entry_count": 231,
+    "added_repo_flow_seeds": 97,
+    "skipped_duplicate_or_existing": 134,
+    "skipped_review_domain": 9
   },
   "entries": [
     {
@@ -4872,6 +4824,3576 @@
       "production_confidence": 0.97,
       "quality_score": 0.25,
       "source_work_item_id": "1002449"
+    },
+    {
+      "id": "repo-flow:autenticacao|autenticacao|login",
+      "dedupe_key": "autenticacao|autenticacao|login",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Autenticação",
+      "flow": "login",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Autenticacao | login",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Login"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "login",
+        "Autenticacao"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:credenciais|credenciais|changecredentials",
+      "dedupe_key": "autenticacao|credenciais|changecredentials",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Credenciais",
+      "flow": "changeCredentials",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Credenciais | changeCredentials",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Change Credentials",
+        "changeCredentials"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "changeCredentials",
+        "Change Credentials",
+        "Credenciais"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|flowdecision",
+      "dedupe_key": "autenticacao|register sibs screens|flowdecision",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "flowDecision",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | flowDecision",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Flow Decision",
+        "flowDecision"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "flowDecision",
+        "Flow Decision",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|registersibsconfirmuserdatapage",
+      "dedupe_key": "autenticacao|register sibs screens|registersibsconfirmuserdatapage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "registerSibsConfirmUserDataPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | registerSibsConfirmUserDataPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Register Sibs Confirm User Data Page",
+        "registerSibsConfirmUserDataPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "registerSibsConfirmUserDataPage",
+        "Register Sibs Confirm User Data Page",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|registersibserrorpage",
+      "dedupe_key": "autenticacao|register sibs screens|registersibserrorpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "registerSibsErrorPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | registerSibsErrorPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Register Sibs Error Page",
+        "registerSibsErrorPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "registerSibsErrorPage",
+        "Register Sibs Error Page",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|registersibsfinishprocesspage",
+      "dedupe_key": "autenticacao|register sibs screens|registersibsfinishprocesspage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "registerSibsFinishProcessPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | registerSibsFinishProcessPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Register Sibs Finish Process Page",
+        "registerSibsFinishProcessPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "registerSibsFinishProcessPage",
+        "Register Sibs Finish Process Page",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|registersibslandingpage",
+      "dedupe_key": "autenticacao|register sibs screens|registersibslandingpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "registerSibsLandingPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | registerSibsLandingPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Register Sibs Landing Page",
+        "registerSibsLandingPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "registerSibsLandingPage",
+        "Register Sibs Landing Page",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|registersibsmissingrequirementspage",
+      "dedupe_key": "autenticacao|register sibs screens|registersibsmissingrequirementspage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "registerSibsMissingRequirementsPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | registerSibsMissingRequirementsPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Register Sibs Missing Requirements Page",
+        "registerSibsMissingRequirementsPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "registerSibsMissingRequirementsPage",
+        "Register Sibs Missing Requirements Page",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:register_sibs_screens|register_sibs_screens|registersibsuserdataselectionpage",
+      "dedupe_key": "autenticacao|register sibs screens|registersibsuserdataselectionpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Autenticação",
+      "journey": "Register Sibs Screens",
+      "flow": "registerSibsUserDataSelectionPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Register Sibs Screens | registerSibsUserDataSelectionPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Register Sibs User Data Selection Page",
+        "registerSibsUserDataSelectionPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "registerSibsUserDataSelectionPage",
+        "Register Sibs User Data Selection Page",
+        "Register Sibs Screens"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:beneficiarios|beneficiarios|beneficiaries",
+      "dedupe_key": "beneficiarios|beneficiarios|beneficiaries",
+      "source_kind": "repo_flow_seed",
+      "domain": "Beneficiários",
+      "journey": "Beneficiários",
+      "flow": "beneficiaries",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Beneficiarios | beneficiaries",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend, BCP.MSE.Beneficiaries.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base, MSE/Beneficiaries",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Beneficiaries"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "beneficiaries",
+        "Beneficiarios"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:beneficiarios|beneficiarios|createbeneficiary",
+      "dedupe_key": "beneficiarios|beneficiarios|createbeneficiary",
+      "source_kind": "repo_flow_seed",
+      "domain": "Beneficiários",
+      "journey": "Beneficiários",
+      "flow": "createBeneficiary",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Beneficiarios | createBeneficiary",
+      "file_key": "",
+      "file_title": "BCP.MSE.Beneficiaries.Frontend",
+      "url": "",
+      "site_placement": "MSE/Beneficiaries",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Create Beneficiary",
+        "createBeneficiary"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "createBeneficiary",
+        "Create Beneficiary",
+        "Beneficiarios"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:beneficiarios|beneficiarios|editbeneficiary",
+      "dedupe_key": "beneficiarios|beneficiarios|editbeneficiary",
+      "source_kind": "repo_flow_seed",
+      "domain": "Beneficiários",
+      "journey": "Beneficiários",
+      "flow": "editBeneficiary",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Beneficiarios | editBeneficiary",
+      "file_key": "",
+      "file_title": "BCP.MSE.Beneficiaries.Frontend",
+      "url": "",
+      "site_placement": "MSE/Beneficiaries",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Edit Beneficiary",
+        "editBeneficiary"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "editBeneficiary",
+        "Edit Beneficiary",
+        "Beneficiarios"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:beneficiarios|beneficiarios|importbeneficiaries",
+      "dedupe_key": "beneficiarios|beneficiarios|importbeneficiaries",
+      "source_kind": "repo_flow_seed",
+      "domain": "Beneficiários",
+      "journey": "Beneficiários",
+      "flow": "importBeneficiaries",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Beneficiarios | importBeneficiaries",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend, BCP.MSE.Beneficiaries.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base, MSE/Beneficiaries",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Import Beneficiaries",
+        "importBeneficiaries"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "importBeneficiaries",
+        "Import Beneficiaries",
+        "Beneficiarios"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:cartoes|cartoes|atmservicecard",
+      "dedupe_key": "cartoes|cartoes|atmservicecard",
+      "source_kind": "repo_flow_seed",
+      "domain": "Cartões",
+      "journey": "Cartões",
+      "flow": "atmServiceCard",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Cartoes | atmServiceCard",
+      "file_key": "2qG5dRQPtk3cYyaNybZOWm",
+      "file_title": "MSE | Cartões [Handoff]",
+      "url": "https://www.figma.com/design/2qG5dRQPtk3cYyaNybZOWm/MSE-%7C-Cart%C3%B5es--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Epic e fluxos de Cartões do canal empresas.",
+      "routing_note": "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
+      "aliases": [
+        "cartoes",
+        "cartao",
+        "via verde",
+        "Atm Service Card",
+        "atmServiceCard"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "ux_terms": [
+        "atmServiceCard",
+        "Atm Service Card",
+        "Cartoes",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Tab",
+        "Modal",
+        "Bloco"
+      ],
+      "currentness_score": 0.98,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:credito|credito|confirming",
+      "dedupe_key": "credito|credito|confirming",
+      "source_kind": "repo_flow_seed",
+      "domain": "Crédito",
+      "journey": "Crédito",
+      "flow": "confirming",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Credito | confirming",
+      "file_key": "2yCxCXQ9LJ7qSZy1l2I5JA",
+      "file_title": "MSE | Crédito [Handoff]",
+      "url": "https://www.figma.com/design/2yCxCXQ9LJ7qSZy1l2I5JA/MSE-%7C-Cr%C3%A9dito--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de crédito do canal empresas.",
+      "routing_note": "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra.",
+      "aliases": [
+        "credito",
+        "Confirming"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "confirming",
+        "Credito",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "currentness_score": 1.0,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:credito|credito|creditdetails",
+      "dedupe_key": "credito|credito|creditdetails",
+      "source_kind": "repo_flow_seed",
+      "domain": "Crédito",
+      "journey": "Crédito",
+      "flow": "creditDetails",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Credito | creditDetails",
+      "file_key": "2yCxCXQ9LJ7qSZy1l2I5JA",
+      "file_title": "MSE | Crédito [Handoff]",
+      "url": "https://www.figma.com/design/2yCxCXQ9LJ7qSZy1l2I5JA/MSE-%7C-Cr%C3%A9dito--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de crédito do canal empresas.",
+      "routing_note": "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra.",
+      "aliases": [
+        "credito",
+        "Credit Details",
+        "creditDetails"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "creditDetails",
+        "Credit Details",
+        "Credito",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "currentness_score": 1.0,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:credito|credito|creditwallet",
+      "dedupe_key": "credito|credito|creditwallet",
+      "source_kind": "repo_flow_seed",
+      "domain": "Crédito",
+      "journey": "Crédito",
+      "flow": "creditWallet",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Credito | creditWallet",
+      "file_key": "2yCxCXQ9LJ7qSZy1l2I5JA",
+      "file_title": "MSE | Crédito [Handoff]",
+      "url": "https://www.figma.com/design/2yCxCXQ9LJ7qSZy1l2I5JA/MSE-%7C-Cr%C3%A9dito--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de crédito do canal empresas.",
+      "routing_note": "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra.",
+      "aliases": [
+        "credito",
+        "Credit Wallet",
+        "creditWallet"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "creditWallet",
+        "Credit Wallet",
+        "Credito",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown"
+      ],
+      "currentness_score": 1.0,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:agenda|agenda|schedule",
+      "dedupe_key": "dashboard|agenda|schedule",
+      "source_kind": "repo_flow_seed",
+      "domain": "Dashboard",
+      "journey": "Agenda",
+      "flow": "schedule",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Agenda | schedule",
+      "file_key": "cBcZdkCy34mrQhMfW3TBDD",
+      "file_title": "MSE | Dashboard [Handoff]",
+      "url": "https://www.figma.com/design/cBcZdkCy34mrQhMfW3TBDD/MSE-%7C-Dashboard--Handoff-?m=auto",
+      "site_placement": "Handoff anterior de Dashboard.",
+      "routing_note": "Usar apenas quando Dashboard II não encaixar ou para comparar evolução do domínio.",
+      "aliases": [
+        "dashboard",
+        "agenda",
+        "home",
+        "overview",
+        "resumo",
+        "Schedule"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Header"
+      ],
+      "ux_terms": [
+        "schedule",
+        "Agenda",
+        "CTA",
+        "Card",
+        "Header"
+      ],
+      "currentness_score": 0.7,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:documentos|documentos|beneficiaryconfirmation",
+      "dedupe_key": "documentos|documentos|beneficiaryconfirmation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Documentos",
+      "journey": "Documentos",
+      "flow": "beneficiaryConfirmation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Documentos | beneficiaryConfirmation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Documents.Frontend",
+      "url": "",
+      "site_placement": "MSE/Documents",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Beneficiary Confirmation",
+        "beneficiaryConfirmation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "beneficiaryConfirmation",
+        "Beneficiary Confirmation",
+        "Documentos"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:documentos|documentos|digitaldocuments",
+      "dedupe_key": "documentos|documentos|digitaldocuments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Documentos",
+      "journey": "Documentos",
+      "flow": "digitalDocuments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Documentos | digitalDocuments",
+      "file_key": "",
+      "file_title": "BCP.MSE.Documents.Frontend",
+      "url": "",
+      "site_placement": "MSE/Documents",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Documents",
+        "digitalDocuments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalDocuments",
+        "Digital Documents",
+        "Documentos"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:documentos|documentos|digitaldocumentslist",
+      "dedupe_key": "documentos|documentos|digitaldocumentslist",
+      "source_kind": "repo_flow_seed",
+      "domain": "Documentos",
+      "journey": "Documentos",
+      "flow": "digitalDocumentsList",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Documentos | digitalDocumentsList",
+      "file_key": "",
+      "file_title": "BCP.MSE.Documents.Frontend",
+      "url": "",
+      "site_placement": "MSE/Documents",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Documents List",
+        "digitalDocumentsList"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalDocumentsList",
+        "Digital Documents List",
+        "Documentos"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:documentos|documentos|documents",
+      "dedupe_key": "documentos|documentos|documents",
+      "source_kind": "repo_flow_seed",
+      "domain": "Documentos",
+      "journey": "Documentos",
+      "flow": "documents",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Documentos | documents",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Documents"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "documents",
+        "Documentos"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:documentos|documentos|fileconsult",
+      "dedupe_key": "documentos|documentos|fileconsult",
+      "source_kind": "repo_flow_seed",
+      "domain": "Documentos",
+      "journey": "Documentos",
+      "flow": "fileConsult",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Documentos | fileConsult",
+      "file_key": "",
+      "file_title": "BCP.MSE.Documents.Frontend",
+      "url": "",
+      "site_placement": "MSE/Documents",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "File Consult",
+        "fileConsult"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "fileConsult",
+        "File Consult",
+        "Documentos"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:documentos|documentos|fileupload",
+      "dedupe_key": "documentos|documentos|fileupload",
+      "source_kind": "repo_flow_seed",
+      "domain": "Documentos",
+      "journey": "Documentos",
+      "flow": "fileUpload",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Documentos | fileUpload",
+      "file_key": "",
+      "file_title": "BCP.MSE.Documents.Frontend",
+      "url": "",
+      "site_placement": "MSE/Documents",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "File Upload",
+        "fileUpload"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "fileUpload",
+        "File Upload",
+        "Documentos"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:empresas|empresas|company",
+      "dedupe_key": "empresas|empresas|company",
+      "source_kind": "repo_flow_seed",
+      "domain": "Empresas",
+      "journey": "Empresas",
+      "flow": "company",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Empresas | company",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Company"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "company",
+        "Empresas"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:empresas|empresas|updatedata",
+      "dedupe_key": "empresas|empresas|updatedata",
+      "source_kind": "repo_flow_seed",
+      "domain": "Empresas",
+      "journey": "Empresas",
+      "flow": "updateData",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Empresas | updateData",
+      "file_key": "",
+      "file_title": "BCP.MSE.Companies.Frontend",
+      "url": "",
+      "site_placement": "MSE/Companies",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Update Data",
+        "updateData"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "updateData",
+        "Update Data",
+        "Empresas"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:investimentos|investimentos|constituteinvestments",
+      "dedupe_key": "investimentos|investimentos|constituteinvestments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Investimentos",
+      "journey": "Investimentos",
+      "flow": "constituteInvestments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Investimentos | constituteInvestments",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "Constitute Investments",
+        "constituteInvestments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "constituteInvestments",
+        "Constitute Investments",
+        "Investimentos",
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:investimentos|investimentos|consultinvestments",
+      "dedupe_key": "investimentos|investimentos|consultinvestments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Investimentos",
+      "journey": "Investimentos",
+      "flow": "consultInvestments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Investimentos | consultInvestments",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "Consult Investments",
+        "consultInvestments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "consultInvestments",
+        "Consult Investments",
+        "Investimentos",
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:investimentos|investimentos|investment",
+      "dedupe_key": "investimentos|investimentos|investment",
+      "source_kind": "repo_flow_seed",
+      "domain": "Investimentos",
+      "journey": "Investimentos",
+      "flow": "investment",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Investimentos | investment",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "Investment"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "investment",
+        "Investimentos",
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:investimentos|investimentos|liquidateinvestment",
+      "dedupe_key": "investimentos|investimentos|liquidateinvestment",
+      "source_kind": "repo_flow_seed",
+      "domain": "Investimentos",
+      "journey": "Investimentos",
+      "flow": "liquidateInvestment",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Investimentos | liquidateInvestment",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "Liquidate Investment",
+        "liquidateInvestment"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "liquidateInvestment",
+        "Liquidate Investment",
+        "Investimentos",
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:investimentos|investimentos|productsshowcase",
+      "dedupe_key": "investimentos|investimentos|productsshowcase",
+      "source_kind": "repo_flow_seed",
+      "domain": "Investimentos",
+      "journey": "Investimentos",
+      "flow": "productsShowcase",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Investimentos | productsShowcase",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "Products Showcase",
+        "productsShowcase"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "productsShowcase",
+        "Products Showcase",
+        "Investimentos",
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:investimentos|investimentos|reinforceinvestment",
+      "dedupe_key": "investimentos|investimentos|reinforceinvestment",
+      "source_kind": "repo_flow_seed",
+      "domain": "Investimentos",
+      "journey": "Investimentos",
+      "flow": "reinforceInvestment",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Investimentos | reinforceInvestment",
+      "file_key": "gAO7TEH94kOPw6yMpROSJ8",
+      "file_title": "MSE | Investimentos [Handoff]",
+      "url": "https://www.figma.com/design/gAO7TEH94kOPw6yMpROSJ8/MSE-%7C-Investimentos--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de investimentos do canal empresas.",
+      "routing_note": "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "Reinforce Investment",
+        "reinforceInvestment"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "ux_terms": [
+        "reinforceInvestment",
+        "Reinforce Investment",
+        "Investimentos",
+        "CTA",
+        "Card",
+        "Tab"
+      ],
+      "currentness_score": 0.74,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:fundos_europeus|fundos_europeus|europeanfunds",
+      "dedupe_key": "onboarding|fundos europeus|europeanfunds",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Fundos Europeus",
+      "flow": "europeanFunds",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Fundos Europeus | europeanFunds",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "European Funds",
+        "europeanFunds"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "europeanFunds",
+        "European Funds",
+        "Fundos Europeus"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|accounts",
+      "dedupe_key": "onboarding|onboarding|accounts",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "accounts",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | accounts",
+      "file_key": "",
+      "file_title": "BCP.MSE.Onboarding.Frontend",
+      "url": "",
+      "site_placement": "MSE/Onboarding",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Accounts"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "accounts",
+        "Onboarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|daytoday",
+      "dedupe_key": "onboarding|onboarding|daytoday",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "dayToDay",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | dayToDay",
+      "file_key": "",
+      "file_title": "BCP.MSE.Onboarding.Frontend",
+      "url": "",
+      "site_placement": "MSE/Onboarding",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Day To Day",
+        "dayToDay"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "dayToDay",
+        "Day To Day",
+        "Onboarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|europeanfunds",
+      "dedupe_key": "onboarding|onboarding|europeanfunds",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "europeanFunds",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | europeanFunds",
+      "file_key": "",
+      "file_title": "BCP.MSE.Onboarding.Frontend",
+      "url": "",
+      "site_placement": "MSE/Onboarding",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "European Funds",
+        "europeanFunds"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "europeanFunds",
+        "European Funds",
+        "Onboarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|globalposition",
+      "dedupe_key": "onboarding|onboarding|globalposition",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "globalPosition",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | globalPosition",
+      "file_key": "",
+      "file_title": "BCP.MSE.Onboarding.Frontend",
+      "url": "",
+      "site_placement": "MSE/Onboarding",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Global Position",
+        "globalPosition"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "globalPosition",
+        "Global Position",
+        "Onboarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|movements",
+      "dedupe_key": "onboarding|onboarding|movements",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "movements",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | movements",
+      "file_key": "",
+      "file_title": "BCP.MSE.Onboarding.Frontend",
+      "url": "",
+      "site_placement": "MSE/Onboarding",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Movements"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "movements",
+        "Onboarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|onboarding",
+      "dedupe_key": "onboarding|onboarding|onboarding",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "onBoarding",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | onBoarding",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "On Boarding",
+        "onBoarding"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "onBoarding",
+        "On Boarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:onboarding|onboarding|yourenterprise",
+      "dedupe_key": "onboarding|onboarding|yourenterprise",
+      "source_kind": "repo_flow_seed",
+      "domain": "Onboarding",
+      "journey": "Onboarding",
+      "flow": "yourEnterprise",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Onboarding | yourEnterprise",
+      "file_key": "",
+      "file_title": "BCP.MSE.Onboarding.Frontend",
+      "url": "",
+      "site_placement": "MSE/Onboarding",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Your Enterprise",
+        "yourEnterprise"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "yourEnterprise",
+        "Your Enterprise",
+        "Onboarding"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:integrated_solutions_pending_ops|integrated_solutions_pending_ops|integratedsolutionsauthorizedoperation",
+      "dedupe_key": "operacoes|integrated solutions pending ops|integratedsolutionsauthorizedoperation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Integrated Solutions Pending Ops",
+      "flow": "integratedSolutionsAuthorizedOperation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Integrated Solutions Pending Ops | integratedSolutionsAuthorizedOperation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Integrated Solutions Authorized Operation",
+        "integratedSolutionsAuthorizedOperation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "integratedSolutionsAuthorizedOperation",
+        "Integrated Solutions Authorized Operation",
+        "Integrated Solutions Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:integrated_solutions_pending_ops|integrated_solutions_pending_ops|integratedsolutionspendingopslandingpage",
+      "dedupe_key": "operacoes|integrated solutions pending ops|integratedsolutionspendingopslandingpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Integrated Solutions Pending Ops",
+      "flow": "integratedSolutionsPendingOpsLandingPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Integrated Solutions Pending Ops | integratedSolutionsPendingOpsLandingPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Integrated Solutions Pending Ops Landing Page",
+        "integratedSolutionsPendingOpsLandingPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "integratedSolutionsPendingOpsLandingPage",
+        "Integrated Solutions Pending Ops Landing Page",
+        "Integrated Solutions Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:integrated_solutions_pending_ops|integrated_solutions_pending_ops|integratedsolutionsregisteroperationpage",
+      "dedupe_key": "operacoes|integrated solutions pending ops|integratedsolutionsregisteroperationpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Integrated Solutions Pending Ops",
+      "flow": "integratedSolutionsRegisterOperationPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Integrated Solutions Pending Ops | integratedSolutionsRegisterOperationPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Integrated Solutions Register Operation Page",
+        "integratedSolutionsRegisterOperationPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "integratedSolutionsRegisterOperationPage",
+        "Integrated Solutions Register Operation Page",
+        "Integrated Solutions Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:mobis_pending_ops|mobis_pending_ops|mobisdataconfirmation",
+      "dedupe_key": "operacoes|mobis pending ops|mobisdataconfirmation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Mobis Pending Ops",
+      "flow": "mobisDataConfirmation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Mobis Pending Ops | mobisDataConfirmation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Data Confirmation",
+        "mobisDataConfirmation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisDataConfirmation",
+        "Mobis Data Confirmation",
+        "Mobis Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:mobis_pending_ops|mobis_pending_ops|mobispendingopsdocuments",
+      "dedupe_key": "operacoes|mobis pending ops|mobispendingopsdocuments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Mobis Pending Ops",
+      "flow": "mobisPendingOpsDocuments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Mobis Pending Ops | mobisPendingOpsDocuments",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Pending Ops Documents",
+        "mobisPendingOpsDocuments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisPendingOpsDocuments",
+        "Mobis Pending Ops Documents",
+        "Mobis Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:mobis_pending_ops|mobis_pending_ops|mobispendingopslandingpage",
+      "dedupe_key": "operacoes|mobis pending ops|mobispendingopslandingpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Mobis Pending Ops",
+      "flow": "mobisPendingOpsLandingPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Mobis Pending Ops | mobisPendingOpsLandingPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Pending Ops Landing Page",
+        "mobisPendingOpsLandingPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisPendingOpsLandingPage",
+        "Mobis Pending Ops Landing Page",
+        "Mobis Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:mobis_pending_ops|mobis_pending_ops|mobispendingopsservicefail",
+      "dedupe_key": "operacoes|mobis pending ops|mobispendingopsservicefail",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Mobis Pending Ops",
+      "flow": "mobisPendingOpsServiceFail",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Mobis Pending Ops | mobisPendingOpsServiceFail",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Pending Ops Service Fail",
+        "mobisPendingOpsServiceFail"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisPendingOpsServiceFail",
+        "Mobis Pending Ops Service Fail",
+        "Mobis Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:mobis_pending_ops|mobis_pending_ops|opapprovedsuccessfully",
+      "dedupe_key": "operacoes|mobis pending ops|opapprovedsuccessfully",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Mobis Pending Ops",
+      "flow": "opApprovedSuccessfully",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Mobis Pending Ops | opApprovedSuccessfully",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Op Approved Successfully",
+        "opApprovedSuccessfully"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "opApprovedSuccessfully",
+        "Op Approved Successfully",
+        "Mobis Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:mobis_pending_ops|mobis_pending_ops|oprejectedsuccessfully",
+      "dedupe_key": "operacoes|mobis pending ops|oprejectedsuccessfully",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Mobis Pending Ops",
+      "flow": "opRejectedSuccessfully",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Mobis Pending Ops | opRejectedSuccessfully",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Op Rejected Successfully",
+        "opRejectedSuccessfully"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "opRejectedSuccessfully",
+        "Op Rejected Successfully",
+        "Mobis Pending Ops"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignatureauthorizedoperation",
+      "dedupe_key": "operacoes|operacoes|digitalsignatureauthorizedoperation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureAuthorizedOperation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureAuthorizedOperation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend, BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base, MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Authorized Operation",
+        "digitalSignatureAuthorizedOperation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureAuthorizedOperation",
+        "Digital Signature Authorized Operation",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignatureconfirmation",
+      "dedupe_key": "operacoes|operacoes|digitalsignatureconfirmation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureConfirmation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureConfirmation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Confirmation",
+        "digitalSignatureConfirmation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureConfirmation",
+        "Digital Signature Confirmation",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignatureconfirmationpage",
+      "dedupe_key": "operacoes|operacoes|digitalsignatureconfirmationpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureConfirmationPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureConfirmationPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Confirmation Page",
+        "digitalSignatureConfirmationPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureConfirmationPage",
+        "Digital Signature Confirmation Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignaturedocuments",
+      "dedupe_key": "operacoes|operacoes|digitalsignaturedocuments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureDocuments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureDocuments",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Documents",
+        "digitalSignatureDocuments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureDocuments",
+        "Digital Signature Documents",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignaturedocumentspage",
+      "dedupe_key": "operacoes|operacoes|digitalsignaturedocumentspage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureDocumentsPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureDocumentsPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Documents Page",
+        "digitalSignatureDocumentsPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureDocumentsPage",
+        "Digital Signature Documents Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignatureerrorpage",
+      "dedupe_key": "operacoes|operacoes|digitalsignatureerrorpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureErrorPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureErrorPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Error Page",
+        "digitalSignatureErrorPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureErrorPage",
+        "Digital Signature Error Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignaturelandingpage",
+      "dedupe_key": "operacoes|operacoes|digitalsignaturelandingpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureLandingPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureLandingPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend, BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base, MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Landing Page",
+        "digitalSignatureLandingPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureLandingPage",
+        "Digital Signature Landing Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignatureregisteroperation",
+      "dedupe_key": "operacoes|operacoes|digitalsignatureregisteroperation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureRegisterOperation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureRegisterOperation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Register Operation",
+        "digitalSignatureRegisterOperation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureRegisterOperation",
+        "Digital Signature Register Operation",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|digitalsignatureregisteroperationpage",
+      "dedupe_key": "operacoes|operacoes|digitalsignatureregisteroperationpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "digitalSignatureRegisterOperationPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | digitalSignatureRegisterOperationPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Digital Signature Register Operation Page",
+        "digitalSignatureRegisterOperationPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "digitalSignatureRegisterOperationPage",
+        "Digital Signature Register Operation Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|integratedsolutionsauthorizedoperation",
+      "dedupe_key": "operacoes|operacoes|integratedsolutionsauthorizedoperation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "integratedSolutionsAuthorizedOperation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | integratedSolutionsAuthorizedOperation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Integrated Solutions Authorized Operation",
+        "integratedSolutionsAuthorizedOperation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "integratedSolutionsAuthorizedOperation",
+        "Integrated Solutions Authorized Operation",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|integratedsolutionspendingopslandingpage",
+      "dedupe_key": "operacoes|operacoes|integratedsolutionspendingopslandingpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "integratedSolutionsPendingOpsLandingPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | integratedSolutionsPendingOpsLandingPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Integrated Solutions Pending Ops Landing Page",
+        "integratedSolutionsPendingOpsLandingPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "integratedSolutionsPendingOpsLandingPage",
+        "Integrated Solutions Pending Ops Landing Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|integratedsolutionsregisteroperation",
+      "dedupe_key": "operacoes|operacoes|integratedsolutionsregisteroperation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "integratedSolutionsRegisterOperation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | integratedSolutionsRegisterOperation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Integrated Solutions Register Operation",
+        "integratedSolutionsRegisterOperation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "integratedSolutionsRegisterOperation",
+        "Integrated Solutions Register Operation",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|mobisdataconfirmation",
+      "dedupe_key": "operacoes|operacoes|mobisdataconfirmation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "mobisDataConfirmation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | mobisDataConfirmation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Data Confirmation",
+        "mobisDataConfirmation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisDataConfirmation",
+        "Mobis Data Confirmation",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|mobispendingopsdocumentspage",
+      "dedupe_key": "operacoes|operacoes|mobispendingopsdocumentspage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "mobisPendingOpsDocumentsPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | mobisPendingOpsDocumentsPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Pending Ops Documents Page",
+        "mobisPendingOpsDocumentsPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisPendingOpsDocumentsPage",
+        "Mobis Pending Ops Documents Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|mobispendingopslandingpage",
+      "dedupe_key": "operacoes|operacoes|mobispendingopslandingpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "mobisPendingOpsLandingPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | mobisPendingOpsLandingPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Pending Ops Landing Page",
+        "mobisPendingOpsLandingPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisPendingOpsLandingPage",
+        "Mobis Pending Ops Landing Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|mobispendingopsservicefailpage",
+      "dedupe_key": "operacoes|operacoes|mobispendingopsservicefailpage",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "mobisPendingOpsServiceFailPage",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | mobisPendingOpsServiceFailPage",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Mobis Pending Ops Service Fail Page",
+        "mobisPendingOpsServiceFailPage"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "mobisPendingOpsServiceFailPage",
+        "Mobis Pending Ops Service Fail Page",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|opapprovedsuccessfully",
+      "dedupe_key": "operacoes|operacoes|opapprovedsuccessfully",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "opApprovedSuccessfully",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | opApprovedSuccessfully",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Op Approved Successfully",
+        "opApprovedSuccessfully"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "opApprovedSuccessfully",
+        "Op Approved Successfully",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|oprejectedsuccessfully",
+      "dedupe_key": "operacoes|operacoes|oprejectedsuccessfully",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "opRejectedSuccessfully",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | opRejectedSuccessfully",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Op Rejected Successfully",
+        "opRejectedSuccessfully"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "opRejectedSuccessfully",
+        "Op Rejected Successfully",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|operations",
+      "dedupe_key": "operacoes|operacoes|operations",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "operations",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | operations",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Operations"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "operations",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|operationscdtflow",
+      "dedupe_key": "operacoes|operacoes|operationscdtflow",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "operationsCDTFlow",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | operationsCDTFlow",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Operations CDTFlow",
+        "operationsCDTFlow"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "operationsCDTFlow",
+        "Operations CDTFlow",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|operationsgeneral",
+      "dedupe_key": "operacoes|operacoes|operationsgeneral",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "operationsGeneral",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | operationsGeneral",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Operations General",
+        "operationsGeneral"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "operationsGeneral",
+        "Operations General",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|operationsoldprocessauthorize",
+      "dedupe_key": "operacoes|operacoes|operationsoldprocessauthorize",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "operationsOldProcessAuthorize",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | operationsOldProcessAuthorize",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Operations Old Process Authorize",
+        "operationsOldProcessAuthorize"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "operationsOldProcessAuthorize",
+        "Operations Old Process Authorize",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|operationsprocessauthorize",
+      "dedupe_key": "operacoes|operacoes|operationsprocessauthorize",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "operationsProcessAuthorize",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | operationsProcessAuthorize",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Operations Process Authorize",
+        "operationsProcessAuthorize"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "operationsProcessAuthorize",
+        "Operations Process Authorize",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|processauthorizeoldoperations",
+      "dedupe_key": "operacoes|operacoes|processauthorizeoldoperations",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "processAuthorizeOldOperations",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | processAuthorizeOldOperations",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Process Authorize Old Operations",
+        "processAuthorizeOldOperations"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "processAuthorizeOldOperations",
+        "Process Authorize Old Operations",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:operacoes|operacoes|processauthorizeoperations",
+      "dedupe_key": "operacoes|operacoes|processauthorizeoperations",
+      "source_kind": "repo_flow_seed",
+      "domain": "Operações",
+      "journey": "Operações",
+      "flow": "processAuthorizeOperations",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Operacoes | processAuthorizeOperations",
+      "file_key": "",
+      "file_title": "BCP.MSE.Operation.Frontend",
+      "url": "",
+      "site_placement": "MSE/Operation",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Process Authorize Operations",
+        "processAuthorizeOperations"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "processAuthorizeOperations",
+        "Process Authorize Operations",
+        "Operacoes"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:pagamentos|pagamentos|loadservices",
+      "dedupe_key": "pagamentos|pagamentos|loadservices",
+      "source_kind": "repo_flow_seed",
+      "domain": "Pagamentos",
+      "journey": "Pagamentos",
+      "flow": "loadServices",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Pagamentos | loadServices",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "recorrencias",
+        "pagamentos recorrentes",
+        "Load Services",
+        "loadServices"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "loadServices",
+        "Load Services",
+        "Pagamentos",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:pagamentos|pagamentos|prepaidcards",
+      "dedupe_key": "pagamentos|pagamentos|prepaidcards",
+      "source_kind": "repo_flow_seed",
+      "domain": "Pagamentos",
+      "journey": "Pagamentos",
+      "flow": "prepaidCards",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Pagamentos | prepaidCards",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "recorrencias",
+        "pagamentos recorrentes",
+        "Prepaid Cards",
+        "prepaidCards"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "prepaidCards",
+        "Prepaid Cards",
+        "Pagamentos",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:pagamentos|pagamentos|servicepayments",
+      "dedupe_key": "pagamentos|pagamentos|servicepayments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Pagamentos",
+      "journey": "Pagamentos",
+      "flow": "servicePayments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Pagamentos | servicePayments",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "recorrencias",
+        "pagamentos recorrentes",
+        "Service Payments",
+        "servicePayments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "servicePayments",
+        "Service Payments",
+        "Pagamentos",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:pagamentos|pagamentos|socialsecuritypayments",
+      "dedupe_key": "pagamentos|pagamentos|socialsecuritypayments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Pagamentos",
+      "journey": "Pagamentos",
+      "flow": "socialSecurityPayments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Pagamentos | socialSecurityPayments",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "recorrencias",
+        "pagamentos recorrentes",
+        "Social Security Payments",
+        "socialSecurityPayments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "socialSecurityPayments",
+        "Social Security Payments",
+        "Pagamentos",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:pagamentos|pagamentos|statepayments",
+      "dedupe_key": "pagamentos|pagamentos|statepayments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Pagamentos",
+      "journey": "Pagamentos",
+      "flow": "statePayments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Pagamentos | statePayments",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "recorrencias",
+        "pagamentos recorrentes",
+        "State Payments",
+        "statePayments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "statePayments",
+        "State Payments",
+        "Pagamentos",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:pagamentos|pagamentos|tsupayments",
+      "dedupe_key": "pagamentos|pagamentos|tsupayments",
+      "source_kind": "repo_flow_seed",
+      "domain": "Pagamentos",
+      "journey": "Pagamentos",
+      "flow": "tsuPayments",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Pagamentos | tsuPayments",
+      "file_key": "ScEWCybXZAshmfzCSv9bT4",
+      "file_title": "MSE | Pagamentos [Handoff] III",
+      "url": "https://www.figma.com/design/ScEWCybXZAshmfzCSv9bT4/MSE-%7C-Pagamentos--Handoff--III?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de pagamentos e transferências do canal empresas.",
+      "routing_note": "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
+      "aliases": [
+        "pagamentos",
+        "pagamento",
+        "transferencias",
+        "recorrencias",
+        "pagamentos recorrentes",
+        "Tsu Payments",
+        "tsuPayments"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "ux_terms": [
+        "tsuPayments",
+        "Tsu Payments",
+        "Pagamentos",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Input",
+        "Modal"
+      ],
+      "currentness_score": 0.99,
+      "production_confidence": 0.7,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:publico|publico|changecredentials",
+      "dedupe_key": "publico|publico|changecredentials",
+      "source_kind": "repo_flow_seed",
+      "domain": "Público",
+      "journey": "Público",
+      "flow": "changeCredentials",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Publico | changeCredentials",
+      "file_key": "",
+      "file_title": "BCP.MSE.Public.Frontend",
+      "url": "",
+      "site_placement": "MSE/Public",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Change Credentials",
+        "changeCredentials"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "changeCredentials",
+        "Change Credentials",
+        "Publico"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:publico|publico|europeanfunds",
+      "dedupe_key": "publico|publico|europeanfunds",
+      "source_kind": "repo_flow_seed",
+      "domain": "Público",
+      "journey": "Público",
+      "flow": "europeanFunds",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Publico | europeanFunds",
+      "file_key": "",
+      "file_title": "BCP.MSE.Public.Frontend",
+      "url": "",
+      "site_placement": "MSE/Public",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "European Funds",
+        "europeanFunds"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "europeanFunds",
+        "European Funds",
+        "Publico"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:publico|publico|suppliercensus",
+      "dedupe_key": "publico|publico|suppliercensus",
+      "source_kind": "repo_flow_seed",
+      "domain": "Público",
+      "journey": "Público",
+      "flow": "supplierCensus",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Publico | supplierCensus",
+      "file_key": "",
+      "file_title": "BCP.MSE.Public.Frontend",
+      "url": "",
+      "site_placement": "MSE/Public",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Supplier Census",
+        "supplierCensus"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "supplierCensus",
+        "Supplier Census",
+        "Publico"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:recebiveis|recebiveis|charges",
+      "dedupe_key": "recebiveis|recebiveis|charges",
+      "source_kind": "repo_flow_seed",
+      "domain": "Recebíveis",
+      "journey": "Recebíveis",
+      "flow": "charges",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Recebiveis | charges",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Charges"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "charges",
+        "Recebiveis"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:recebiveis|recebiveis|receivables",
+      "dedupe_key": "recebiveis|recebiveis|receivables",
+      "source_kind": "repo_flow_seed",
+      "domain": "Recebíveis",
+      "journey": "Recebíveis",
+      "flow": "receivables",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Recebiveis | receivables",
+      "file_key": "",
+      "file_title": "BCP.MSE.Receivables.Frontend",
+      "url": "",
+      "site_placement": "MSE/Receivables",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Receivables"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "receivables",
+        "Recebiveis"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:recebiveis|recebiveis|spin",
+      "dedupe_key": "recebiveis|recebiveis|spin",
+      "source_kind": "repo_flow_seed",
+      "domain": "Recebíveis",
+      "journey": "Recebíveis",
+      "flow": "spin",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Recebiveis | spin",
+      "file_key": "",
+      "file_title": "BCP.MSE.Receivables.Frontend",
+      "url": "",
+      "site_placement": "MSE/Receivables",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Spin"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "spin",
+        "Recebiveis"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:recebiveis|recebiveis|spincancellation",
+      "dedupe_key": "recebiveis|recebiveis|spincancellation",
+      "source_kind": "repo_flow_seed",
+      "domain": "Recebíveis",
+      "journey": "Recebíveis",
+      "flow": "spinCancellation",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Recebiveis | spinCancellation",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Spin Cancellation",
+        "spinCancellation"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "spinCancellation",
+        "Spin Cancellation",
+        "Recebiveis"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:recebiveis|recebiveis|spinmanagement",
+      "dedupe_key": "recebiveis|recebiveis|spinmanagement",
+      "source_kind": "repo_flow_seed",
+      "domain": "Recebíveis",
+      "journey": "Recebíveis",
+      "flow": "spinManagement",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Recebiveis | spinManagement",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Spin Management",
+        "spinManagement"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "spinManagement",
+        "Spin Management",
+        "Recebiveis"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:recebiveis|recebiveis|spinsubscription",
+      "dedupe_key": "recebiveis|recebiveis|spinsubscription",
+      "source_kind": "repo_flow_seed",
+      "domain": "Recebíveis",
+      "journey": "Recebíveis",
+      "flow": "spinSubscription",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Recebiveis | spinSubscription",
+      "file_key": "",
+      "file_title": "BCP.MSE.Base.Frontend",
+      "url": "",
+      "site_placement": "MSE/Base",
+      "routing_note": "Confirmar sempre no GitHub main antes de assumir source of truth funcional.",
+      "aliases": [
+        "Spin Subscription",
+        "spinSubscription"
+      ],
+      "ui_components": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "ux_terms": [
+        "spinSubscription",
+        "Spin Subscription",
+        "Recebiveis"
+      ],
+      "currentness_score": 0.62,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|paysalary",
+      "dedupe_key": "transferencias|transferencias|paysalary",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "paySalary",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | paySalary",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Pay Salary",
+        "paySalary"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "paySalary",
+        "Pay Salary",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|paysupplier",
+      "dedupe_key": "transferencias|transferencias|paysupplier",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "paySupplier",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | paySupplier",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Pay Supplier",
+        "paySupplier"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "paySupplier",
+        "Pay Supplier",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|salary",
+      "dedupe_key": "transferencias|transferencias|salary",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "salary",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | salary",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Salary"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "salary",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|spintransfer",
+      "dedupe_key": "transferencias|transferencias|spintransfer",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "spinTransfer",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | spinTransfer",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Spin Transfer",
+        "spinTransfer"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "spinTransfer",
+        "Spin Transfer",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|spintransfers",
+      "dedupe_key": "transferencias|transferencias|spintransfers",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "spinTransfers",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | spinTransfers",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Spin Transfers",
+        "spinTransfers"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "spinTransfers",
+        "Spin Transfers",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|statetransfers",
+      "dedupe_key": "transferencias|transferencias|statetransfers",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "stateTransfers",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | stateTransfers",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "State Transfers",
+        "stateTransfers"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "stateTransfers",
+        "State Transfers",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|supplier",
+      "dedupe_key": "transferencias|transferencias|supplier",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "supplier",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | supplier",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Supplier"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "supplier",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
+    },
+    {
+      "id": "repo-flow:transferencias|transferencias|transfers",
+      "dedupe_key": "transferencias|transferencias|transfers",
+      "source_kind": "repo_flow_seed",
+      "domain": "Transferências",
+      "journey": "Transferências",
+      "flow": "transfers",
+      "detail": "Flow inferido por crawl semantico de repos e promovido para candidate seed.",
+      "title": "Transferencias | transfers",
+      "file_key": "MtYj8lVJKk5DalTvn9bFXY",
+      "file_title": "MSE | Transferências [Handoff]",
+      "url": "https://www.figma.com/design/MtYj8lVJKk5DalTvn9bFXY/MSE-%7C-Transfer%C3%AAncias--Handoff-?m=auto&t=tOpbMgDoMYpOdd2k-6",
+      "site_placement": "Fluxos de transferências do canal empresas.",
+      "routing_note": "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+      "aliases": [
+        "transferencias",
+        "transferencia",
+        "Transfers"
+      ],
+      "ui_components": [
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "ux_terms": [
+        "transfers",
+        "Transferencias",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Input",
+        "Dropdown",
+        "Stepper"
+      ],
+      "currentness_score": 0.95,
+      "production_confidence": 0.66,
+      "quality_score": 0.12,
+      "source_work_item_id": ""
     }
   ]
 }

@@ -25,3 +25,16 @@ def test_select_story_policy_pack_prefers_dashboard():
     assert policy_pack
     assert policy_pack["domain"] == "Dashboard"
     assert policy_pack["canonical_title_pattern"]
+
+
+def test_select_story_policy_pack_prefers_autenticacao():
+    policy_pack = select_story_policy_pack(
+        objective="Alterar credenciais de acesso com validação de segurança.",
+        context="Fluxo de login e recuperação de acesso.",
+        epic_or_feature="Credenciais",
+        dominant_domain="Autenticação",
+    )
+
+    assert policy_pack
+    assert policy_pack["domain"] == "Autenticação"
+    assert "acceptance_criteria" in policy_pack["mandatory_sections"]

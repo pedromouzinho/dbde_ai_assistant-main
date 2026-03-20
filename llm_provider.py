@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from azure_auth import build_azure_openai_auth_headers, close_azure_auth
 from config import (
     AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_KEY, AZURE_OPENAI_BASE_URL,
     AZURE_OPENAI_API_PREFIX, AZURE_OPENAI_AUTH_MODE, AZURE_OPENAI_AUTH_HEADER,
@@ -436,9 +437,15 @@ class AzureOpenAIProvider(LLMProvider):
             default_header="api-key",
         )
 
-    def _request_headers(self) -> dict[str, str]:
+    async def _request_headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
-        headers.update(self._auth_headers())
+        headers.update(
+            await build_azure_openai_auth_headers(
+                auth_mode=self.auth_mode,
+                auth_header=self.auth_header,
+                auth_value=self.api_key,
+            )
+        )
         return headers
 
     def _chat_url(self) -> str:
@@ -467,6 +474,7 @@ class AzureOpenAIProvider(LLMProvider):
             if self._http_client and not self._http_client.is_closed:
                 await self._http_client.aclose()
             self._http_client = None
+        await close_azure_auth()
 
     async def chat(
         self,
@@ -498,7 +506,7 @@ class AzureOpenAIProvider(LLMProvider):
             try:
                 resp = await client.post(
                     url, json=body,
-                    headers=self._request_headers(),
+                    headers=await self._request_headers(),
                 )
                 if resp.status_code == 429:
                     retry_after = int(resp.headers.get("Retry-After", 5 * (attempt + 1)))
@@ -572,7 +580,7 @@ class AzureOpenAIProvider(LLMProvider):
         client = await _maybe_await(self._get_client())
         async with client.stream(
             "POST", url, json=body,
-            headers=self._request_headers(),
+            headers=await self._request_headers(),
         ) as resp:
             full_content = ""
             async for line in resp.aiter_lines():
@@ -602,7 +610,7 @@ class AzureOpenAIProvider(LLMProvider):
         client = await _maybe_await(self._get_client())
         resp = await client.post(
             url, json={"input": text},
-            headers=self._request_headers(),
+            headers=await self._request_headers(),
             timeout=30,
         )
         resp.raise_for_status()

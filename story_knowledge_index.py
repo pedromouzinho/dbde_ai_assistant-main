@@ -6,11 +6,13 @@ import asyncio
 import json
 import logging
 import re
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from config import API_VERSION_SEARCH, OMNI_INDEX, SEARCH_KEY, SEARCH_SERVICE, STORY_KNOWLEDGE_INDEX
+from azure_auth import build_search_auth_headers
 from figma_story_map import search_story_design_map
 from http_helpers import search_request_with_retry
 from story_domain_profiles import select_story_domain_profile
@@ -25,6 +27,12 @@ _SYNC_TABLE = "IndexSyncState"
 _SYNC_PARTITION = "story_knowledge_index"
 _SYNC_ROW = "latest"
 _DATA_DIR = Path(__file__).resolve().parent / "data"
+_INDEX_EMBED_CONCURRENCY = 2
+_INDEX_BATCH_SIZE = 10
+_INDEX_BATCH_DELAY_SECONDS = 2.0
+_INDEX_MAX_RETRIES = 5
+_INDEX_UPLOAD_ATTEMPTS = 4
+_LOCAL_SEED_CACHE: list[dict] | None = None
 
 
 def _clip(value: Any, max_len: int) -> str:
@@ -42,15 +50,17 @@ def _utc_now_iso() -> str:
 
 
 def _target_index_ready() -> bool:
-    return bool(str(SEARCH_SERVICE or "").strip() and str(SEARCH_KEY or "").strip() and str(STORY_KNOWLEDGE_INDEX or "").strip())
+    return bool(str(SEARCH_SERVICE or "").strip() and str(STORY_KNOWLEDGE_INDEX or "").strip())
 
 
 def _source_index_ready() -> bool:
-    return bool(str(SEARCH_SERVICE or "").strip() and str(SEARCH_KEY or "").strip() and str(OMNI_INDEX or "").strip())
+    return bool(str(SEARCH_SERVICE or "").strip() and str(OMNI_INDEX or "").strip())
 
 
-def _headers() -> dict[str, str]:
-    return {"api-key": SEARCH_KEY, "Content-Type": "application/json"}
+async def _headers() -> dict[str, str]:
+    headers = {"Content-Type": "application/json"}
+    headers.update(await build_search_auth_headers(api_key=SEARCH_KEY, service_name=SEARCH_SERVICE))
+    return headers
 
 
 def _source_url(suffix: str) -> str:
@@ -81,6 +91,18 @@ def _coerce_str_list(values: Any, *, max_items: int = 24, max_len: int = 120) ->
         seen.add(item)
         result.append(item)
     return result
+
+
+def _normalize_text(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    folded = unicodedata.normalize("NFKD", text)
+    folded = "".join(ch for ch in folded if not unicodedata.combining(ch))
+    return re.sub(r"\s+", " ", folded).strip()
+
+
+def _tokenize(value: Any) -> set[str]:
+    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(value))
+    return {token for token in normalized.split() if len(token) >= 3}
 
 
 def _source_title(item: dict) -> str:
@@ -246,6 +268,13 @@ def _build_local_seed_documents() -> list[dict]:
     return list(deduped.values())
 
 
+def _get_local_seed_documents() -> list[dict]:
+    global _LOCAL_SEED_CACHE
+    if _LOCAL_SEED_CACHE is None:
+        _LOCAL_SEED_CACHE = _build_local_seed_documents()
+    return list(_LOCAL_SEED_CACHE)
+
+
 def _infer_story_context(item: dict) -> dict:
     title = _source_title(item)
     content = _clip(item.get("content", ""), 5000)
@@ -389,7 +418,7 @@ async def _fetch_source_batch(*, top: int, skip: int) -> list[dict]:
     }
     data = await search_request_with_retry(
         url=_source_url("docs/search"),
-        headers=_headers(),
+        headers=await _headers(),
         json_body=body,
         max_retries=3,
         timeout=45,
@@ -408,7 +437,7 @@ async def _index_documents(docs: list[dict]) -> dict:
         return {"ok": False, "skipped": "target_matches_source_index"}
 
     total_indexed = 0
-    semaphore = asyncio.Semaphore(6)
+    semaphore = asyncio.Semaphore(_INDEX_EMBED_CONCURRENCY)
 
     async def _embed_doc(doc: dict) -> dict | None:
         async with semaphore:
@@ -417,8 +446,11 @@ async def _index_documents(docs: list[dict]) -> dict:
             return None
         return {"@search.action": "mergeOrUpload", **doc, "content_vector": embedding}
 
-    for start in range(0, len(docs), 100):
-        embedded_docs = await asyncio.gather(*[_embed_doc(doc) for doc in docs[start : start + 100]], return_exceptions=True)
+    for start in range(0, len(docs), _INDEX_BATCH_SIZE):
+        embedded_docs = await asyncio.gather(
+            *[_embed_doc(doc) for doc in docs[start : start + _INDEX_BATCH_SIZE]],
+            return_exceptions=True,
+        )
         enriched = []
         for embedded in embedded_docs:
             if isinstance(embedded, Exception):
@@ -429,17 +461,32 @@ async def _index_documents(docs: list[dict]) -> dict:
             enriched.append(embedded)
         if not enriched:
             continue
-        data = await search_request_with_retry(
-            url=_target_url("docs/index"),
-            headers=_headers(),
-            json_body={"value": enriched},
-            max_retries=3,
-            timeout=60,
-        )
-        if "error" in data:
-            raise RuntimeError(f"Azure AI Search index failed: {data['error']}")
+        data: dict | None = None
+        for upload_attempt in range(1, _INDEX_UPLOAD_ATTEMPTS + 1):
+            data = await search_request_with_retry(
+                url=_target_url("docs/index"),
+                headers=await _headers(),
+                json_body={"value": enriched},
+                max_retries=_INDEX_MAX_RETRIES,
+                timeout=60,
+            )
+            if "error" not in data:
+                break
+            error_text = str(data.get("error", "") or "")
+            if "429" not in error_text or upload_attempt >= _INDEX_UPLOAD_ATTEMPTS:
+                raise RuntimeError(f"Azure AI Search index failed: {error_text}")
+            wait = min(20.0, _INDEX_BATCH_DELAY_SECONDS * (upload_attempt + 1))
+            logger.info(
+                "[StoryKnowledgeIndex] batch upload throttled (attempt %s/%s); retry in %.1fs",
+                upload_attempt,
+                _INDEX_UPLOAD_ATTEMPTS,
+                wait,
+            )
+            await asyncio.sleep(wait)
         total_indexed += len(enriched)
         logger.info("[StoryKnowledgeIndex] indexed %s/%s knowledge docs", total_indexed, len(docs))
+        if start + _INDEX_BATCH_SIZE < len(docs):
+            await asyncio.sleep(_INDEX_BATCH_DELAY_SECONDS)
     if total_indexed <= 0:
         return {"ok": False, "skipped": "missing_embeddings"}
     return {"ok": True, "indexed": total_indexed}
@@ -454,7 +501,7 @@ async def upsert_story_knowledge_index_document(doc: dict) -> dict:
     payload = {"value": [{"@search.action": "mergeOrUpload", **doc, "content_vector": embedding}]}
     data = await search_request_with_retry(
         url=_target_url("docs/index"),
-        headers=_headers(),
+        headers=await _headers(),
         json_body=payload,
         max_retries=3,
         timeout=30,
@@ -471,7 +518,7 @@ async def delete_story_knowledge_index_document(document_id: str) -> dict:
     payload = {"value": [{"@search.action": "delete", "id": _safe_doc_id(document_id)}]}
     data = await search_request_with_retry(
         url=_target_url("docs/index"),
-        headers=_headers(),
+        headers=await _headers(),
         json_body=payload,
         max_retries=3,
         timeout=30,
@@ -516,6 +563,66 @@ def _result_to_item(doc: dict) -> dict:
     }
 
 
+def _local_seed_to_item(doc: dict, *, score: float) -> dict:
+    item = _result_to_item({**doc, "@search.score": score})
+    item["origin"] = "local_story_knowledge_seed"
+    return item
+
+
+def _search_local_seed_documents(*, query_text: str, dominant_domain: str = "", top: int = 3) -> dict:
+    effective_query = str(query_text or "").strip()
+    if not effective_query:
+        return {"items": [], "total_results": 0, "source": "local_story_knowledge_seed"}
+
+    query_normalized = _normalize_text(effective_query)
+    query_tokens = _tokenize(effective_query)
+    dominant_normalized = _normalize_text(dominant_domain)
+    ranked: list[dict] = []
+
+    for doc in _get_local_seed_documents():
+        haystack = " ".join(
+            str(part)
+            for part in [
+                doc.get("title", ""),
+                doc.get("content", ""),
+                doc.get("domain", ""),
+                doc.get("journey", ""),
+                doc.get("flow", ""),
+                doc.get("detail", ""),
+                doc.get("site_section", ""),
+                " ".join(str(item) for item in doc.get("ux_terms", [])[:12] if item),
+            ]
+            if part
+        )
+        haystack_normalized = _normalize_text(haystack)
+        haystack_tokens = _tokenize(haystack)
+        overlap = (len(query_tokens & haystack_tokens) / max(1, len(query_tokens))) if query_tokens else 0.0
+        phrase_bonus = 0.2 if query_normalized and query_normalized in haystack_normalized else 0.0
+        domain_bonus = 0.0
+        if dominant_normalized and _normalize_text(doc.get("domain", "")) == dominant_normalized:
+            domain_bonus = 0.35
+        elif dominant_normalized and dominant_normalized in haystack_normalized:
+            domain_bonus = 0.15
+        score = round(overlap + phrase_bonus + domain_bonus, 4)
+        if score <= 0:
+            continue
+        ranked.append(_local_seed_to_item(doc, score=score))
+
+    ranked.sort(
+        key=lambda item: (
+            float(item.get("score", 0.0) or 0.0),
+            _normalize_text(item.get("title", "")),
+        ),
+        reverse=True,
+    )
+    limit = max(1, int(top or 3))
+    return {
+        "items": ranked[:limit],
+        "total_results": len(ranked),
+        "source": "local_story_knowledge_seed",
+    }
+
+
 async def search_story_knowledge_index(
     *,
     query_text: str,
@@ -524,7 +631,7 @@ async def search_story_knowledge_index(
     top: int = 3,
 ) -> dict:
     if not _target_index_ready():
-        return {"items": [], "total_results": 0, "source": "disabled"}
+        return _search_local_seed_documents(query_text=query_text, dominant_domain=dominant_domain, top=top)
     effective_query = str(query_text or "").strip()
     if not effective_query:
         return {"items": [], "total_results": 0, "source": "empty_query"}
@@ -568,14 +675,16 @@ async def search_story_knowledge_index(
         ]
     data = await search_request_with_retry(
         url=_target_url("docs/search"),
-        headers=_headers(),
+        headers=await _headers(),
         json_body=body,
         max_retries=3,
         timeout=30,
     )
     if "error" in data:
         logger.warning("[StoryKnowledgeIndex] search failed: %s", data["error"])
-        return {"items": [], "total_results": 0, "source": "error", "error": data["error"]}
+        fallback = _search_local_seed_documents(query_text=effective_query, dominant_domain=dominant_domain, top=top)
+        fallback["error"] = data["error"]
+        return fallback
 
     dominant = safe_domain.lower()
     ranked: list[dict] = []
@@ -587,6 +696,8 @@ async def search_story_knowledge_index(
         item["score"] = round(score, 4)
         ranked.append(item)
     ranked.sort(key=lambda item: float(item.get("score", 0.0) or 0.0), reverse=True)
+    if not ranked:
+        return _search_local_seed_documents(query_text=effective_query, dominant_domain=dominant_domain, top=top)
     return {
         "items": ranked[: max(1, int(top or 3))],
         "total_results": int(data.get("@odata.count", 0) or 0),

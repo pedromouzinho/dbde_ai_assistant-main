@@ -18,8 +18,15 @@ def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", folded).strip()
 
 
+def _expand_identifier_text(value: str) -> str:
+    text = str(value or "").strip()
+    text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
+    text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
+    return text
+
+
 def _tokenize(value: str) -> set[str]:
-    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(value))
+    normalized = re.sub(r"[^a-z0-9 ]+", " ", _normalize_text(_expand_identifier_text(value)))
     return {token for token in normalized.split() if len(token) >= 3}
 
 
@@ -37,7 +44,9 @@ def _pack_score(entry: dict, query_text: str, query_tokens: set[str], dominant_d
     score = 0.0
     domain = _normalize_text(entry.get("domain", ""))
     if dominant_domain and domain == dominant_domain:
-        score += 1.0
+        # Keep the policy pack aligned with the already-resolved dominant
+        # domain when one is explicitly supplied by upstream routing.
+        score += 1.2
     elif domain and domain in query_text:
         score += 0.65
 

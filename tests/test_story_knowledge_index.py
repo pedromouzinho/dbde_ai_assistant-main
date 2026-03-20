@@ -109,6 +109,57 @@ async def test_search_story_knowledge_index_prefers_matching_domain(monkeypatch)
 
 
 @pytest.mark.asyncio
+async def test_search_story_knowledge_index_falls_back_to_local_seed_when_azure_returns_empty(monkeypatch):
+    import story_knowledge_index
+
+    async def _fake_embedding(_text: str):
+        return [0.1, 0.2, 0.3]
+
+    async def _empty_search_request_with_retry(**kwargs):
+        _ = kwargs
+        return {"@odata.count": 0, "value": []}
+
+    monkeypatch.setattr(story_knowledge_index, "get_embedding", _fake_embedding)
+    monkeypatch.setattr(story_knowledge_index, "search_request_with_retry", _empty_search_request_with_retry)
+    monkeypatch.setattr(story_knowledge_index, "SEARCH_SERVICE", "search-test")
+    monkeypatch.setattr(story_knowledge_index, "STORY_KNOWLEDGE_INDEX", "story-knowledge-test")
+    monkeypatch.setattr(
+        story_knowledge_index,
+        "_get_local_seed_documents",
+        lambda: [
+            {
+                "id": "seed-auth-login",
+                "title": "Autenticacao | login",
+                "content": "Domínio Autenticação. Fluxo login com credenciais.",
+                "url": "",
+                "tag": "Story flow map",
+                "domain": "Autenticação",
+                "journey": "Autenticação",
+                "flow": "login",
+                "detail": "",
+                "site_section": "Autenticação",
+                "ux_terms": ["login", "credenciais"],
+                "visibility": "global",
+                "source_kind": "story_flow_map:repo",
+                "source_id": "seed-auth-login",
+                "source_index": "local_story_assets",
+                "updated_at": "2026-03-20T00:00:00Z",
+            }
+        ],
+    )
+
+    result = await story_knowledge_index.search_story_knowledge_index(
+        query_text="autenticação login",
+        dominant_domain="Autenticação",
+        top=3,
+    )
+
+    assert result["source"] == "local_story_knowledge_seed"
+    assert result["items"][0]["domain"] == "Autenticação"
+    assert result["items"][0]["origin"] == "local_story_knowledge_seed"
+
+
+@pytest.mark.asyncio
 async def test_sync_story_knowledge_index_scans_source_and_updates_state(monkeypatch):
     import story_knowledge_index
 

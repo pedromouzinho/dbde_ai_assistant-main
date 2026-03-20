@@ -155,6 +155,10 @@ async def test_azure_chat_adds_response_format_without_tools(monkeypatch):
             payloads.append(json or {})
             return FakeResponse()
 
+    monkeypatch.setattr(llm_provider, "AZURE_OPENAI_AUTH_MODE", "api-key")
+    monkeypatch.setattr(llm_provider, "AZURE_OPENAI_AUTH_HEADER", "api-key")
+    monkeypatch.setattr(llm_provider, "AZURE_OPENAI_AUTH_VALUE", "test-key")
+
     provider = llm_provider.AzureOpenAIProvider(deployment="gpt-4.1")
     monkeypatch.setattr(provider, "_get_client", lambda: FakeClient())
 

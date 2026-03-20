@@ -1,7 +1,8 @@
 {
-  "version": 1,
-  "generated_at": "2026-03-11T00:08:54.153467+00:00",
-  "source": "story_domain_profiles",
+  "version": 3,
+  "generated_at": "2026-03-19T21:44:28+00:00",
+  "source": "current_story_policy_packs + phase3_merged_profiles",
+  "motto": "seguranca de dados confidenciais sempre",
   "entries": [
     {
       "id": "policy:apoio_ao_cliente",
@@ -52,7 +53,8 @@
       "top_flows": [],
       "section_emphasis": [],
       "notes": [
-        "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente."
+        "Usar quando o pedido mencionar ajuda, suporte ou contacto com cliente.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 0.0,
       "production_confidence": 0.9,
@@ -60,14 +62,175 @@
       "design_file_title": "MSE | Apoio ao Cliente [Handoff]"
     },
     {
+      "id": "policy:autenticacao",
+      "domain": "Autenticação",
+      "aliases": [
+        "registerSibsErrorPage",
+        "Register Sibs Screens",
+        "registerSibsConfirmUserDataPage",
+        "registerSibsLandingPage",
+        "flowDecision",
+        "Credenciais",
+        "login",
+        "changeCredentials",
+        "registerSibsMissingRequirementsPage",
+        "registerSibsFinishProcessPage",
+        "registerSibsUserDataSelectionPage",
+        "Autenticacao"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Autenticacao",
+        "Credenciais",
+        "Register Sibs Screens"
+      ],
+      "top_flows": [
+        "changeCredentials",
+        "flowDecision",
+        "login",
+        "registerSibsConfirmUserDataPage",
+        "registerSibsErrorPage",
+        "registerSibsFinishProcessPage",
+        "registerSibsLandingPage",
+        "registerSibsMissingRequirementsPage",
+        "registerSibsUserDataSelectionPage"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules  com layers frontend.",
+        "Flows observados na Fase 1: changeCredentials, flowDecision, login, registerSibsConfirmUserDataPage, registerSibsErrorPage, registerSibsFinishProcessPage.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.65,
+      "production_confidence": 0.76,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Autenticação"
+    },
+    {
+      "id": "policy:beneficiarios",
+      "domain": "Beneficiários",
+      "aliases": [
+        "editBeneficiary",
+        "MSE/Beneficiaries",
+        "Beneficiaries",
+        "createBeneficiary",
+        "Beneficiarios",
+        "importBeneficiaries"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Beneficiarios"
+      ],
+      "top_flows": [
+        "beneficiaries",
+        "createBeneficiary",
+        "editBeneficiary",
+        "importBeneficiaries"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Beneficiaries com layers api, experience_backend, frontend.",
+        "Flows observados na Fase 1: beneficiaries, createBeneficiary, editBeneficiary, importBeneficiaries.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.6,
+      "production_confidence": 0.82,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Beneficiários"
+    },
+    {
       "id": "policy:cartões",
       "domain": "Cartões",
       "aliases": [
         "cartoes",
-        "cartões",
         "cartao",
-        "cartão",
-        "via verde"
+        "via verde",
+        "atmServiceCard",
+        "MSE/Cards",
+        "Cards"
       ],
       "language": "pt-PT",
       "template_version": "us-v1",
@@ -130,14 +293,23 @@
         "Ativar Via Verde",
         "Step 2",
         "Cartões de Crédito",
-        "Cartões Pré-pagos"
+        "Cartões Pré-pagos",
+        "atmServiceCard"
       ],
       "section_emphasis": [
-        "comportamento"
+        "comportamento",
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
       ],
       "notes": [
         "Este é o domínio com melhor cobertura no corpus curado; preferir para pedidos ligados a cartões.",
-        "O corpus curado puxa sobretudo para a jornada Pedir Cartão de Débito."
+        "O corpus curado puxa sobretudo para a jornada Pedir Cartão de Débito.",
+        "Repo atlas aponta para modules Cards com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: Step 1, Step 3, Transversal, Alterar Cartão, Ativar Via Verde, Step 2.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 1.0,
       "production_confidence": 0.97,
@@ -149,7 +321,13 @@
       "domain": "Crédito",
       "aliases": [
         "credito",
-        "crédito"
+        "MSE/Credits",
+        "MSE/Credit",
+        "Credit",
+        "creditDetails",
+        "Credits",
+        "creditWallet",
+        "confirming"
       ],
       "language": "pt-PT",
       "template_version": "us-v1",
@@ -170,7 +348,8 @@
         "Primary CTA",
         "Card",
         "Input",
-        "Dropdown"
+        "Dropdown",
+        "Modal"
       ],
       "terminology_overrides": [
         {
@@ -197,12 +376,25 @@
       "top_journeys": [
         "crédito"
       ],
-      "top_flows": [],
-      "section_emphasis": [],
-      "notes": [
-        "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra."
+      "top_flows": [
+        "confirming",
+        "creditDetails",
+        "creditWallet"
       ],
-      "coverage_score": 0.0,
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Usar para pedidos ligados a Crédito; foi o ficheiro com atividade mais recente na amostra.",
+        "Repo atlas aponta para modules Credit, Credits com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: confirming, creditDetails, creditWallet.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.65,
       "production_confidence": 0.96,
       "curated_example_count": 0,
       "design_file_title": "MSE | Crédito [Handoff]"
@@ -215,7 +407,8 @@
         "agenda",
         "home",
         "overview",
-        "resumo"
+        "resumo",
+        "schedule"
       ],
       "language": "pt-PT",
       "template_version": "us-v1",
@@ -262,7 +455,8 @@
       ],
       "top_journeys": [
         "Agenda",
-        "Estatuto Cliente Aplauso"
+        "Estatuto Cliente Aplauso",
+        "dashboard"
       ],
       "top_flows": [
         "Agendamentos",
@@ -270,26 +464,117 @@
         "Step 1 - Entrada DIA a DIA",
         "Step 2 - Nova área",
         "Tab \"Agendamentos\"",
-        "Criar Agendamento"
+        "Criar Agendamento",
+        "schedule"
       ],
       "section_emphasis": [
-        "comportamento"
+        "comportamento",
+        "business_goal",
+        "conditions"
       ],
       "notes": [
         "Usar apenas quando Dashboard II não encaixar ou para comparar evolução do domínio.",
-        "O corpus curado puxa sobretudo para a jornada Agenda."
+        "O corpus curado puxa sobretudo para a jornada Agenda.",
+        "Repo atlas aponta para modules  com layers frontend.",
+        "Flows observados na Fase 1: Agendamentos, Melhoria, Step 1 - Entrada DIA a DIA, Step 2 - Nova área, Tab \"Agendamentos\", Criar Agendamento.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 1.0,
-      "production_confidence": 0.69,
+      "production_confidence": 0.72,
       "curated_example_count": 27,
       "design_file_title": "MSE | Dashboard [Handoff]"
     },
     {
-      "id": "policy:investimentos",
-      "domain": "Investimentos",
+      "id": "policy:documentos",
+      "domain": "Documentos",
       "aliases": [
-        "investimentos",
-        "investimento"
+        "documents",
+        "ACD/Documents",
+        "beneficiaryConfirmation",
+        "fileUpload",
+        "fileConsult",
+        "digitalDocuments",
+        "Document",
+        "MSE/Documents",
+        "digitalDocumentsList",
+        "Documentos",
+        "MSE/Document"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "high",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Documentos"
+      ],
+      "top_flows": [
+        "beneficiaryConfirmation",
+        "digitalDocuments",
+        "digitalDocumentsList",
+        "documents",
+        "fileConsult",
+        "fileUpload"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Document, Documents com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: beneficiaryConfirmation, digitalDocuments, digitalDocumentsList, documents, fileConsult, fileUpload.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.95,
+      "production_confidence": 0.86,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Documentos"
+    },
+    {
+      "id": "policy:empresas",
+      "domain": "Empresas",
+      "aliases": [
+        "MSE/Companies",
+        "company",
+        "Empresas",
+        "Companies",
+        "updateData"
       ],
       "language": "pt-PT",
       "template_version": "us-v1",
@@ -308,7 +593,87 @@
       "preferred_lexicon": [
         "CTA",
         "Card",
-        "Tab"
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Empresas"
+      ],
+      "top_flows": [
+        "company",
+        "updateData"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Companies com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: company, updateData.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.4,
+      "production_confidence": 0.78,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Empresas"
+    },
+    {
+      "id": "policy:investimentos",
+      "domain": "Investimentos",
+      "aliases": [
+        "investimentos",
+        "investimento",
+        "consultInvestments",
+        "Investments",
+        "liquidateInvestment",
+        "reinforceInvestment",
+        "constituteInvestments",
+        "MSE/Investments",
+        "productsShowcase",
+        "investment"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Tab",
+        "Input",
+        "Modal",
+        "Dropdown"
       ],
       "terminology_overrides": [
         {
@@ -325,13 +690,29 @@
       "top_journeys": [
         "investimentos"
       ],
-      "top_flows": [],
-      "section_emphasis": [],
-      "notes": [
-        "Útil para grounding de domínio, mas com menor sinal de edição humana recente."
+      "top_flows": [
+        "constituteInvestments",
+        "consultInvestments",
+        "investment",
+        "liquidateInvestment",
+        "productsShowcase",
+        "reinforceInvestment"
       ],
-      "coverage_score": 0.0,
-      "production_confidence": 0.76,
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Útil para grounding de domínio, mas com menor sinal de edição humana recente.",
+        "Repo atlas aponta para modules Investments com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: constituteInvestments, consultInvestments, investment, liquidateInvestment, productsShowcase, reinforceInvestment.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.8,
+      "production_confidence": 0.86,
       "curated_example_count": 0,
       "design_file_title": "MSE | Investimentos [Handoff]"
     },
@@ -379,7 +760,8 @@
       "top_flows": [],
       "section_emphasis": [],
       "notes": [
-        "Bom candidato atual para pedidos que mencionem explicitamente MDSE."
+        "Bom candidato atual para pedidos que mencionem explicitamente MDSE.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 0.0,
       "production_confidence": 0.92,
@@ -393,7 +775,6 @@
         "menu",
         "menu lateral",
         "navegacao",
-        "navegação",
         "sidebar"
       ],
       "language": "pt-PT",
@@ -435,12 +816,95 @@
       "top_flows": [],
       "section_emphasis": [],
       "notes": [
-        "Usar para proveniência de navegação, entry points e estrutura transversal."
+        "Usar para proveniência de navegação, entry points e estrutura transversal.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 0.0,
       "production_confidence": 0.82,
       "curated_example_count": 0,
       "design_file_title": "MSE | Menu [Handoff]"
+    },
+    {
+      "id": "policy:onboarding",
+      "domain": "Onboarding",
+      "aliases": [
+        "Fundos Europeus",
+        "Onboarding",
+        "globalPosition",
+        "yourEnterprise",
+        "MSE/Onboarding",
+        "dayToDay",
+        "europeanFunds",
+        "movements",
+        "accounts"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "high",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Fundos Europeus",
+        "Onboarding"
+      ],
+      "top_flows": [
+        "accounts",
+        "dayToDay",
+        "europeanFunds",
+        "globalPosition",
+        "movements",
+        "onBoarding",
+        "yourEnterprise"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Onboarding com layers api, experience_backend, frontend.",
+        "Flows observados na Fase 1: accounts, dayToDay, europeanFunds, globalPosition, movements, onBoarding.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.85,
+      "production_confidence": 0.88,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Onboarding"
     },
     {
       "id": "policy:open_banking",
@@ -485,12 +949,102 @@
       "top_flows": [],
       "section_emphasis": [],
       "notes": [
-        "Usar como fonte de domínio para Open Banking; boa recência, mas menos evidência humana direta."
+        "Usar como fonte de domínio para Open Banking; boa recência, mas menos evidência humana direta.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 0.0,
       "production_confidence": 0.81,
       "curated_example_count": 0,
       "design_file_title": "MSE | Open Banking [Handoff]"
+    },
+    {
+      "id": "policy:operacoes",
+      "domain": "Operações",
+      "aliases": [
+        "mobisPendingOpsDocuments",
+        "opRejectedSuccessfully",
+        "digitalSignatureLandingPage",
+        "processAuthorizeOldOperations",
+        "mobisPendingOpsDocumentsPage",
+        "digitalSignatureConfirmationPage",
+        "digitalSignatureErrorPage",
+        "operationsCDTFlow",
+        "Integrated Solutions Pending Ops",
+        "integratedSolutionsAuthorizedOperation",
+        "digitalSignatureRegisterOperationPage",
+        "integratedSolutionsRegisterOperation"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "high",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Integrated Solutions Pending Ops",
+        "Mobis Pending Ops",
+        "Operacoes"
+      ],
+      "top_flows": [
+        "digitalSignatureAuthorizedOperation",
+        "digitalSignatureConfirmation",
+        "digitalSignatureConfirmationPage",
+        "digitalSignatureDocuments",
+        "digitalSignatureDocumentsPage",
+        "digitalSignatureErrorPage",
+        "digitalSignatureLandingPage",
+        "digitalSignatureRegisterOperation",
+        "digitalSignatureRegisterOperationPage",
+        "integratedSolutionsAuthorizedOperation"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Operation com layers api, experience_backend, frontend.",
+        "Flows observados na Fase 1: digitalSignatureAuthorizedOperation, digitalSignatureConfirmation, digitalSignatureConfirmationPage, digitalSignatureDocuments, digitalSignatureDocumentsPage, digitalSignatureErrorPage.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.85,
+      "production_confidence": 0.92,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Operações"
     },
     {
       "id": "policy:pagamentos",
@@ -499,10 +1053,15 @@
         "pagamentos",
         "pagamento",
         "transferencias",
-        "transferências",
         "recorrencias",
-        "recorrências",
-        "pagamentos recorrentes"
+        "pagamentos recorrentes",
+        "loadServices",
+        "Payments",
+        "socialSecurityPayments",
+        "prepaidCards",
+        "servicePayments",
+        "MSE/Payments",
+        "statePayments"
       ],
       "language": "pt-PT",
       "template_version": "us-v1",
@@ -520,38 +1079,232 @@
       "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
       "preferred_lexicon": [
         "Tab",
-        "Input"
+        "Input",
+        "CTA",
+        "Primary CTA",
+        "Card",
+        "Bloco",
+        "Dropdown",
+        "Modal"
       ],
-      "terminology_overrides": [],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "botão principal",
+          "to": "Primary CTA",
+          "when": "ação principal do passo"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
       "top_journeys": [
         "Pagar Serviços",
         "Pagar ao Estado",
         "Pagar à Segurança Social",
         "Carregar cartão pré-pago",
-        "Pagamento ao Estado"
+        "Pagamento ao Estado",
+        "pagamentos"
       ],
       "top_flows": [
         "Adicionar Nota - Propagação para Detalhe de Movimento",
-        "Alterar Operation ID para montante >= 500.000,00€"
+        "Alterar Operation ID para montante >= 500.000,00€",
+        "loadServices",
+        "prepaidCards",
+        "servicePayments",
+        "socialSecurityPayments",
+        "statePayments",
+        "tsuPayments"
       ],
       "section_emphasis": [
-        "comportamento"
+        "comportamento",
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
       ],
       "notes": [
         "Preferir este handoff para pedidos de Pagamentos; o sufixo III indica iteração mais recente.",
-        "O corpus curado puxa sobretudo para a jornada Pagar Serviços."
+        "O corpus curado puxa sobretudo para a jornada Pagar Serviços.",
+        "Repo atlas aponta para modules Payments com layers api, experience_backend, frontend.",
+        "Flows observados na Fase 1: Adicionar Nota - Propagação para Detalhe de Movimento, Alterar Operation ID para montante >= 500.000,00€, loadServices, prepaidCards, servicePayments, socialSecurityPayments.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
-      "coverage_score": 0.25,
+      "coverage_score": 0.85,
       "production_confidence": 0.96,
       "curated_example_count": 5,
       "design_file_title": "MSE | Pagamentos [Handoff] III"
+    },
+    {
+      "id": "policy:publico",
+      "domain": "Público",
+      "aliases": [
+        "europeanFunds",
+        "changeCredentials",
+        "MSE/Public",
+        "Public",
+        "supplierCensus",
+        "Publico"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Publico"
+      ],
+      "top_flows": [
+        "changeCredentials",
+        "europeanFunds",
+        "supplierCensus"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Public com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: changeCredentials, europeanFunds, supplierCensus.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.5,
+      "production_confidence": 0.8,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Público"
+    },
+    {
+      "id": "policy:recebiveis",
+      "domain": "Recebíveis",
+      "aliases": [
+        "Receivables",
+        "Recebiveis",
+        "charges",
+        "spinCancellation",
+        "spinManagement",
+        "MSE/Receivables",
+        "spin",
+        "spinSubscription"
+      ],
+      "language": "pt-PT",
+      "template_version": "us-v1",
+      "detail_level": "medium",
+      "canonical_title_pattern": "[Prefix] | [Domínio] | [Jornada/Subárea] | [Fluxo/Step] | [Detalhe]",
+      "mandatory_sections": [
+        "business_goal",
+        "provenance",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "acceptance_style": "CA-xx com comportamento observável, mensurável e testável.",
+      "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
+      "preferred_lexicon": [
+        "CTA",
+        "Card",
+        "Input",
+        "Modal",
+        "Dropdown"
+      ],
+      "terminology_overrides": [
+        {
+          "from": "botão",
+          "to": "CTA",
+          "when": "ação navegacional ou acionável na interface"
+        },
+        {
+          "from": "caixa",
+          "to": "Card",
+          "when": "container visual de resumo ou agrupamento"
+        },
+        {
+          "from": "lista",
+          "to": "Dropdown",
+          "when": "seleção fechada de opções"
+        }
+      ],
+      "top_journeys": [
+        "Recebiveis"
+      ],
+      "top_flows": [
+        "charges",
+        "receivables",
+        "spin",
+        "spinCancellation",
+        "spinManagement",
+        "spinSubscription"
+      ],
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Repo atlas aponta para modules Receivables com layers api, experience_backend, frontend.",
+        "Flows observados na Fase 1: charges, receivables, spin, spinCancellation, spinManagement, spinSubscription.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.8,
+      "production_confidence": 0.86,
+      "curated_example_count": 0,
+      "design_file_title": "Repo atlas | Recebíveis"
     },
     {
       "id": "policy:repositório_handoffs",
       "domain": "Repositório Handoffs",
       "aliases": [
         "repositorio",
-        "repositório",
         "handoffs"
       ],
       "language": "pt-PT",
@@ -570,14 +1323,17 @@
       "test_style": "Cenários Dado/Quando/Então alinhados com os critérios.",
       "preferred_lexicon": [],
       "terminology_overrides": [],
-      "top_journeys": [],
+      "top_journeys": [
+        "Repositório Handoffs"
+      ],
       "top_flows": [],
       "section_emphasis": [],
       "notes": [
-        "Usar apenas como fallback ou índice manual; não deve ser a primeira referência do draft."
+        "Usar apenas como fallback ou índice manual; não deve ser a primeira referência do draft.",
+        "Confirmar sempre detalhes finais no GitHub main."
       ],
       "coverage_score": 0.0,
-      "production_confidence": 0.35,
+      "production_confidence": 0.42,
       "curated_example_count": 0,
       "design_file_title": "MSE | Repositório Handoffs"
     },
@@ -586,9 +1342,16 @@
       "domain": "Transferências",
       "aliases": [
         "transferencias",
-        "transferências",
         "transferencia",
-        "transferência"
+        "Transfers",
+        "spinTransfer",
+        "salary",
+        "stateTransfers",
+        "supplier",
+        "paySalary",
+        "MSE/Transfers",
+        "paySupplier",
+        "spinTransfers"
       ],
       "language": "pt-PT",
       "template_version": "us-v1",
@@ -610,7 +1373,8 @@
         "Card",
         "Input",
         "Dropdown",
-        "Stepper"
+        "Stepper",
+        "Modal"
       ],
       "terminology_overrides": [
         {
@@ -637,12 +1401,30 @@
       "top_journeys": [
         "transferências"
       ],
-      "top_flows": [],
-      "section_emphasis": [],
-      "notes": [
-        "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III."
+      "top_flows": [
+        "paySalary",
+        "paySupplier",
+        "salary",
+        "spinTransfer",
+        "spinTransfers",
+        "stateTransfers",
+        "supplier",
+        "transfers"
       ],
-      "coverage_score": 0.0,
+      "section_emphasis": [
+        "business_goal",
+        "conditions",
+        "rules_constraints",
+        "acceptance_criteria",
+        "test_scenarios"
+      ],
+      "notes": [
+        "Preferir este handoff quando o pedido for especificamente sobre transferências; pode complementar Pagamentos III.",
+        "Repo atlas aponta para modules Transfers com layers api, experience_backend, frontend, process_backend.",
+        "Flows observados na Fase 1: paySalary, paySupplier, salary, spinTransfer, spinTransfers, stateTransfers.",
+        "Confirmar sempre detalhes finais no GitHub main."
+      ],
+      "coverage_score": 0.85,
       "production_confidence": 0.94,
       "curated_example_count": 0,
       "design_file_title": "MSE | Transferências [Handoff]"
