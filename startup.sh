@@ -15,10 +15,13 @@ APP_VENV_ROOT="$APP_ROOT/antenv"
 if [[ -x "$APP_VENV_ROOT/bin/python" ]]; then
   export PATH="$APP_VENV_ROOT/bin:${PATH:-}"
   PYTHON_BIN="$APP_VENV_ROOT/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="$(command -v python3)"
 elif command -v python >/dev/null 2>&1; then
   PYTHON_BIN="$(command -v python)"
 else
-  PYTHON_BIN="$(command -v python3)"
+  echo "FATAL: No Python interpreter found" >&2
+  exit 127
 fi
 export PYTHONPATH="$APP_ROOT:${PYTHONPATH:-}"
 
