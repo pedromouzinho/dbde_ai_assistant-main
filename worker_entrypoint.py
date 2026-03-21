@@ -14,6 +14,12 @@ import time
 from pathlib import Path
 from typing import Iterable, Sequence
 
+from config import (
+    EXPORT_WORKER_BATCH_SIZE,
+    EXPORT_WORKER_POLL_SECONDS,
+    UPLOAD_WORKER_BATCH_SIZE,
+    UPLOAD_WORKER_POLL_SECONDS,
+)
 from worker_health_server import serve
 
 
@@ -93,8 +99,8 @@ def _worker_specs() -> list[tuple[str, Path, list[str]]]:
                 LOG_DIR / "upload-worker.log",
                 _command(
                     "upload_worker.py",
-                    batch_size=os.getenv("UPLOAD_WORKER_BATCH_SIZE", "4"),
-                    poll_seconds=os.getenv("UPLOAD_WORKER_POLL_SECONDS", "2.5"),
+                    batch_size=os.getenv("UPLOAD_WORKER_BATCH_SIZE", str(UPLOAD_WORKER_BATCH_SIZE)),
+                    poll_seconds=os.getenv("UPLOAD_WORKER_POLL_SECONDS", str(UPLOAD_WORKER_POLL_SECONDS)),
                 ),
             )
         )
@@ -105,8 +111,8 @@ def _worker_specs() -> list[tuple[str, Path, list[str]]]:
                 LOG_DIR / "export-worker.log",
                 _command(
                     "export_worker.py",
-                    batch_size=os.getenv("EXPORT_WORKER_BATCH_SIZE", "3"),
-                    poll_seconds=os.getenv("EXPORT_WORKER_POLL_SECONDS", "2.0"),
+                    batch_size=os.getenv("EXPORT_WORKER_BATCH_SIZE", str(EXPORT_WORKER_BATCH_SIZE)),
+                    poll_seconds=os.getenv("EXPORT_WORKER_POLL_SECONDS", str(EXPORT_WORKER_POLL_SECONDS)),
                 ),
             )
         )
