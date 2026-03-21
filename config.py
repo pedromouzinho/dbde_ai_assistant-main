@@ -234,8 +234,6 @@ STORY_CONTEXT_FIGMA_FILES_TOP = int(_get_env("STORY_CONTEXT_FIGMA_FILES_TOP", "2
 STORY_CONTEXT_FIGMA_FLOW_TOP = int(_get_env("STORY_CONTEXT_FIGMA_FLOW_TOP", "4"))
 STORY_MAX_CLARIFICATIONS = int(_get_env("STORY_MAX_CLARIFICATIONS", "2"))
 
-TOP_K = int(_get_env("TOP_K", "10"))
-
 # =============================================================================
 # POST-RETRIEVAL RERANK
 # =============================================================================
