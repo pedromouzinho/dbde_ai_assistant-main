@@ -163,6 +163,10 @@ class _DecoratorRateLimiter:
         resolved_key_func = key_func or self._default_key_func
 
         def decorator(fn):
+            if max_requests <= 0 or window_seconds <= 0:
+                if hasattr(fn, "__dbde_rate_limit__"):
+                    delattr(fn, "__dbde_rate_limit__")
+                return fn
             setattr(
                 fn,
                 "__dbde_rate_limit__",
@@ -188,6 +192,10 @@ class _DecoratorRateLimiter:
         shared_scope = str(scope or "").strip()
 
         def decorator(fn):
+            if max_requests <= 0 or window_seconds <= 0:
+                if hasattr(fn, "__dbde_rate_limit__"):
+                    delattr(fn, "__dbde_rate_limit__")
+                return fn
             setattr(
                 fn,
                 "__dbde_rate_limit__",

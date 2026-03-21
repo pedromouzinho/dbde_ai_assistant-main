@@ -1051,6 +1051,7 @@ function App() {
             let useStreaming = true;
             let streamCompleted = false;
             let streamedText = "";
+            let streamErrorMessage = "";
 
             if (useStreaming) {
                 try {
@@ -1134,10 +1135,11 @@ function App() {
                                             break;
                                         case "error":
                                             setStreamingTrace(prev => applyStreamingTraceEvent(prev, "error", evt));
-                                            throw new Error(evt.text || evt.message || "Erro de streaming");
+                                            streamErrorMessage = evt.text || evt.message || "Erro de streaming";
+                                            throw new Error(streamErrorMessage);
                                     }
                                 } catch (parseErr) {
-                                    if (parseErr.message.includes("Erro de streaming")) throw parseErr;
+                                    if (!(parseErr instanceof SyntaxError)) throw parseErr;
                                 }
                             }
                         }
@@ -1164,12 +1166,13 @@ function App() {
 
                             setConversations(prev => {
                                 const u = [...prev];
+                                const finalContent = fullText || streamErrorMessage || "A resposta terminou sem conteúdo.";
                                 u[activeIdx] = {
                                     ...u[activeIdx],
                                     id: convId,
                                     updatedAt: new Date().toISOString(),
                                     messages: [...u[activeIdx].messages, {
-                                        role: "assistant", content: fullText || `O modelo (${tierLabels[requestTier] || requestTier}) não conseguiu gerar resposta. Possíveis causas: timeout, limite de tokens, ou indisponibilidade temporária. Tenta novamente ou experimenta outro tier.`,
+                                        role: "assistant", content: finalContent,
                                         tools_used: toolsUsed.length > 0 ? [...new Set(toolsUsed)] : undefined,
                                         tool_details: toolDetails.length > 0 ? toolDetails : undefined,
                                         tool_results: toolResults.length > 0 ? toolResults : undefined,
@@ -1197,9 +1200,10 @@ function App() {
                     }
                 } catch (streamErr) {
                     console.warn("Stream error, falling back:", streamErr);
-                    setStreamingTrace(prev => applyStreamingTraceEvent(prev, "error", { message: streamErr.message || "Erro de streaming" }));
+                    streamErrorMessage = streamErr.message || streamErrorMessage || "Erro de streaming";
+                    setStreamingTrace(prev => applyStreamingTraceEvent(prev, "error", { message: streamErrorMessage }));
                     if (streamedText) {
-                        streamedText += "\n\nA resposta pode estar incompleta devido a um erro de comunicação.";
+                        streamedText += `\n\nErro real detetado durante o streaming: ${streamErrorMessage}`;
                         setStreamingText(streamedText);
                         setStreamingActiveBlock(streamedText);
                         streamCompleted = true;
@@ -1273,7 +1277,7 @@ function App() {
                 u[activeIdx] = {
                     ...u[activeIdx],
                     updatedAt: new Date().toISOString(),
-                    messages: [...u[activeIdx].messages, { role: "assistant", content: "Erro: " + err.message + ". Tenta novamente." }],
+                    messages: [...u[activeIdx].messages, { role: "assistant", content: "Erro real detetado: " + (err.message || "erro sem detalhe") }],
                 };
                 return u;
             });

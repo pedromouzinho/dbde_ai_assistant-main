@@ -52,6 +52,55 @@ def _log(msg: str):
     logger.info("[LLM] %s", msg)
 
 
+def _classify_provider_exception(exc: Exception) -> Dict[str, Any]:
+    if isinstance(exc, (asyncio.TimeoutError, httpx.TimeoutException)):
+        return {
+            "kind": "timeout",
+            "detail": "timeout a aguardar resposta do provider",
+        }
+    if isinstance(exc, httpx.HTTPStatusError):
+        status_code = int(getattr(exc.response, "status_code", 0) or 0)
+        body = _sanitize_error_response(getattr(exc.response, "text", ""), 240)
+        detail = f"HTTP {status_code}"
+        if body:
+            detail += f": {body}"
+        return {
+            "kind": "http_status",
+            "status_code": status_code,
+            "detail": detail,
+        }
+    if isinstance(exc, httpx.RequestError):
+        return {
+            "kind": "request_error",
+            "detail": f"{exc.__class__.__name__}: {str(exc).strip() or 'erro de rede sem detalhe'}",
+        }
+    detail = str(exc).strip() or exc.__class__.__name__
+    return {
+        "kind": exc.__class__.__name__,
+        "detail": f"{exc.__class__.__name__}: {detail}",
+    }
+
+
+def _format_failure_chain_for_user(fallback_chain: List[Dict[str, Any]]) -> str:
+    failures = []
+    for item in fallback_chain:
+        if item.get("status") != "failed":
+            continue
+        provider = str(item.get("provider") or "provider").strip() or "provider"
+        detail = str(item.get("detail") or item.get("error") or item.get("reason") or "erro sem detalhe").strip()
+        failures.append(f"{provider}: {detail}")
+    if not failures:
+        return "A chamada ao modelo terminou sem conteúdo."
+    return "Erro real detetado ao contactar os modelos: " + " | ".join(failures[:3])
+
+
+def format_llm_error_for_user(error: Exception, fallback_chain: Optional[List[Dict[str, Any]]] = None) -> str:
+    if fallback_chain:
+        return _format_failure_chain_for_user(fallback_chain)
+    info = _classify_provider_exception(error)
+    return f"Erro real detetado ao contactar o modelo: {info.get('detail') or 'erro sem detalhe'}"
+
+
 async def _maybe_await(value):
     if inspect.isawaitable(value):
         return await value
@@ -1107,16 +1156,22 @@ async def llm_with_fallback(
             result.fallback_chain = fallback_chain
             return result
         except Exception as e:
-            fallback_chain.append({"provider": provider.name, "status": "failed", "error": str(e)[:200]})
+            info = _classify_provider_exception(e)
+            fallback_chain.append(
+                {
+                    "provider": provider.name,
+                    "status": "failed",
+                    "error": str(info.get("detail") or "")[:240],
+                    "detail": str(info.get("detail") or "")[:240],
+                    "error_kind": info.get("kind"),
+                    "status_code": info.get("status_code"),
+                }
+            )
             _log(f"Provider ({provider.name}) failed: {e}")
 
     _log(f"ALL providers failed. Chain: {fallback_chain}")
     return LLMResponse(
-        content=(
-            "Lamento, mas não consegui processar o teu pedido neste momento. "
-            "Os modelos AI estão temporariamente indisponíveis. "
-            "Tenta novamente em alguns segundos."
-        ),
+        content=_format_failure_chain_for_user(fallback_chain),
         tool_calls=None,
         usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
         model="",
@@ -1185,6 +1240,7 @@ async def llm_stream_with_fallback(
         return (unmasked_text or None), (safe_data if safe_data else done_data)
 
     primary = get_provider(tier)
+    fallback_chain: List[Dict[str, Any]] = []
     try:
         async for event in primary.chat_stream(
             actual_messages,
@@ -1206,6 +1262,16 @@ async def llm_stream_with_fallback(
             yield event
         return
     except Exception as e:
+        info = _classify_provider_exception(e)
+        fallback_chain.append(
+            {
+                "provider": primary.name,
+                "status": "failed",
+                "detail": str(info.get("detail") or "")[:240],
+                "error_kind": info.get("kind"),
+                "status_code": info.get("status_code"),
+            }
+        )
         _log(f"Primary streaming ({primary.name}) failed: {e}, trying fallback")
 
     try:
@@ -1232,15 +1298,22 @@ async def llm_stream_with_fallback(
             yield event
         return
     except Exception as e2:
+        info = _classify_provider_exception(e2)
+        fallback_chain.append(
+            {
+                "provider": getattr(fallback, "name", "fallback"),
+                "status": "failed",
+                "detail": str(info.get("detail") or "")[:240],
+                "error_kind": info.get("kind"),
+                "status_code": info.get("status_code"),
+            }
+        )
         _log(f"Fallback streaming failed: {e2}")
 
+    failure_text = _format_failure_chain_for_user(fallback_chain)
     yield StreamEvent(
         type="token",
-        text=(
-            "Lamento, mas não consegui processar o teu pedido neste momento. "
-            "Os modelos AI estão temporariamente indisponíveis. "
-            "Tenta novamente em alguns segundos."
-        ),
+        text=failure_text,
     )
     yield StreamEvent(
         type="done",
@@ -1248,9 +1321,7 @@ async def llm_stream_with_fallback(
             "content": "",
             "model": "",
             "provider": "",
-            "fallback_chain": [
-                {"provider": primary.name, "status": "failed"},
-                {"provider": "fallback", "status": "failed"},
-            ],
+            "error_detail": failure_text,
+            "fallback_chain": fallback_chain,
         },
     )

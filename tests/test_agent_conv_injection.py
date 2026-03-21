@@ -164,7 +164,7 @@ async def test_switch_conversation_mode_waits_for_conversation_lock():
 
 
 @pytest.mark.asyncio
-async def test_agent_chat_returns_generic_error_on_timeout(monkeypatch):
+async def test_agent_chat_returns_precise_timeout_error_without_secret(monkeypatch):
     async def fake_ensure_conversation(conv_id, _mode, _partition_key, user_sub=""):
         _ = user_sub
         agent.conversations[conv_id] = [{"role": "system", "content": "system"}]
@@ -194,8 +194,20 @@ async def test_agent_chat_returns_generic_error_on_timeout(monkeypatch):
         agent.conversation_meta.pop("conv-timeout", None)
         agent._conversation_locks.pop("conv-timeout", None)
 
-    assert response.answer == "Ocorreu um erro inesperado. Por favor tenta novamente."
+    assert response.answer == "Erro real detetado ao contactar o modelo: timeout a aguardar resposta do provider"
     assert "sensitive/path/secret" not in response.answer
+
+
+@pytest.mark.asyncio
+async def test_check_token_quota_is_fail_open_when_enforcement_disabled(monkeypatch):
+    class _DenyManager:
+        async def check(self, _tier):
+            return False, "daily quota exceeded"
+
+    monkeypatch.setattr(agent, "TOKEN_QUOTA_ENFORCEMENT_ENABLED", False)
+    monkeypatch.setattr(agent._tq_module, "token_quota_manager", _DenyManager())
+
+    assert await agent._check_token_quota("standard", "conv-quota") == ""
 
 
 @pytest.mark.asyncio

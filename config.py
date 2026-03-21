@@ -463,6 +463,7 @@ STARTUP_FAIL_FAST = _get_env("STARTUP_FAIL_FAST", "true").lower() == "true"
 # TOKEN QUOTAS (per tier, hourly/daily)
 # =============================================================================
 # Format: "hourly,daily" — 0 means unlimited
+TOKEN_QUOTA_ENFORCEMENT_ENABLED = _get_env("TOKEN_QUOTA_ENFORCEMENT_ENABLED", "false").lower() == "true"
 _QUOTA_FAST = _get_env("TOKEN_QUOTA_FAST", "500000,5000000")
 _QUOTA_STANDARD = _get_env("TOKEN_QUOTA_STANDARD", "200000,2000000")
 _QUOTA_PRO = _get_env("TOKEN_QUOTA_PRO", "100000,1000000")
@@ -490,6 +491,11 @@ TOKEN_QUOTA_CONFIG = {
     "standard": _parse_quota(_QUOTA_STANDARD),
     "pro": _parse_quota(_QUOTA_PRO),
 }
+
+# =============================================================================
+# CHAT RATE LIMITING
+# =============================================================================
+CHAT_RATE_LIMIT_ENFORCEMENT_ENABLED = _get_env("CHAT_RATE_LIMIT_ENFORCEMENT_ENABLED", "false").lower() == "true"
 
 DEBUG_LOG_SIZE = int(_get_env("DEBUG_LOG_SIZE", "50"))
 DEBUG_MODE = _get_env("DEBUG_MODE", "false").lower() == "true"

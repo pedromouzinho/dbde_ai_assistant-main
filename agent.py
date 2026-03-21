@@ -21,13 +21,14 @@ from config import (
     AGENT_MAX_ITERATIONS, AGENT_MAX_TOKENS, AGENT_TEMPERATURE,
     AGENT_HISTORY_LIMIT, LLM_DEFAULT_TIER, UPLOAD_MAX_IMAGES_PER_MESSAGE,
     UPLOAD_INDEX_TOP, DEVOPS_AREAS, CHAT_TOOLRESULT_BLOB_CONTAINER, PII_ENABLED,
+    TOKEN_QUOTA_ENFORCEMENT_ENABLED,
 )
 from models import (
     AgentChatRequest, AgentChatResponse, LLMToolCall,
 )
 from llm_provider import (
     get_provider, llm_with_fallback, llm_stream_with_fallback,
-    make_assistant_message_from_response,
+    make_assistant_message_from_response, format_llm_error_for_user,
 )
 from token_counter import (
     count_messages_tokens,
@@ -297,7 +298,6 @@ conversations = ConversationStore(
     on_evict=_cleanup_conversation_related_state,
 )
 logger = logging.getLogger(__name__)
-_AGENT_LLM_STEP_TIMEOUT_SECONDS = 90.0
 
 # ---------------------------------------------------------------------------
 # Write-through persistence — background loop + pre-evict + shutdown hook
@@ -475,6 +475,8 @@ def _quota_tier_name(tier: Optional[str]) -> str:
 
 
 async def _check_token_quota(tier: Optional[str], conv_id: str) -> str:
+    if not TOKEN_QUOTA_ENFORCEMENT_ENABLED:
+        return ""
     mgr = _tq_module.token_quota_manager
     if not mgr:
         return ""
@@ -509,6 +511,10 @@ async def _record_token_quota(tier: Optional[str], usage: Dict) -> None:
         await mgr.record(_quota_tier_name(tier), total_tokens)
     except Exception as e:
         logger.warning("[Agent] Token quota record failed tier=%s err=%s", _quota_tier_name(tier), e)
+
+
+def _format_agent_error_for_user(error: Exception) -> str:
+    return format_llm_error_for_user(error)
 
 
 def _user_partition_key(user: Optional[dict]) -> str:
@@ -2204,10 +2210,7 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
         else:
             quota_reason = await _check_token_quota(tier, conv_id)
             if quota_reason:
-                answer = (
-                    f"⚠️ Limite de utilização do tier atingido: {quota_reason}. "
-                    "Tenta novamente mais tarde ou muda de tier."
-                )
+                answer = f"Erro real detetado antes de chamar o modelo: {quota_reason}."
                 conversations[conv_id].append({"role": "assistant", "content": answer})
                 conversations.mark_dirty(conv_id)
                 should_persist = True
@@ -2264,12 +2267,9 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
                         tools_list=tool_definitions,
                         user_sub=str((user or {}).get("sub", "") or ""),
                     )
-                    response = await asyncio.wait_for(
-                        llm_with_fallback(
-                            ephemeral, tools=tool_definitions, tier=tier,
-                            temperature=AGENT_TEMPERATURE, max_tokens=AGENT_MAX_TOKENS,
-                        ),
-                        timeout=_AGENT_LLM_STEP_TIMEOUT_SECONDS,
+                    response = await llm_with_fallback(
+                        ephemeral, tools=tool_definitions, tier=tier,
+                        temperature=AGENT_TEMPERATURE, max_tokens=AGENT_MAX_TOKENS,
                     )
                     _log_fallback_chain_if_needed(response)
                     model_used = response.model
@@ -2316,12 +2316,9 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
                             tools_list=tool_definitions,
                             user_sub=str((user or {}).get("sub", "") or ""),
                         )
-                        response = await asyncio.wait_for(
-                            llm_with_fallback(
-                                ephemeral, tools=tool_definitions, tier=tier,
-                                temperature=AGENT_TEMPERATURE, max_tokens=AGENT_MAX_TOKENS,
-                            ),
-                            timeout=_AGENT_LLM_STEP_TIMEOUT_SECONDS,
+                        response = await llm_with_fallback(
+                            ephemeral, tools=tool_definitions, tier=tier,
+                            temperature=AGENT_TEMPERATURE, max_tokens=AGENT_MAX_TOKENS,
                         )
                         _log_fallback_chain_if_needed(response)
                         for k, v in response.usage.items():
@@ -2336,7 +2333,7 @@ async def agent_chat(request: AgentChatRequest, user: dict) -> AgentChatResponse
 
                 except Exception as e:
                     logger.error("[Agent] agent_chat exception: %s", e, exc_info=True)
-                    answer = "Ocorreu um erro inesperado. Por favor tenta novamente."
+                    answer = _format_agent_error_for_user(e)
 
     if should_persist:
         try:
@@ -2441,7 +2438,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
             if quota_reason:
                 yield _sse({
                     "type": "error",
-                    "text": f"Limite de utilização do tier atingido: {quota_reason}.",
+                    "text": f"Erro real detetado antes de chamar o modelo: {quota_reason}.",
                 })
                 yield _sse({
                     "type": "done",
@@ -2515,12 +2512,9 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                         tools_list=tool_definitions,
                         user_sub=str((user or {}).get("sub", "") or ""),
                     )
-                    response = await asyncio.wait_for(
-                        llm_with_fallback(
-                            ephemeral, tools=tool_definitions, tier=tier,
-                            temperature=AGENT_TEMPERATURE, max_tokens=AGENT_MAX_TOKENS,
-                        ),
-                        timeout=_AGENT_LLM_STEP_TIMEOUT_SECONDS,
+                    response = await llm_with_fallback(
+                        ephemeral, tools=tool_definitions, tier=tier,
+                        temperature=AGENT_TEMPERATURE, max_tokens=AGENT_MAX_TOKENS,
                     )
                     _log_fallback_chain_if_needed(response)
                     for k, v in response.usage.items():
@@ -2600,7 +2594,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                             except Exception as stream_err:
                                 logger.warning("[Agent] streaming fallback to static: %s", stream_err)
                                 if not stream_content:
-                                    stream_content = "Não consegui processar a tua pergunta."
+                                    stream_content = _format_agent_error_for_user(stream_err)
                                     yield _sse({"type": "token", "text": stream_content})
 
                             if stream_content:
@@ -2609,7 +2603,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
                                 conversations.mark_dirty(conv_id)
                                 should_persist = True
                             else:
-                                yield _sse({"type": "token", "text": "Não consegui processar a tua pergunta."})
+                                yield _sse({"type": "token", "text": "A chamada ao modelo terminou sem conteúdo."})
 
                 if need_final_response:
                     # Garantir sempre resposta textual quando o loop atinge limite de iterações.
@@ -2622,7 +2616,7 @@ async def agent_chat_stream(request: AgentChatRequest, user: dict) -> AsyncGener
 
             except Exception as e:
                 logger.error("[Agent] agent_chat_stream exception: %s", e, exc_info=True)
-                yield _sse({"type": "error", "text": "Ocorreu um erro inesperado. Por favor tenta novamente."})
+                yield _sse({"type": "error", "text": _format_agent_error_for_user(e)})
 
     if should_persist:
         try:

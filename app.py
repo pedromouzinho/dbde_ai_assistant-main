@@ -114,6 +114,7 @@ from config import (
     EXPORT_WORKER_BATCH_SIZE,
     EXPORT_BRAND_COLOR, EXPORT_BRAND_NAME, EXPORT_AGENT_NAME,
     STARTUP_FAIL_FAST, TOKEN_QUOTA_CONFIG, CHAT_BUDGET_PER_MINUTE,
+    CHAT_RATE_LIMIT_ENFORCEMENT_ENABLED,
     STORY_LANE_ENABLED,
     WORKER_RUN_DIR, UPLOAD_WORKER_PID_FILE, EXPORT_WORKER_PID_FILE,
 )
@@ -250,7 +251,11 @@ from routes_admin import router as _admin_router, _router_state as _admin_state
 # =============================================================================
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent
-_CHAT_BUDGET_LIMIT = f"{max(1, int(CHAT_BUDGET_PER_MINUTE or 10))}/minute"
+_CHAT_BUDGET_LIMIT = (
+    f"{max(1, int(CHAT_BUDGET_PER_MINUTE or 10))}/minute"
+    if CHAT_RATE_LIMIT_ENFORCEMENT_ENABLED
+    else "0/minute"
+)
 _inline_worker_task: Optional[asyncio.Task] = None
 _inline_export_worker_task: Optional[asyncio.Task] = None
 _upload_retention_task: Optional[asyncio.Task] = None
