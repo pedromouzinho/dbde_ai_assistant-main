@@ -195,23 +195,6 @@ DOC_INTEL_MODEL = _get_env("DOC_INTEL_MODEL", "prebuilt-layout")
 # Fallback provider (se o primário falhar) — DataZone para máxima segurança
 LLM_FALLBACK = _get_env("LLM_FALLBACK", "azure_openai:gpt-4-1-mini-dz")
 
-# Model Router — feature flag para routing inteligente entre modelos.
-# Desactivado em produção por omissão. Para activar:
-#   1. Definir MODEL_ROUTER_ENABLED=true
-#   2. Definir MODEL_ROUTER_SPEC=azure_openai:<deployment-name>
-#   3. Opcional: MODEL_ROUTER_NON_PROD_ONLY=false para permitir em produção
-_app_env_hint = _get_env("APP_ENV", "").lower()
-MODEL_ROUTER_ENABLED = _get_env(
-    "MODEL_ROUTER_ENABLED",
-    "true" if _app_env_hint in ("test", "staging", "qa") else "false",
-).lower() == "true"
-MODEL_ROUTER_SPEC = _get_env("MODEL_ROUTER_SPEC", "azure_openai:model-router")
-MODEL_ROUTER_TARGET_TIERS = tuple(
-    t.strip().lower()
-    for t in _get_env("MODEL_ROUTER_TARGET_TIERS", "standard,pro").split(",")
-    if t.strip()
-)
-MODEL_ROUTER_NON_PROD_ONLY = _get_env("MODEL_ROUTER_NON_PROD_ONLY", "true").lower() == "true"
 
 # =============================================================================
 # AZURE AI SEARCH

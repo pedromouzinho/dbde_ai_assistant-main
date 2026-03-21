@@ -30,8 +30,6 @@ from config import (
     ANTHROPIC_MODEL_HAIKU,
     LLM_DEFAULT_TIER, LLM_TIER_FAST, LLM_TIER_STANDARD, LLM_TIER_PRO, LLM_TIER_VISION,
     LLM_FALLBACK, AGENT_MAX_TOKENS, AGENT_TEMPERATURE,
-    MODEL_ROUTER_ENABLED, MODEL_ROUTER_SPEC, MODEL_ROUTER_TARGET_TIERS,
-    MODEL_ROUTER_NON_PROD_ONLY, IS_PRODUCTION,
     DEBUG_LOG_SIZE,
 )
 from http_helpers import _sanitize_error_response
@@ -953,34 +951,22 @@ def _parse_provider_spec(spec: str) -> tuple[str, str]:
     return spec, ""
 
 
-def _should_route_tier_with_model_router(tier: str) -> bool:
-    """Check if this tier should use the Model Router deployment."""
-    if not MODEL_ROUTER_ENABLED:
-        return False
-    if MODEL_ROUTER_NON_PROD_ONLY and IS_PRODUCTION:
-        return False
-    wanted = str(tier or "").strip().lower()
-    return wanted in MODEL_ROUTER_TARGET_TIERS
-
-
 def get_provider(tier: str = None) -> LLMProvider:
     """Retorna o provider para o tier pedido.
-    
+
     Tiers: "fast", "standard", "pro", "vision"
     Se tier=None, usa LLM_DEFAULT_TIER.
     """
     tier = (tier or LLM_DEFAULT_TIER or "standard").strip().lower()
-    
+
     tier_map = {
         "fast": LLM_TIER_FAST,
         "standard": LLM_TIER_STANDARD,
         "pro": LLM_TIER_PRO,
         "vision": LLM_TIER_VISION,
     }
-    
+
     spec = tier_map.get(tier, LLM_TIER_STANDARD)
-    if _should_route_tier_with_model_router(tier):
-        spec = MODEL_ROUTER_SPEC
     provider_name, model = _parse_provider_spec(spec)
 
     return _get_cached_provider(provider_name, model)
