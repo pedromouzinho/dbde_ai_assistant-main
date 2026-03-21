@@ -74,22 +74,6 @@ AZURE_SPEECH_ENABLED = _get_env("AZURE_SPEECH_ENABLED", "false").lower() == "tru
 AZURE_SPEECH_KEY = _get_env("AZURE_SPEECH_KEY", "")
 AZURE_SPEECH_REGION = _get_env("AZURE_SPEECH_REGION", "")
 AZURE_SPEECH_LANGUAGE = _get_env("AZURE_SPEECH_LANGUAGE", "pt-PT")
-AZURE_SPEECH_PHRASE_LIST_GENERAL = tuple(
-    item.strip()
-    for item in _get_env(
-        "AZURE_SPEECH_PHRASE_LIST_GENERAL",
-        "Millennium,DBDE,MSE,MDSE,Via Verde,CTA,stepper,RevampFEE,epic,feature,user story,acceptance criteria,KPI,DevOps",
-    ).split(",")
-    if item.strip()
-)
-AZURE_SPEECH_PHRASE_LIST_USERSTORY = tuple(
-    item.strip()
-    for item in _get_env(
-        "AZURE_SPEECH_PHRASE_LIST_USERSTORY",
-        "Millennium,DBDE,MSE,MDSE,Via Verde,CTA,stepper,RevampFEE,epic,feature,user story,acceptance criteria,critérios de aceitação,proveniência,composição,comportamento",
-    ).split(",")
-    if item.strip()
-)
 SPEECH_PROMPT_PRIMARY_SPEC = _get_env("SPEECH_PROMPT_PRIMARY_SPEC", "azure_openai:gpt-4-1-mini-dz")
 SPEECH_PROMPT_FALLBACK_SPEC = _get_env("SPEECH_PROMPT_FALLBACK_SPEC", "anthropic:sonnet")
 PROVIDER_GOVERNANCE_MODE = _get_env("PROVIDER_GOVERNANCE_MODE", "advisory").lower()
@@ -374,8 +358,8 @@ UPLOAD_INDEX_TOP = int(_get_env("UPLOAD_INDEX_TOP", "200"))
 UPLOAD_INLINE_WORKER_ENABLED = _get_env("UPLOAD_INLINE_WORKER_ENABLED", "true").lower() == "true"
 UPLOAD_INLINE_WORKER_RUNTIME_ENABLED = _get_env("UPLOAD_INLINE_WORKER_RUNTIME_ENABLED", "true").lower() == "true"
 UPLOAD_DEDICATED_WORKER_ENABLED = _get_env("UPLOAD_DEDICATED_WORKER_ENABLED", "true").lower() == "true"
-UPLOAD_WORKER_POLL_SECONDS = float(_get_env("UPLOAD_WORKER_POLL_SECONDS", "15"))
-UPLOAD_WORKER_BATCH_SIZE = int(_get_env("UPLOAD_WORKER_BATCH_SIZE", "6"))
+UPLOAD_WORKER_POLL_SECONDS = float(_get_env("UPLOAD_WORKER_POLL_SECONDS", "2.5"))
+UPLOAD_WORKER_BATCH_SIZE = int(_get_env("UPLOAD_WORKER_BATCH_SIZE", "4"))
 UPLOAD_TABULAR_ARTIFACT_ENABLED = _get_env("UPLOAD_TABULAR_ARTIFACT_ENABLED", "true").lower() == "true"
 UPLOAD_TABULAR_ARTIFACT_BATCH_ROWS = int(_get_env("UPLOAD_TABULAR_ARTIFACT_BATCH_ROWS", "25000"))
 UPLOAD_ARTIFACT_RETENTION_HOURS = int(_get_env("UPLOAD_ARTIFACT_RETENTION_HOURS", "72"))
@@ -433,7 +417,6 @@ DEVOPS_AREAS = [
 ]
 
 DEVOPS_WORKITEM_TYPES = ["User Story", "Bug", "Task", "Feature", "Epic"]
-DEVOPS_STATES = ["New", "Active", "Closed", "Resolved", "Removed"]
 
 # =============================================================================
 # DEBUG

@@ -31,6 +31,7 @@ from config import (
     LLM_DEFAULT_TIER, LLM_TIER_FAST, LLM_TIER_STANDARD, LLM_TIER_PRO, LLM_TIER_VISION,
     LLM_FALLBACK, AGENT_MAX_TOKENS, AGENT_TEMPERATURE,
     DEBUG_LOG_SIZE,
+    _normalize_url_path,
 )
 from http_helpers import _sanitize_error_response
 from models import LLMResponse, LLMToolCall, StreamEvent
@@ -113,12 +114,6 @@ def _is_gpt5_family(deployment: str) -> bool:
 def _normalize_base_url(value: str) -> str:
     return str(value or "").strip().rstrip("/")
 
-
-def _normalize_url_path(value: str, default: str = "") -> str:
-    raw = str(value if value is not None else default).strip()
-    if not raw:
-        return ""
-    return "/" + raw.strip("/")
 
 
 def _join_url(base_url: str, *paths: str) -> str:
